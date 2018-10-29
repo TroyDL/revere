@@ -279,7 +279,7 @@ void r_socket::send( const void* buf, size_t len )
             if(bytesJustSent <= 0)
             {
                 close();
-                R_STHROW(r_socket_exception, ("io error in send()"));
+                R_STHROW(r_socket_exception, ("io error in send(%s)",strerror(errno)));
             }
             else
             {

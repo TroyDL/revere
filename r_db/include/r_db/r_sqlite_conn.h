@@ -13,7 +13,7 @@ namespace r_db
 class r_sqlite_conn final
 {
 public:
-    r_sqlite_conn(const std::string& fileName, bool rw = false);
+    r_sqlite_conn(const std::string& fileName, bool rw = true);
     r_sqlite_conn(const r_sqlite_conn&) = delete;
     r_sqlite_conn(r_sqlite_conn&& obj) noexcept;
 

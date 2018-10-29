@@ -26,6 +26,7 @@ vector<uint8_t> r_vss_client::query(const std::string& dataSourceID,
                                      r_time_utils::tp_to_iso_8601(end, false).c_str()));
 
     r_socket sok;
+    sok.set_io_timeout(30000);
     sok.connect("127.0.0.1", 11002);
 
     request.write_request(sok);
@@ -45,6 +46,7 @@ vector<uint8_t> r_vss_client::query(const string& uri)
     request.set_uri(uri);
 
     r_socket sok;
+    sok.set_io_timeout(30000);
     sok.connect("127.0.0.1", 11002);
 
     request.write_request(sok);

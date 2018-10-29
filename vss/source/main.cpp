@@ -55,11 +55,17 @@ unique_ptr<r_control> _create_stream(const data_source& ds)
 
 void _remove_unhealthy(vector<data_source>& current, const std::string& dataSourceID, const std::string& type)
 {
+    bool removedSome = false;
+    printf("size before = %lu\n",current.size());
     for(auto i = current.begin(), e = current.end(); i != e; ++i)
     {
         if(i->id == dataSourceID && i->type == type)
+        {
             i = current.erase(i);
+            removedSome = true;
+        }
     }
+    printf("size after = %lu, removedSome = %s\n",current.size(),(removedSome)?"true":"false");
 }
 
 int main(int argc, char* argv[])
@@ -180,14 +186,19 @@ int main(int argc, char* argv[])
 
         current = recordingInDB;
 
+again:
         for(auto& sh : streams)
         {
             for(auto& sc : sh.second.controls)
+            {
                 if(!sc.second->healthy())
                 {
                     printf("FOUND UNHEALTHY: %s\n", sh.first.c_str());
                     _remove_unhealthy(current, sh.first, sc.first);
+		    streams.erase(sh.first);
+		    goto again;
                 }
+            }
         }
 
         usleep(5000000);

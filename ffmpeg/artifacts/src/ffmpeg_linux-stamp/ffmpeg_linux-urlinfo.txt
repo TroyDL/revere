@@ -1,0 +1,3 @@
+repository='external project URL'
+module='/home/td/code/dicroce/revere/ffmpeg/ffmpeg-3.4.1.tar.bz2'
+tag=''

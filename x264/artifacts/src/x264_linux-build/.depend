@@ -1,0 +1,1122 @@
+common/mc.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/mc.h
+common/predict.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/predict.h
+common/pixel.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/predict.h
+common/macroblock.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/me.h
+common/frame.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/dct.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/dct.h
+common/cpu.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/cabac.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/common.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/osdep.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/rectangle.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/set.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/quant.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/quant.h
+common/deblock.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/deblock.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/vlc.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/vlc.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/mvpred.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mvpred.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/bitstream.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+encoder/analyse.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/analyse.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/me.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/ratecontrol.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/analyse.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/rdo.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/cavlc.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/cabac.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/slicetype.c
+encoder/me.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/me.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/me.h
+encoder/ratecontrol.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/ratecontrol.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/ratecontrol.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/me.h
+encoder/set.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/set.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/set.h
+encoder/macroblock.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/macroblock.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h
+encoder/cabac.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/cabac.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h
+encoder/cavlc.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/cavlc.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h
+encoder/encoder.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/encoder.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/analyse.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/ratecontrol.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/me.h
+encoder/lookahead.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/lookahead.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/encoder/analyse.h
+common/threadpool.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+common/x86/mc-c.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/mc-c.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/mc.h
+common/x86/predict-c.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/predict-c.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/pixel.h
+x264.o: /home/td/code/dicroce/revere/x264/build/x264_sources/x264.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/output.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h
+input/input.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+input/timecode.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/timecode.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+input/raw.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/raw.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+input/y4m.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/y4m.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+output/raw.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/raw.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/output.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h
+output/matroska.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/matroska.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/output.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/matroska_ebml.h
+output/matroska_ebml.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/matroska_ebml.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/output.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/matroska_ebml.h
+output/flv.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/flv.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/output.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/flv_bytestream.h
+output/flv_bytestream.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/flv_bytestream.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/output.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/output/flv_bytestream.h
+filters/filters.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h
+filters/video/video.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h
+filters/video/source.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/source.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h
+filters/video/internal.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/internal.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/internal.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h
+filters/video/resize.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/resize.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h
+filters/video/cache.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/cache.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/internal.h
+filters/video/fix_vfr_pts.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/fix_vfr_pts.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/internal.h
+filters/video/select_every.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/select_every.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h
+filters/video/crop.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/crop.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h
+filters/video/depth.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/depth.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/filters.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/filters/video/video.h
+input/thread.o: \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/thread.c \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/input/input.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/x264cli.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/common.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/osdep.h \
+ config.h /home/td/code/dicroce/revere/x264/build/x264_sources/x264.h \
+ x264_config.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cabac.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/bitstream.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/set.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/predict.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/pixel.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/mc.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/frame.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/dct.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/quant.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/cpu.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/threadpool.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/macroblock.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/x86/util.h \
+ /home/td/code/dicroce/revere/x264/build/x264_sources/common/rectangle.h

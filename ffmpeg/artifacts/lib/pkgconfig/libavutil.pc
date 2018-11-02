@@ -1,0 +1,14 @@
+prefix=/home/td/code/dicroce/revere/ffmpeg/artifacts
+exec_prefix=${prefix}
+libdir=/home/td/code/dicroce/revere/ffmpeg/artifacts/lib
+includedir=/home/td/code/dicroce/revere/ffmpeg/artifacts/include
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 55.78.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil 
+Libs.private: -lm
+Cflags: -I${includedir}

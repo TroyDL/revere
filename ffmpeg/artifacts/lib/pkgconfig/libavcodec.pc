@@ -1,0 +1,14 @@
+prefix=/home/td/code/dicroce/revere/ffmpeg/artifacts
+exec_prefix=${prefix}
+libdir=/home/td/code/dicroce/revere/ffmpeg/artifacts/lib
+includedir=/home/td/code/dicroce/revere/ffmpeg/artifacts/include
+
+Name: libavcodec
+Description: FFmpeg codec library
+Version: 57.107.100
+Requires: 
+Requires.private: libswresample >= 2.9.100, libavutil >= 55.78.100
+Conflicts:
+Libs: -L${libdir}  -lavcodec 
+Libs.private: -lva -lva-drm -lva -lx264 -lmp3lame -lm -ldl -lbz2 -lz -pthread -pthread
+Cflags: -I${includedir}

@@ -1,0 +1,187 @@
+
+#include "r_storage/r_file_index.h"
+#include "r_storage/r_append_file.h"
+#include "r_db/r_sqlite_conn.h"
+#include "r_db/r_sqlite_pager.h"
+#include "r_utils/r_string.h"
+#include <chrono>
+
+using namespace r_storage;
+using namespace r_utils;
+using namespace r_db;
+using namespace std;
+using namespace std::chrono;
+
+r_file_index::r_file_index(const string& indexPath) :
+    _indexPath(indexPath)
+{
+    _upgrade_db(_indexPath);
+
+    _fix_end_times();
+}
+
+r_file_index::~r_file_index() noexcept
+{
+}
+
+void r_file_index::allocate(const string& indexPath)
+{
+    _upgrade_db(indexPath);
+}
+
+void r_file_index::create_invalid_segment_file(r_sqlite_conn& conn, const std::string& path, const std::string& dataSourceID)
+{
+    uint64_t oldestStart = _oldest_start_time(conn);
+    conn.exec(r_string::format("INSERT INTO segment_files(valid, "
+                                                         "path, "
+                                                         "start_time, "
+                                                         "end_time, "
+                                                         "data_source_id, "
+                                                         "type, "
+                                                         "sdp) "
+                                                         "VALUES(0, '%s', %s, %s, '%s', 'none', '');",
+                                                          path.c_str(),
+                                                          r_string::uint64_to_s(oldestStart - 2000).c_str(),
+                                                          r_string::uint64_to_s(oldestStart - 1000).c_str(),
+                                                          dataSourceID.c_str()));
+}
+
+segment_file r_file_index::recycle_append(uint64_t startTime, const string& dataSourceID, const string& type, const string& sdp)
+{
+    r_sqlite_conn conn(_indexPath);
+
+    segment_file sf;
+
+    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
+        auto results = conn.exec("SELECT * FROM segment_files ORDER BY start_time ASC LIMIT 1;");
+        if(results.empty())
+            R_STHROW(r_not_found_exception, ("Empty segment_files?"));
+
+        conn.exec(r_string::format("UPDATE segment_files SET "
+                                   "valid=1, "
+                                   "start_time=%s, "
+                                   "end_time=0, "
+                                   "data_source_id='%s', "
+                                   "type='%s', "
+                                   "sdp='%s' "
+                                   "WHERE id='%s';",
+                                   r_string::uint64_to_s(startTime).c_str(),
+                                   dataSourceID.c_str(),
+                                   type.c_str(),
+                                   sdp.c_str(),
+                                   results.front()["id"].c_str()));
+
+        sf.id = results.front()["id"];
+        sf.valid = true;
+        sf.path = results.front()["path"];
+        sf.start_time = startTime;
+        sf.end_time = 0;
+        sf.data_source_id = dataSourceID;
+        sf.type = type;
+    });
+
+    return sf;
+}
+
+void r_file_index::update_end_time(segment_file& sf, uint64_t endTime)
+{
+    r_sqlite_conn conn(_indexPath);
+
+    conn.exec(r_string::format("UPDATE segment_files SET "
+                               "end_time=%s "
+                               "WHERE id='%s';",
+                               r_string::uint64_to_s(endTime).c_str(),
+                               sf.id.c_str()));
+
+    sf.end_time = endTime;
+}
+
+void r_file_index::free(uint64_t keyA, uint64_t keyB, const std::string& type)
+{
+    r_sqlite_conn conn(_indexPath);
+
+    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
+        r_sqlite_pager pager("*", "segment_files", "start_time", 5);
+        pager.find(conn, r_string::uint64_to_s(keyA));
+        if(pager.valid())
+        {
+            auto row = pager.current();
+
+            auto oldestStart = _oldest_start_time(conn);
+
+            do
+            {
+                if(row["type"] == type)
+                {
+                    oldestStart -= 2000;
+                    conn.exec(r_string::format("UPDATE segment_files SET "
+                                            "valid=0, "
+                                            "start_time=%s, "
+                                            "end_time=%s, "
+                                            "type='none' "
+                                            "WHERE id='%s';",
+                                            r_string::uint64_to_s(oldestStart).c_str(),
+                                            r_string::uint64_to_s(oldestStart+1000).c_str(),
+                                            row["id"].c_str()));
+                }
+
+                pager.next(conn);
+                row = pager.current();
+            }
+            while(pager.valid() && (r_string::s_to_uint64(row["start_time"]) < keyB));
+        }
+    });
+}
+
+uint64_t r_file_index::_oldest_start_time(const r_sqlite_conn& conn) const
+{
+    auto result = conn.exec("SELECT * FROM segment_files ORDER BY start_time ASC LIMIT 1;");
+
+    if(result.empty())
+        return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    else return r_string::s_to_uint64(result.front()["start_time"]);
+}
+
+void r_file_index::_fix_end_times() const
+{
+    r_sqlite_conn conn(_indexPath);
+
+    auto results = conn.exec("SELECT * FROM segment_files WHERE end_time=0;");
+
+    for(auto row : results)
+    {
+        r_append_file f(row["path"]);
+
+        conn.exec(r_string::format("UPDATE segment_files SET end_time=%s WHERE id=%s;",
+                                   r_string::uint64_to_s(f.last_key()).c_str(),
+                                   row["id"].c_str()));
+    }
+}
+
+void r_file_index::_upgrade_db(const std::string& indexPath)
+{
+    r_sqlite_conn conn(indexPath);
+
+    auto results = conn.exec("PRAGMA user_version;");
+
+    uint16_t version = 0;
+
+    if(!results.empty())
+        version = r_string::s_to_uint16(results.front()["user_version"]);
+
+    switch( version )
+    {
+
+    case 0:
+    {
+        R_LOG_NOTICE("upgrade index to version: 1");
+        conn.exec("CREATE TABLE IF NOT EXISTS segment_files(id INTEGER PRIMARY KEY AUTOINCREMENT, valid INTEGER, path TEXT, start_time INTEGER, end_time INTEGER, data_source_id TEXT, type TEXT, sdp TEXT);");
+        conn.exec("CREATE INDEX IF NOT EXISTS segment_files_start_time_idx ON segment_files(start_time);");
+        conn.exec("CREATE INDEX IF NOT EXISTS segment_files_end_time_idx ON segment_files(end_time);");
+        conn.exec("PRAGMA user_version=1;");
+    }
+
+    default:
+        break;
+    }
+}

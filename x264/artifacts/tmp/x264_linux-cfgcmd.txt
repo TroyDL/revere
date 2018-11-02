@@ -1,0 +1,1 @@
+cmd='/home/td/code/dicroce/revere/x264/build/x264_sources/configure;--prefix=/home/td/code/dicroce/revere/x264/artifacts;--enable-shared;--disable-avs;--disable-cli;--disable-gpl;--disable-opencl'

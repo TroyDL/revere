@@ -1,3 +1,0 @@
-repository='external project URL'
-module='/home/td/code/dicroce/revere/x264/x264.tar.bz2'
-tag=''

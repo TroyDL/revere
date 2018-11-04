@@ -562,6 +562,20 @@ double r_utils::r_string_utils::s_to_double(const string& s)
     return val;
 }
 
+float r_utils::r_string_utils::s_to_float(const string& s)
+{
+    float val;
+    sscanf(s.c_str(), "%f", &val);
+    return val;
+}
+
+size_t r_utils::r_string_utils::s_to_size_t(const string& s)
+{
+    size_t val;
+    sscanf(s.c_str(), "%zu", &val);
+    return val;
+}
+
 string r_utils::r_string_utils::int_to_s(int val)
 {
     return to_string(val);
@@ -615,4 +629,14 @@ string r_utils::r_string_utils::uint64_to_s(uint64_t val)
 string r_utils::r_string_utils::double_to_s(double val)
 {
     return r_string_utils::format("%lf", val);
+}
+
+string r_utils::r_string_utils::float_to_s(float val)
+{
+    return r_string_utils::format("%f", val);
+}
+
+string r_utils::r_string_utils::size_t_to_s(size_t val)
+{
+    return r_string_utils::format("%zu", val);
 }

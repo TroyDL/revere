@@ -40,91 +40,91 @@ static time_t _dst_offset()
     return abs(julDiff - janDiff);
 }
 
+static time_t _parse_offset(const string& offset)
+{
+	auto colindex = offset.find(':');
+	int hour = stoi(offset.substr(1, colindex)), minute = stoi(offset.substr(colindex+1));
+	return (hour * 3600) + (minute * 60);
+}
+
 system_clock::time_point r_utils::r_time_utils::iso_8601_to_tp(const string& str)
 {
-	const size_t tDex = str.find('T');
+	// 1976-10-01T12:00:00.000+0:00   Interesting cases because time is essentially in UTC but
+	// 1976-10-01T12:00:00.000-0:00   there is no trailing Z.
+	//
+	// 1976-10-01T12:00:00.000-7:00   Los Angeles
+	//    local time is 12pm and that is behind utc by 7 hours
+	//
+	// 1976-10-01T12:00:00.000+3:00   Moscow
+	//    local time is 12pm and that is ahead of utc by 3 hours
 
-	if (tDex == string::npos)
-        R_STHROW(r_invalid_argument_exception, ("Invalid iso 8601 string: %s",str.c_str()));
+	auto tdex = str.find('T');
 
-	const size_t dotDex = str.find('.');
-	const size_t zDex = str.find('Z');
-	const size_t plusDex = str.find('+', 1);
-	const size_t subDex = str.find('-', str.find('-', str.find('-') + 1) + 1);
+	if(tdex == string::npos)
+		R_THROW(("Invalid iso 8601 string"));
 
-	if (plusDex != string::npos && subDex != string::npos)
-        R_STHROW(r_invalid_argument_exception, ("Invalid iso 8601 string: %s",str.c_str()));
+	auto dateStr = str.substr(0, tdex);
 
-	size_t dtEnd = dotDex;
+	int year, month, day;
+	auto err = sscanf(dateStr.c_str(), "%4d-%2d-%2d", &year, &month, &day);
+	if(err == EOF)
+		R_THROW(("iso 8601 parse error."));
 
-	if (dtEnd == string::npos || dtEnd > zDex)
-		dtEnd = zDex;
+	auto offsetdex = str.substr(tdex+1).rfind('+');
 
-	if (dtEnd == string::npos || dtEnd > plusDex)
-		dtEnd = plusDex;
+	if(offsetdex == string::npos)
+		offsetdex = str.substr(tdex+1).rfind('-');
+	
+	bool hasOffset = (offsetdex != string::npos);
 
-	if (dtEnd == string::npos || dtEnd > subDex)
-		dtEnd = subDex;
+	auto timeStr = str.substr(tdex+1, offsetdex);
 
-	const string dateStr = str.substr(0, tDex);
-	const string timeStr = str.substr(tDex + 1, (dtEnd - tDex) - 1);
-	string fracSecStr;
+	int hour, minute, second;
+	err = sscanf(timeStr.c_str(), "%2d:%2d:%2d", &hour, &minute, &second);
 
-	if (dotDex != string::npos)
-	{
-		size_t fsEnd = zDex;
+	auto pdex = timeStr.find(".");
+	string frac = (pdex == string::npos)?"0":timeStr.substr(pdex);
 
-		if (fsEnd == string::npos || fsEnd > plusDex)
-			fsEnd = plusDex;
+	auto offsetStr = (offsetdex!=string::npos)?str.substr(offsetdex + tdex + 1):"+00:00";
+	auto offset = _parse_offset(offsetStr);
+	bool plus = (offsetStr[0] == '+');
 
-		if (fsEnd == string::npos || fsEnd > subDex)
-			fsEnd = subDex;
+	bool hasZ = (str.find('Z') != string::npos);
 
-		const size_t fsStart = dateStr.size() + 1 + timeStr.size();
-		const size_t fsLen = fsEnd == string::npos ? string::npos : fsEnd - fsStart;
+	auto ttm = tm();
+	ttm.tm_year = year - 1900;
+	ttm.tm_mon = month - 1;
+	ttm.tm_mday = day;
+	ttm.tm_hour = hour;
+	ttm.tm_min = minute;
+	ttm.tm_sec = second;
 
-		fracSecStr = str.substr(fsStart, fsLen);
-	}
+	time_t theTime;
 
-	const size_t zoneDex = dateStr.size() + 1 + timeStr.size() + fracSecStr.size();
-	const string zoneStr = zDex == str.size() ? "" : str.substr(zoneDex);
-
-	tm ttm = tm();
-
-	int yyyy = 0, mm = 0, dd = 0;
-	sscanf(dateStr.c_str(), "%4d-%2d-%2d", &yyyy, &mm, &dd);
-
-	ttm.tm_year = yyyy - 1900;
-	ttm.tm_mon = mm - 1; // Month since January 
-	ttm.tm_mday = dd; // Day of the month [1-31]
-
-	int HH = 0, MM = 0, SS = 0;
-	sscanf(timeStr.c_str(), "%2d:%2d:%2d", &HH, &MM, &SS);
-
-	ttm.tm_hour = HH; // Hour of the day [00-23]
-	ttm.tm_min = MM;
-	ttm.tm_sec = SS;
-
-	// We need to go from a broken down time (struct tm) to a time_t. BUT, we have to use the right function when converting
-	// from struct tm. mktime() assumes the struct tm is in localtime. gmtime() assumes the struct tm is in UTC. If the incoming
-	// iso 8601 string has a 'Z' then we need to use gmtime() (or _mkgmtime() on windows), else we can use mktime().
-	time_t theTime = 0;
-	if (zDex == string::npos) // input is local time
-	{
-		theTime = mktime(&ttm);
-		if(_dst_in_effect(theTime))
-			theTime -= _dst_offset();
-	}
-	else // input is UTC
+	if(hasOffset)
 	{
 		theTime = timegm(&ttm);
+		if(plus)
+			theTime -= offset;
+		else theTime += offset;
+	}
+	else
+	{
+		if(hasZ)
+			theTime = timegm(&ttm);
+		else
+		{
+			theTime = mktime(&ttm);
+			if(_dst_in_effect(theTime))
+				theTime -= _dst_offset();
+		}
 	}
 
-	system_clock::time_point time_point_result = chrono::system_clock::from_time_t(theTime);
+	auto time_point_result = chrono::system_clock::from_time_t(theTime);
 
-	double fracSec = stod(fracSecStr);
+	auto fracSec = stod(frac);
 
-	uint32_t numMillis = (uint32_t)(fracSec * 1000);
+	auto numMillis = (uint32_t)(fracSec * 1000);
 
 	time_point_result += chrono::milliseconds(numMillis);
 
@@ -169,6 +169,157 @@ string r_utils::r_time_utils::tp_to_iso_8601(const system_clock::time_point& tp,
 	return result;
 }
 
+milliseconds r_utils::r_time_utils::iso_8601_period_to_duration(const string& str)
+{
+	auto dur = milliseconds::zero();
+
+	char designators[] = {'Y', 'M', 'W', 'D', 'T', 'H', 'M', 'S'};
+
+	size_t idx = 0;
+
+	auto prevDesig = 'P';
+
+	bool parsedDate = false;
+
+	for(size_t i = 0; i < 8; ++i)
+	{
+		auto didx = str.find(designators[i], idx);
+		idx = didx + 1;
+
+		if(didx != string::npos)
+		{
+			//auto fieldStart = str.rfind_first_not_of("0123456789");
+			auto fieldStart = str.rfind(prevDesig, didx) + 1;
+
+			auto field = str.substr(fieldStart, (didx - fieldStart));
+
+            auto val = r_string_utils::s_to_size_t(field);
+
+			if(!parsedDate)
+			{
+				switch(designators[i])
+				{
+					case 'Y'://YEARS
+						dur += hours(val * 8760);
+					break;
+					case 'M'://MONTHS
+						dur += hours(val * 720);
+					break;
+					case 'W'://WEEKS
+						dur += hours(val * 168);
+					break;
+					case 'D'://DAYS
+						dur += hours(val * 24);
+					break;
+					case 'T':
+						parsedDate = true;
+					break;
+                	default:
+                    	R_THROW(("Unknown iso 8601 duration designator 1:"));
+            	};
+			}
+			else
+			{
+				switch(designators[i])
+				{
+					case 'H'://HOURS
+						dur += hours(val);
+					break;
+					case 'M'://MINUTES
+						dur += minutes(val);
+					break;
+					case 'S'://SECONDS
+					{
+						if(field.find(".") != std::string::npos)
+						{
+							auto val = r_string_utils::s_to_double(field);
+							size_t wholeSeconds = (size_t)val;
+							double fracSeconds = val - wholeSeconds;
+							dur += seconds(wholeSeconds);
+							size_t millis = (size_t)(fracSeconds * (double)1000);
+							dur += milliseconds(millis);
+						}
+						else dur += seconds(val);
+					}
+					break;
+					default:
+						R_THROW(("Unknown iso 8601 duration designator 2:"));
+				};
+			}
+
+			prevDesig = designators[i];
+		}
+	}
+
+
+	return dur;
+}
+
+string r_utils::r_time_utils::duration_to_iso_8601_period(milliseconds d)
+{
+	string output = "P";
+
+    auto y = duration_cast<hours>(d).count() / 8760;
+    d -= hours(y * 8760);
+	if(y > 0)
+		output += r_string_utils::format("%dY", y);
+
+    auto mo = duration_cast<hours>(d).count() / 720;
+    d -= hours(mo * 720);
+	if(mo > 0)
+		output += r_string_utils::format("%dM", mo);
+
+    auto w = duration_cast<hours>(d).count() / 168;
+    d -= hours(w * 168);
+	if(w > 0)
+		output += r_string_utils::format("%dW", w);
+
+    auto da = duration_cast<hours>(d).count() / 24;
+    d -= hours(da * 24);
+	if(da > 0)
+		output += r_string_utils::format("%dD", da);
+
+    auto h = duration_cast<hours>(d).count();
+    d -= hours(h);
+
+    auto m = duration_cast<minutes>(d).count();
+    d -= minutes(m);
+
+    auto s = duration_cast<seconds>(d).count();
+    d -= seconds(s);
+
+    auto ms = duration_cast<milliseconds>(d).count();
+
+	if(h > 0 || m > 0 || s > 0 || ms > 0)
+		output += "T";
+
+	if(h > 0)
+		output += r_string_utils::format("%dH", h);
+
+	if(m > 0)
+		output += r_string_utils::format("%dM", m);
+
+	if(s > 0)
+		output += r_string_utils::format("%lld", s);
+
+    if(ms > 0)
+    {
+		if(s == 0)
+			output += "0";
+
+    	auto frac = r_string_utils::double_to_s((double)ms / 1000.f).substr(2);
+        frac.erase(frac.find_last_not_of('0') + 1, std::string::npos);
+		output += r_string_utils::format(".%sS",frac.c_str());
+    }
+    else
+	{
+		if(s > 0)
+			output += "S";
+	}
+
+    return output;
+}
+
 uint64_t r_utils::r_time_utils::tp_to_epoch_millis(const chrono::system_clock::time_point& tp)
 {
 	return duration_cast<milliseconds>(tp.time_since_epoch()).count();
@@ -177,4 +328,12 @@ uint64_t r_utils::r_time_utils::tp_to_epoch_millis(const chrono::system_clock::t
 chrono::system_clock::time_point r_utils::r_time_utils::epoch_millis_to_tp(uint64_t t)
 {
 	return system_clock::time_point() + milliseconds(t);
+}
+
+bool r_utils::r_time_utils::is_tz_utc()
+{
+	auto t = time(0);
+	struct tm lt;
+	localtime_r(&t, &lt);
+	return (r_string_utils::to_lower(string(lt.tm_zone)) == "utc") ? true : false;
 }

@@ -24,7 +24,7 @@ static r_file_system _parse_file_system(const string& fs)
     r_file_system rfs;
     rfs.name = fsj["name"].get<string>();
     rfs.path = fsj["path"].get<string>();
-    rfs.reserve_bytes = r_string::s_to_uint64(fsj["reserve_bytes"].get<string>());
+    rfs.reserve_bytes = r_string_utils::s_to_uint64(fsj["reserve_bytes"].get<string>());
 
     r_fs::get_fs_usage(rfs.path, rfs.size_bytes, rfs.free_bytes);
 
@@ -143,15 +143,15 @@ void r_storage_engine::configure_storage(const string& config)
 
     cfg.file_allocation_bytes = (1024*1024*10);
     if(cfgj.find("file_allocation_bytes") != cfgj.end())
-        cfg.file_allocation_bytes = r_string::s_to_uint64(cfgj["file_allocation_bytes"].get<string>());
+        cfg.file_allocation_bytes = r_string_utils::s_to_uint64(cfgj["file_allocation_bytes"].get<string>());
 
     cfg.max_files_in_dir = 10000;
     if(cfgj.find("max_files_in_dir") != cfgj.end())
-        cfg.max_files_in_dir = r_string::s_to_uint32(cfgj["max_files_in_dir"].get<string>());
+        cfg.max_files_in_dir = r_string_utils::s_to_uint32(cfgj["max_files_in_dir"].get<string>());
 
     cfg.max_indexes_per_file = 3200;
     if(cfgj.find("max_indexes_per_file") != cfgj.end())
-        cfg.max_indexes_per_file = r_string::s_to_uint32(cfgj["max_indexes_per_file"].get<string>());
+        cfg.max_indexes_per_file = r_string_utils::s_to_uint32(cfgj["max_indexes_per_file"].get<string>());
 
     cfg.index_path = cfgj["index_path"].get<string>();
 

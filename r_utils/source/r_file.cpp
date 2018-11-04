@@ -257,7 +257,7 @@ int r_utils::r_fs::fallocate(FILE* file, uint64_t size)
 void r_utils::r_fs::break_path(const string& path, string& dir, string& fileName)
 {
     auto p = path;
-    while(r_utils::r_string::ends_with(p, PATH_SLASH))
+    while(r_utils::r_string_utils::ends_with(p, PATH_SLASH))
         p = p.substr(0, p.length() - 1);
 
     size_t rslash = p.rfind(PATH_SLASH);

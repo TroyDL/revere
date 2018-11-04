@@ -56,7 +56,7 @@ void test_r_storage_r_file_index::test_create_invalid()
     while(pager.valid())
     {
         auto row = pager.current();
-        RTF_ASSERT(r_string::s_to_uint64(row["end_time"]) < now);
+        RTF_ASSERT(r_string_utils::s_to_uint64(row["end_time"]) < now);
         RTF_ASSERT(row["valid"] == "0");
         RTF_ASSERT(row["data_source_id"] == "487cffdf-1cb4-4f0b-b220-b88502a6c096");
         pager.next(conn);
@@ -202,7 +202,7 @@ void test_r_storage_r_file_index::test_update_end_time()
 
     result = conn.exec("SELECT * FROM segment_files ORDER BY start_time DESC LIMIT 1;");
     
-    RTF_ASSERT(r_string::s_to_uint64(result.front()["end_time"]) == now);    
+    RTF_ASSERT(r_string_utils::s_to_uint64(result.front()["end_time"]) == now);    
 }
 
 void test_r_storage_r_file_index::test_free()

@@ -62,7 +62,7 @@ void r_server_request::read_request(r_utils::r_stream_io& socket)
             _read_header_line(socket, writer, true);
         }
 
-        _initialLine = r_string::strip_eol(string(lineBuf));
+        _initialLine = r_string_utils::strip_eol(string(lineBuf));
 
         /// Now, read the rest of the header lines...
         do
@@ -77,22 +77,22 @@ void r_server_request::read_request(r_utils::r_stream_io& socket)
 
     _headerParts.clear();
 
-    const vector<string> initialLineParts = r_string::split(_initialLine, ' ');
+    const vector<string> initialLineParts = r_string_utils::split(_initialLine, ' ');
 
     if(initialLineParts.size() != 3)
         R_STHROW(r_http_exception_generic, ("HTTP request initial line exceeded 3 parts"));
 
     _set_header("method", initialLineParts[0]);
     _set_header("uri", initialLineParts[1]);
-    _set_header("http_version", r_string::strip_eol(initialLineParts[2]));
+    _set_header("http_version", r_string_utils::strip_eol(initialLineParts[2]));
 
     _process_request_lines(requestLines);
 
-    const string method = r_string::to_lower(initialLineParts[0]);
-    if( method == r_string::to_lower(method_text( METHOD_POST )) ||
-        method == r_string::to_lower(method_text( METHOD_PUT )) ||
-        method == r_string::to_lower(method_text( METHOD_PATCH )) ||
-        method == r_string::to_lower(method_text( METHOD_DELETE )) )
+    const string method = r_string_utils::to_lower(initialLineParts[0]);
+    if( method == r_string_utils::to_lower(method_text( METHOD_POST )) ||
+        method == r_string_utils::to_lower(method_text( METHOD_PUT )) ||
+        method == r_string_utils::to_lower(method_text( METHOD_PATCH )) ||
+        method == r_string_utils::to_lower(method_text( METHOD_DELETE )) )
         _process_body(socket);
 }
 
@@ -156,7 +156,7 @@ r_nullable<string> r_server_request::get_header( const std::string& key ) const
 {
     r_nullable<string> result;
 
-    auto found = _headerParts.find( r_string::to_lower(key) );
+    auto found = _headerParts.find( r_string_utils::to_lower(key) );
     if( found != _headerParts.end() )
         result.set_value(found->second);
 
@@ -202,7 +202,7 @@ void r_server_request::_clean_socket(r_stream_io& socket, char** writer)
         if( !socket.valid() )
             R_STHROW( r_http_io_exception, ("Socket invalid."));
 
-        if(!r_string::is_space(tempBuffer[0]))
+        if(!r_string_utils::is_space(tempBuffer[0]))
         {
             **writer = tempBuffer[0];
             ++*writer;
@@ -238,10 +238,10 @@ void r_server_request::_read_header_line(r_stream_io& socket, char* writer, bool
 
 bool r_server_request::_add_line(std::list<string>& lines, const string& line)
 {
-    if(r_string::starts_with(line, "\r\n") || r_string::starts_with(line, "\n"))
+    if(r_string_utils::starts_with(line, "\r\n") || r_string_utils::starts_with(line, "\n"))
         return true;
 
-    if(r_string::starts_with(line, " ") || r_string::starts_with(line, "\t"))
+    if(r_string_utils::starts_with(line, " ") || r_string_utils::starts_with(line, "\t"))
     {
         if(!lines.empty())
             lines.back() += line;
@@ -267,7 +267,7 @@ void r_server_request::_process_request_lines(const list<string>& requestLines)
             const string key = iter->substr(0, firstColon);
             const string val = firstColon + 1 < iter->size() ? iter->substr(firstColon + 1) : "";
 
-            _set_header(key, r_string::strip_eol(val));
+            _set_header(key, r_string_utils::strip_eol(val));
         }
     }
 }
@@ -278,8 +278,8 @@ void r_server_request::_process_body(r_stream_io& socket)
 
     if(!cl.is_null())
     {
-        auto contentLengthString = r_string::strip(cl.value());
-        uint32_t contentLength = r_string::s_to_uint32(contentLengthString);
+        auto contentLengthString = r_string_utils::strip(cl.value());
+        uint32_t contentLength = r_string_utils::s_to_uint32(contentLengthString);
 
         if(!contentLength)
             return;
@@ -296,19 +296,19 @@ void r_server_request::_process_body(r_stream_io& socket)
 
         if(!ct.is_null())
         {
-            _contentType = r_string::lstrip(ct.value());
+            _contentType = r_string_utils::lstrip(ct.value());
 
-            if(r_string::contains(_contentType, "x-www-form-urlencoded"))
+            if(r_string_utils::contains(_contentType, "x-www-form-urlencoded"))
             {
                 string rawBody((char*)&_body[0], (int)_body.size());
 
-                vector<string> parts = r_string::split(rawBody, "&");
+                vector<string> parts = r_string_utils::split(rawBody, "&");
 
                 for(size_t i = 0; i < parts.size(); ++i)
                 {
                     string nvPair = parts[i];
 
-                    vector<string> nameAndValue = r_string::split(nvPair, "=");
+                    vector<string> nameAndValue = r_string_utils::split(nvPair, "=");
 
                     if(nameAndValue.size() == 2)
                         _postVars.insert( make_pair( (string)nameAndValue[0], nameAndValue[1] ) );

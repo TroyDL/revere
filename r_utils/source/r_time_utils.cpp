@@ -157,7 +157,7 @@ string r_utils::r_time::tp_to_iso_8601(const system_clock::time_point& tp, bool 
 	char frac[6] = { 0, 0, 0, 0, 0, 0 };
 	auto numMillis = ms.count();
 	double fracV = ((double)numMillis) / 1000.0;
-    r_string::format_buffer(frac, 6, "%3f", fracV);
+    r_string_utils::format_buffer(frac, 6, "%3f", fracV);
 
 	string result(time_str);
 	result.append(".");

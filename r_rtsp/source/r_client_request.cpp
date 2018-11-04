@@ -127,19 +127,19 @@ void r_client_request::set_uri( const string& uri )
     if( uri.length() == 0 )
         R_STHROW( rtsp_400_exception, ( "Invalid URI set on r_client_request." ) );
 
-    if( r_string::starts_with( uri, "/" ) )
+    if( r_string_utils::starts_with( uri, "/" ) )
         _uri = uri.substr( 1 );
     else _uri = uri;
 }
 
 string r_client_request::get_uri() const
 {
-    return r_string::format( "/%s", _uri.c_str() );
+    return r_string_utils::format( "/%s", _uri.c_str() );
 }
 
 void r_client_request::write_request( r_stream_io& sok )
 {
-    string rtspURL = r_string::format( "rtsp://%s:%d/%s",
+    string rtspURL = r_string_utils::format( "rtsp://%s:%d/%s",
                                         _serverIP.c_str(),
                                         _serverPort,
                                         _uri.c_str() );
@@ -149,16 +149,16 @@ void r_client_request::write_request( r_stream_io& sok )
 
     string request = get_method_name( _method );
 
-    string initialLine = r_string::format( "%s %s RTSP/1.0\r\n", request.c_str(), rtspURL.c_str() );
+    string initialLine = r_string_utils::format( "%s %s RTSP/1.0\r\n", request.c_str(), rtspURL.c_str() );
 
     string message = initialLine;
 
-    message += r_string::format( "User-Agent: %s\r\n", _userAgent.c_str() );
+    message += r_string_utils::format( "User-Agent: %s\r\n", _userAgent.c_str() );
 
     for( auto i : _additionalHeaders )
-        message += r_string::format( "%s: %s\r\n", i.first.c_str(), i.second.c_str() );
+        message += r_string_utils::format( "%s: %s\r\n", i.first.c_str(), i.second.c_str() );
 
-    message += r_string::format( "\r\n" );
+    message += r_string_utils::format( "\r\n" );
 
     sok.send( message.c_str(), message.length() );
 }

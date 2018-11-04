@@ -78,7 +78,7 @@ READ_BEGIN:
             _read_header_line(socket, writer, true);
         }
 
-        _initialLine = r_string::strip_eol(string(lineBuf));
+        _initialLine = r_string_utils::strip_eol(string(lineBuf));
 
         /// Now, read the rest of the header lines...
         do
@@ -93,7 +93,7 @@ READ_BEGIN:
 
     _headerParts.clear();
 
-    const vector<string> initialLineParts = r_string::split(_initialLine, ' ');
+    const vector<string> initialLineParts = r_string_utils::split(_initialLine, ' ');
 
     if(initialLineParts.size() <= 2)
         R_STHROW(r_http_exception_generic, ("HTTP request initial line doesn't have enough parts."));
@@ -117,14 +117,14 @@ READ_BEGIN:
     auto i = _headerParts.find( "response_code" );
     if( i != _headerParts.end() )
     {
-        _statusCode = r_string::s_to_int(i->second.front());
+        _statusCode = r_string_utils::s_to_int(i->second.front());
         if(response_ok <= _statusCode && _statusCode < response_multiple_choices)
             _success = true;
     }
 
     // Handling a "100 continue" initial line, as per http 1.1 spec; we basically
     // just restart... A 100 continue means another complete header and body follows...
-    if(r_string::contains(r_string::to_lower(msg), "continue"))
+    if(r_string_utils::contains(r_string_utils::to_lower(msg), "continue"))
         goto READ_BEGIN;
 
     _process_request_lines(requestLines);
@@ -143,7 +143,7 @@ void r_client_response::_clean_socket(r_stream_io& socket, char** writer)
     {
         socket.recv(tempBuffer, 1);
 
-        if(!r_string::is_space(tempBuffer[0]))
+        if(!r_string_utils::is_space(tempBuffer[0]))
         {
             **writer = tempBuffer[0];
             ++*writer;
@@ -181,10 +181,10 @@ void r_client_response::_read_header_line(r_stream_io& socket, char* writer, boo
 
 bool r_client_response::_add_line(std::list<string>& lines, const string& line)
 {
-    if(r_string::starts_with(line, "\r\n") || r_string::starts_with(line, "\n"))
+    if(r_string_utils::starts_with(line, "\r\n") || r_string_utils::starts_with(line, "\n"))
         return true;
 
-    if(r_string::starts_with(line, " ") || r_string::starts_with(line, "\t"))
+    if(r_string_utils::starts_with(line, " ") || r_string_utils::starts_with(line, "\t"))
     {
         if(!lines.empty())
             lines.back() += line;
@@ -212,7 +212,7 @@ void r_client_response::_process_request_lines(const list<string>& requestLines)
             const string key = iter->substr(0, firstColon);
             const string val = firstColon + 1 < iter->size() ? iter->substr(firstColon + 1) : "";
 
-            _add_header(r_string::to_lower(key), r_string::strip_eol(val));
+            _add_header(r_string_utils::to_lower(key), r_string_utils::strip_eol(val));
         }
     }
 }
@@ -223,7 +223,7 @@ void r_client_response::_process_body(r_stream_io& socket)
     auto found = _headerParts.find( "content-length" );
     if( found != _headerParts.end() )
     {
-        const uint32_t contentLength = r_string::s_to_uint32((*found).second.front());
+        const uint32_t contentLength = r_string_utils::s_to_uint32((*found).second.front());
 
         if(contentLength > 0)
         {
@@ -233,7 +233,7 @@ void r_client_response::_process_body(r_stream_io& socket)
     }
     else if( (found = _headerParts.find( "transfer-encoding" )) != _headerParts.end() )
     {
-        if(r_string::contains(r_string::to_lower((*found).second.front()), "chunked"))
+        if(r_string_utils::contains(r_string_utils::to_lower((*found).second.front()), "chunked"))
         {
             _read_chunked_body(socket);
             return;
@@ -242,14 +242,14 @@ void r_client_response::_process_body(r_stream_io& socket)
 
     if( (found = _headerParts.find("content-type")) != _headerParts.end() )
     {
-        if(r_string::contains(r_string::to_lower((*found).second.front()), "multipart"))
+        if(r_string_utils::contains(r_string_utils::to_lower((*found).second.front()), "multipart"))
         {
             _read_multi_part(socket);
             return;
         }
     }
 
-    if(r_string::contains(r_string::to_lower(get_header("content-type")), "multipart"))
+    if(r_string_utils::contains(r_string_utils::to_lower(get_header("content-type")), "multipart"))
         _read_multi_part(socket);
 }
 
@@ -275,7 +275,7 @@ string r_client_response::get_body_as_string() const
 
 string r_client_response::get_header(const string& name) const
 {
-    auto values = _headerParts.find( r_string::to_lower(name) );
+    auto values = _headerParts.find( r_string_utils::to_lower(name) );
 
     return (values != _headerParts.end()) ? (*values).second.front() : "";
 }
@@ -284,7 +284,7 @@ vector<string> r_client_response::get_all_matching_headers(const string& header)
 {
     vector<string> matchingHeaders;
 
-    auto matches = _headerParts.find(r_string::to_lower(header));
+    auto matches = _headerParts.find(r_string_utils::to_lower(header));
     if( matches != _headerParts.end() )
     {
         for( auto i = (*matches).second.begin(); i != (*matches).second.end(); ++i )
@@ -398,7 +398,7 @@ void r_client_response::_read_multi_part(r_stream_io& socket)
 
         _read_header_line(socket, lineBuf, false);
 
-        if(r_string::ends_with(r_string::strip_eol(string(lineBuf)), "--"))
+        if(r_string_utils::ends_with(r_string_utils::strip_eol(string(lineBuf)), "--"))
             break;
 
         map<string,string> partHeaders = _read_multi_header_lines(socket, lineBuf);
@@ -406,7 +406,7 @@ void r_client_response::_read_multi_part(r_stream_io& socket)
         auto i = partHeaders.find( "content-length" );
         if( i != partHeaders.end() )
         {
-            const int partContentLength = r_string::s_to_int((*i).second);
+            const int partContentLength = r_string_utils::s_to_int((*i).second);
 
             _chunk.resize(partContentLength);
 
@@ -455,8 +455,8 @@ map<string,string> r_client_response::_read_multi_header_lines(r_stream_io& sock
 
     for(auto iter = partLines.begin(), end = partLines.end(); iter != end; ++iter)
     {
-        auto lineParts = r_string::split(*iter, ':');
-        partHeaders.insert( make_pair( adjust_header_name( lineParts[0] ), adjust_header_value( r_string::strip_eol(lineParts[1]) ) ) );
+        auto lineParts = r_string_utils::split(*iter, ':');
+        partHeaders.insert( make_pair( adjust_header_name( lineParts[0] ), adjust_header_value( r_string_utils::strip_eol(lineParts[1]) ) ) );
     }
 
     return partHeaders;

@@ -18,7 +18,7 @@ vector<uint8_t> r_vss_client::query(const std::string& dataSourceID,
                                     const std::chrono::system_clock::time_point& end)
 {
     r_client_request request("127.0.0.1", 11002);
-    request.set_uri(r_string::format("/query?data_source_id=%s&type=%s&previous_playable=%s&start_time=%s&end_time=%s",
+    request.set_uri(r_string_utils::format("/query?data_source_id=%s&type=%s&previous_playable=%s&start_time=%s&end_time=%s",
                                      dataSourceID.c_str(),
                                      type.c_str(),
                                      (previousPlayable==true)?"true":"true",

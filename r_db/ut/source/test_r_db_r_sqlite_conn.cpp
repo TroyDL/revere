@@ -88,7 +88,7 @@ void test_r_db_r_sqlite_conn::test_paging()
     RTF_ASSERT(result[3]["name"] == "Yann LeCun");
 
     // Next
-    result = conn.exec(r_string::format("SELECT * from worker_bees WHERE sesa_id > %s LIMIT 4;", result.back()["sesa_id"].c_str()));
+    result = conn.exec(r_string_utils::format("SELECT * from worker_bees WHERE sesa_id > %s LIMIT 4;", result.back()["sesa_id"].c_str()));
     RTF_ASSERT(result.size() == 4);
     RTF_ASSERT(result[0]["name"] == "Yoshua Bengio");
     RTF_ASSERT(result[1]["name"] == "Guido van Rossum");
@@ -96,7 +96,7 @@ void test_r_db_r_sqlite_conn::test_paging()
     RTF_ASSERT(result[3]["name"] == "Ken Thompson");
 
     // Prev
-    result = conn.exec(r_string::format("SELECT * from worker_bees WHERE sesa_id < %s ORDER BY sesa_id DESC LIMIT 4;", result.front()["sesa_id"].c_str()));
+    result = conn.exec(r_string_utils::format("SELECT * from worker_bees WHERE sesa_id < %s ORDER BY sesa_id DESC LIMIT 4;", result.front()["sesa_id"].c_str()));
     reverse(begin(result), end(result));
     RTF_ASSERT(result.size() == 4);
     RTF_ASSERT(result[0]["name"] == "Bjarne Stroustrup");

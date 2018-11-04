@@ -35,7 +35,7 @@ private:
             printf("FIX HARD CODED 127.0.0.1!\n");
             fflush(stdout);
             _vm = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
-                                                  r_utils::r_string::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));
+                                                  r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));
 
             r_av::r_stream_options vsoptions;
             vsoptions.type = "video";
@@ -53,7 +53,7 @@ private:
             auto outputVideoStreamIndex = _vm->add_stream(vsoptions);
 
             auto sleepMicros = (int64_t)(1000000.f / ((double)inputFrameRate.first / inputFrameRate.second));
-            printf("sleepMicros = %s\n",r_utils::r_string::int64_to_s(sleepMicros).c_str());
+            printf("sleepMicros = %s\n",r_utils::r_string_utils::int64_to_s(sleepMicros).c_str());
             //auto sleepMicros = ((double)inputTimeBase.first / (double)inputTimeBase.second) * 1000000;
 
 //            auto runStartTime = std::chrono::steady_clock::now();
@@ -105,10 +105,10 @@ private:
             fflush(stdout);
 
             _vm = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
-                                                  r_utils::r_string::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));
+                                                  r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));
 
             _am = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
-                                                  r_utils::r_string::format("rtp://%s:%s", "127.0.0.1", _audioRtpPort.c_str()));
+                                                  r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _audioRtpPort.c_str()));
 
             r_av::r_stream_options vsoptions;
             vsoptions.type = "video";
@@ -136,7 +136,7 @@ private:
             auto outputAudioStreamIndex = _am->add_stream(asoptions);
 
             auto sleepMicros = (int64_t)(1000000.f / ((double)inputFrameRate.first / inputFrameRate.second));
-            printf("sleepMicros = %s\n",r_utils::r_string::int64_to_s(sleepMicros).c_str());
+            printf("sleepMicros = %s\n",r_utils::r_string_utils::int64_to_s(sleepMicros).c_str());
             //auto sleepMicros = ((double)inputTimeBase.first / (double)inputTimeBase.second) * 1000000;
 
             auto runStartTime = std::chrono::steady_clock::now();
@@ -211,7 +211,7 @@ public:
 
     virtual bool handles_this_presentation(const std::string& presentation)
     {
-        auto urlParts = r_utils::r_string::split(presentation, "/");
+        auto urlParts = r_utils::r_string_utils::split(presentation, "/");
 
         if(urlParts[0] != "video")
             return false;
@@ -228,7 +228,7 @@ public:
     {
         auto response = std::make_shared<r_server_response>();
 
-        auto urlParts = r_utils::r_string::split(request->get_uri(), "/");
+        auto urlParts = r_utils::r_string_utils::split(request->get_uri(), "/");
 
         if(urlParts[0] != "video")
             R_THROW(("Invalid URL."));
@@ -251,16 +251,16 @@ public:
             if(!request->get_header("Transport", transport))
                 R_THROW(("Unable to find Transport header."));
 
-            if(r_utils::r_string::contains(urlParts[2], "streamid=0"))
+            if(r_utils::r_string_utils::contains(urlParts[2], "streamid=0"))
             {
-                auto outerParts = r_utils::r_string::split(transport, ";");
+                auto outerParts = r_utils::r_string_utils::split(transport, ";");
                 for(auto p : outerParts)
                 {
-                    if(r_utils::r_string::contains(p, "client_port"))
+                    if(r_utils::r_string_utils::contains(p, "client_port"))
                     {
-                        auto innerParts = r_utils::r_string::split(p, "=");
+                        auto innerParts = r_utils::r_string_utils::split(p, "=");
                     
-                        auto portParts = r_utils::r_string::split(innerParts[1], "-");
+                        auto portParts = r_utils::r_string_utils::split(innerParts[1], "-");
 
                         _videoRtpPort = portParts[0];
                         _videoRtcpPort = portParts[1];
@@ -269,14 +269,14 @@ public:
             }
             else
             {
-                auto outerParts = r_utils::r_string::split(transport, ";");
+                auto outerParts = r_utils::r_string_utils::split(transport, ";");
                 for(auto p : outerParts)
                 {
-                    if(r_utils::r_string::contains(p, "client_port"))
+                    if(r_utils::r_string_utils::contains(p, "client_port"))
                     {
-                        auto innerParts = r_utils::r_string::split(p, "=");
+                        auto innerParts = r_utils::r_string_utils::split(p, "=");
                     
-                        auto portParts = r_utils::r_string::split(innerParts[1], "-");
+                        auto portParts = r_utils::r_string_utils::split(innerParts[1], "-");
 
                         _audioRtpPort = portParts[0];
                         _audioRtcpPort = portParts[1];

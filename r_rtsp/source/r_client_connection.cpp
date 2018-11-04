@@ -40,7 +40,7 @@ void r_client_connection::write_request( shared_ptr<r_client_request > request )
     request->set_server_ip( _serverIP );
     request->set_server_port( _serverPort );
 
-    request->set_header( "CSeq", r_string::int_to_s( _sequence ) );
+    request->set_header( "CSeq", r_string_utils::int_to_s( _sequence ) );
 
     if( _sessionID.length() > 0 )
         request->set_header( "Session", _sessionID );

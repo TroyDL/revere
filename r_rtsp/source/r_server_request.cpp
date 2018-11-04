@@ -197,7 +197,7 @@ void r_server_request::read_request( r_utils::r_stream_io& sok )
 
 void r_server_request::_parse_additional_lines( const string& str )
 {
-    if( r_string::starts_with(str, " ") || r_string::starts_with(str, "\t") )
+    if( r_string_utils::starts_with(str, " ") || r_string_utils::starts_with(str, "\t") )
     {
         auto last = _requestLines.rbegin();
         if( last != _requestLines.rend() )
@@ -211,7 +211,7 @@ void r_server_request::_parse_initial_line( string& str )
 {
     _headerParts.clear();
 
-    const vector<string> initialLineParts = r_string::split(str, ' ');
+    const vector<string> initialLineParts = r_string_utils::split(str, ' ');
 
     if( initialLineParts.size() != 3 )
     {
@@ -237,7 +237,7 @@ void r_server_request::_parse_initial_line( string& str )
 
     for( auto line : _requestLines )
     {
-        const vector<string> lineParts = r_string::split(line, ':');
-        _headerParts.insert( std::make_pair( lineParts[0], r_string::strip(lineParts[1]) ) );
+        const vector<string> lineParts = r_string_utils::split(line, ':');
+        _headerParts.insert( std::make_pair( lineParts[0], r_string_utils::strip(lineParts[1]) ) );
     }
 }

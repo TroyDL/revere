@@ -330,7 +330,7 @@ r_socket_connect_exception::r_socket_connect_exception(const char* msg, ...) :
 {
     va_list args;
     va_start(args, msg);
-    _msg = r_string::format(msg, args);
+    _msg = r_string_utils::format(msg, args);
     va_end(args);
 }
 
@@ -339,7 +339,7 @@ r_socket_exception::r_socket_exception(const char* msg, ...) :
 {
     va_list args;
     va_start(args, msg);
-    _msg = r_string::format(msg, args);
+    _msg = r_string_utils::format(msg, args);
     va_end(args);
 }
 
@@ -459,7 +459,7 @@ string r_utils::r_networking::r_get_device_uuid(const std::string& ifname)
     vector<uint8_t> buffer(32);
     h.get(&buffer[0]);
     // 6957a8f7-f1ab-4e87-9377-62cea97766f5
-    return r_string::format("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+    return r_string_utils::format("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                             buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7],
                             buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15]);
 }

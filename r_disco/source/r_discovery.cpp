@@ -68,7 +68,7 @@ static void _send_msearch(int sok)
 {
     R_LOG_NOTICE("sending m-search...\n");
 
-    string msearch = r_string::format("M-SEARCH * HTTP/1.1\r\n"
+    string msearch = r_string_utils::format("M-SEARCH * HTTP/1.1\r\n"
                                       "ST: upnp:rootdevice\r\n"
                                       "MX: 5\r\n"
                                       "MAN: \"ssdp:discover\"\r\n"
@@ -101,7 +101,7 @@ static void _send_msearch_response(const string& destIP,
     {
         R_LOG_NOTICE("sending m-search response to: %s\n",destIP.c_str());
 
-        string response = r_string::format("HTTP/1.1 200 OK\r\n"
+        string response = r_string_utils::format("HTTP/1.1 200 OK\r\n"
                                            "CACHE-CONTROL: max-age=1800\r\n"
                                            "LOCATION: http://%s:%d/Device.xml\r\n"
                                            "SERVER: argus-discserver\r\n"
@@ -143,7 +143,7 @@ static void _send_notify(const string& deviceID,
     {
         R_LOG_NOTICE("sending notify...\n");
 
-        string notify = r_string::format("NOTIFY * HTTP/1.1\r\n"
+        string notify = r_string_utils::format("NOTIFY * HTTP/1.1\r\n"
                                          "CACHE-CONTROL: max-age=1800\r\n"
                                          "HOST: 239.255.255.250:1900\r\n"
                                          "LOCATION: http://%s:%d/Device.xml\r\n"
@@ -169,9 +169,9 @@ static void _send_notify(const string& deviceID,
 
 static bool _is_argus_device(const string& msg)
 {
-    auto lowerMsg = r_string::to_lower(msg);
+    auto lowerMsg = r_string_utils::to_lower(msg);
 
-    if(r_string::contains(lowerMsg, "location") && r_string::contains(lowerMsg, "argus"))
+    if(r_string_utils::contains(lowerMsg, "location") && r_string_utils::contains(lowerMsg, "argus"))
         return true;
 
     return false;
@@ -181,18 +181,18 @@ static r_nullable<string> _parse_location(const string& msg)
 {
     r_nullable<string> result;
 
-    auto parts = r_string::split(msg, "\n");
+    auto parts = r_string_utils::split(msg, "\n");
     for(auto& line : parts)
     {
-        if(r_string::contains(r_string::to_lower(line), "location"))
+        if(r_string_utils::contains(r_string_utils::to_lower(line), "location"))
         {
             auto firstColon = line.find(":");
 
             if(firstColon == string::npos)
                 continue;
 
-            auto location = r_string::strip(line.substr(firstColon+1, line.length()-firstColon));
-            if(r_string::contains(r_string::to_lower(location), "http"))
+            auto location = r_string_utils::strip(line.substr(firstColon+1, line.length()-firstColon));
+            if(r_string_utils::contains(r_string_utils::to_lower(location), "http"))
                 result.set_value(location);
         }
     }
@@ -500,7 +500,7 @@ void r_discovery::_discoverable_entry()
 
             string msg((char*)&buffer[0],strlen((char*)&buffer[0]));
 
-            if(r_string::contains(msg, "M-SEARCH") && r_string::contains(msg, "rootdevice") && their_addr.ss_family == AF_INET)
+            if(r_string_utils::contains(msg, "M-SEARCH") && r_string_utils::contains(msg, "rootdevice") && their_addr.ss_family == AF_INET)
             {
                 R_LOG_NOTICE("FOUND M-SEARCH: %s",msg.c_str());
                 printf("msg: %s\n",msg.c_str());
@@ -532,15 +532,15 @@ r_server_response r_discovery::_discoverable_get_device(const r_web_server<r_soc
 
     if( !userAgent.is_null() )
     {
-        if(r_string::contains(r_string::to_lower(userAgent.value()), "hermes"))
+        if(r_string_utils::contains(r_string_utils::to_lower(userAgent.value()), "hermes"))
         {
             // User-Agent: type=hermes;id=4de8ac41-9fcc-4fed-9a64-3e0589d76df5
-            auto uaparts = r_string::split(userAgent.value(), ";");
+            auto uaparts = r_string_utils::split(userAgent.value(), ";");
 
             map<string, string> nvpairs;
             for( auto p : uaparts )
             {
-                auto nvparts = r_string::split(p, "=");
+                auto nvparts = r_string_utils::split(p, "=");
                 nvpairs[nvparts[0]] = nvparts[1];
             }
 
@@ -557,15 +557,15 @@ r_server_response r_discovery::_discoverable_get_device(const r_web_server<r_soc
 
     auto ifname = _get_first_interface_name();
 
-    auto udn = r_string::format("uuid:%s", r_networking::r_get_device_uuid(ifname).c_str());
+    auto udn = r_string_utils::format("uuid:%s", r_networking::r_get_device_uuid(ifname).c_str());
 
     auto hwAddress = r_networking::r_get_hardware_address(ifname);
 
-    auto mac = r_string::format("%02X:%02X:%02X:%02X:%02X:%02X",
+    auto mac = r_string_utils::format("%02X:%02X:%02X:%02X:%02X:%02X",
                                  hwAddress[0], hwAddress[1], hwAddress[2],
                                  hwAddress[3], hwAddress[4], hwAddress[5]);
 
-    auto deviceXML = r_string::format("<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\r\n"
+    auto deviceXML = r_string_utils::format("<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\r\n"
                                        "<specVersion>\r\n"
                                        "<major>1</major>\r\n"
                                        "<minor>0</minor>\r\n"
@@ -598,7 +598,7 @@ r_server_response r_discovery::_discoverable_get_manifest(const r_web_server<r_s
 {
     R_LOG_NOTICE("GET /Manifest.xml\n");
 
-    auto manifest = r_string::format("<moduleCatalog>\r\n"
+    auto manifest = r_string_utils::format("<moduleCatalog>\r\n"
                                       "<modelName>KM10N</modelName>\r\n"
                                       "<hardwareFamily>0001</hardwareFamily>\r\n"
                                       "<failInterval>600</failInterval>\r\n"

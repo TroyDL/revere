@@ -260,7 +260,7 @@ bool r_socket_address::is_ipv4_mapped_to_ipv6(string* unmapped) const
         if (IN6_IS_ADDR_V4MAPPED(&a6->sin6_addr))
         {
             if (unmapped)
-                *unmapped = r_string::format("%u.%u.%u.%u",
+                *unmapped = r_string_utils::format("%u.%u.%u.%u",
                                              a6->sin6_addr.s6_addr[12],
                                              a6->sin6_addr.s6_addr[13],
                                              a6->sin6_addr.s6_addr[14],

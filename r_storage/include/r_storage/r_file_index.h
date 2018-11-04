@@ -48,7 +48,7 @@ public:
 
         void find(uint64_t key)
         {
-            _pager.find(_conn, r_utils::r_string::uint64_to_s(key));
+            _pager.find(_conn, r_utils::r_string_utils::uint64_to_s(key));
             _move_to_ds_id(true);
         }
 
@@ -88,8 +88,8 @@ public:
             sf.id = row["id"];
             sf.valid = (row["valid"]=="1")?true:false;
             sf.path = row["path"];
-            sf.start_time = r_utils::r_string::s_to_uint64(row["start_time"]);
-            sf.end_time = r_utils::r_string::s_to_uint64(row["end_time"]);
+            sf.start_time = r_utils::r_string_utils::s_to_uint64(row["start_time"]);
+            sf.end_time = r_utils::r_string_utils::s_to_uint64(row["end_time"]);
             sf.data_source_id = row["data_source_id"];
             sf.sdp = row["sdp"];
 

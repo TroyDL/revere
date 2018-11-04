@@ -10,12 +10,12 @@
 using namespace r_utils;
 using namespace std;
 
-vector<string> r_utils::r_string::split(const string& str, char delim)
+vector<string> r_utils::r_string_utils::split(const string& str, char delim)
 {
     return split(str, string(&delim, 1));
 }
 
-vector<string> r_utils::r_string::split(const string& str, const string& delim)
+vector<string> r_utils::r_string_utils::split(const string& str, const string& delim)
 {
     vector<string> parts;
 
@@ -44,7 +44,7 @@ vector<string> r_utils::r_string::split(const string& str, const string& delim)
     return parts;
 }
 
-string r_utils::r_string::format(const char* fmt, ...)
+string r_utils::r_string_utils::format(const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -53,7 +53,7 @@ string r_utils::r_string::format(const char* fmt, ...)
     return result;
 }
 
-string r_utils::r_string::format(const char* fmt, va_list& args)
+string r_utils::r_string_utils::format(const char* fmt, va_list& args)
 {
     va_list newargs;
     va_copy(newargs, args);
@@ -69,7 +69,7 @@ string r_utils::r_string::format(const char* fmt, va_list& args)
     return string(&str[0]);
 }
 
-bool r_utils::r_string::format_buffer(char* buf, size_t size, const char* fmt, ...)
+bool r_utils::r_string_utils::format_buffer(char* buf, size_t size, const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -78,7 +78,7 @@ bool r_utils::r_string::format_buffer(char* buf, size_t size, const char* fmt, .
     return result;
 }
 
-bool r_utils::r_string::format_buffer(char* buf, size_t size, const char* fmt, va_list& args)
+bool r_utils::r_string_utils::format_buffer(char* buf, size_t size, const char* fmt, va_list& args)
 {
     auto result = vsnprintf(buf, size, fmt, args);
     if(result < 0)
@@ -86,19 +86,19 @@ bool r_utils::r_string::format_buffer(char* buf, size_t size, const char* fmt, v
     return ((size_t)result >= size);
 }
 
-bool r_utils::r_string::contains(const string& str, const string& target)
+bool r_utils::r_string_utils::contains(const string& str, const string& target)
 {
     return (str.find(target) != string::npos) ? true : false;
 }
 
-string r_utils::r_string::erase_all(const string& str, char delim)
+string r_utils::r_string_utils::erase_all(const string& str, char delim)
 {
     return erase_all(str, string(1, delim));
 }
 
-string r_utils::r_string::erase_all(const string& str, const string& delim)
+string r_utils::r_string_utils::erase_all(const string& str, const string& delim)
 {
-    auto splitList = r_utils::r_string::split( str, delim );
+    auto splitList = r_utils::r_string_utils::split( str, delim );
 
     string output;
     for(auto& p : splitList)
@@ -107,12 +107,12 @@ string r_utils::r_string::erase_all(const string& str, const string& delim)
     return output;
 }
 
-string r_utils::r_string::replace_all(const string& str, char toBeReplaced, char toReplaceWith)
+string r_utils::r_string_utils::replace_all(const string& str, char toBeReplaced, char toReplaceWith)
 {
     return replace_all(str, string(1, toBeReplaced), string(1, toReplaceWith));
 }
 
-string r_utils::r_string::replace_all(const string& str, const string& toBeReplaced, const string& toReplaceWith)
+string r_utils::r_string_utils::replace_all(const string& str, const string& toBeReplaced, const string& toReplaceWith)
 {
     size_t found = str.find(toBeReplaced);
 
@@ -142,14 +142,14 @@ string r_utils::r_string::replace_all(const string& str, const string& toBeRepla
     return retval;
 }
 
-string r_utils::r_string::to_lower(const string& str)
+string r_utils::r_string_utils::to_lower(const string& str)
 {
     string retval = str;
     transform(retval.begin(), retval.end(), retval.begin(), ::tolower);
     return retval;
 }
 
-string r_utils::r_string::to_upper(const string& str)
+string r_utils::r_string_utils::to_upper(const string& str)
 {
     string retval = str;
     transform(retval.begin(), retval.end(), retval.begin(), ::toupper);
@@ -161,7 +161,7 @@ static bool _is_valid_uri_character(char c)
     return isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~';
 }
 
-string r_utils::r_string::uri_encode(const string& str)
+string r_utils::r_string_utils::uri_encode(const string& str)
 {
     string retval;
 
@@ -182,7 +182,7 @@ string r_utils::r_string::uri_encode(const string& str)
     return retval;
 }
 
-string r_utils::r_string::uri_decode(const string& str)
+string r_utils::r_string_utils::uri_decode(const string& str)
 {
     string retval;
 
@@ -218,7 +218,7 @@ string r_utils::r_string::uri_decode(const string& str)
 
                     unsigned int val;
                     sscanf(hexStr.c_str(), "%x", &val);
-                    retval += r_string::format("%c", (char)val);
+                    retval += r_string_utils::format("%c", (char)val);
                     i += 2;
                 }
                 else
@@ -240,7 +240,7 @@ static const char base64_encoding_table[64] =
     'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'
 };
 
-string r_utils::r_string::to_base64( const void* source, size_t length )
+string r_utils::r_string_utils::to_base64( const void* source, size_t length )
 {
     size_t srcLen = length;
     const size_t bufferSize = (4 * ((srcLen + 2 - ((srcLen + 2) % 3)) / 3));
@@ -324,7 +324,7 @@ static CHAR_CLASS _get_char_class(char c)
         return OTHER;
 }
 
-vector<uint8_t> r_utils::r_string::from_base64(const std::string str)
+vector<uint8_t> r_utils::r_string_utils::from_base64(const std::string str)
 {
     if (str.size() < 2)
         return vector<uint8_t>();
@@ -419,7 +419,7 @@ vector<uint8_t> r_utils::r_string::from_base64(const std::string str)
 
 static bool verify_digit(char c){ return isdigit(c) != 0; }
 
-bool r_utils::r_string::is_integer(const string& str, bool canHaveSign)
+bool r_utils::r_string_utils::is_integer(const string& str, bool canHaveSign)
 {
     const size_t first = str.find_first_not_of(' ');
 
@@ -439,46 +439,46 @@ bool r_utils::r_string::is_integer(const string& str, bool canHaveSign)
                     verify_digit) == numSize;
 }
 
-string r_utils::r_string::lstrip(const string& str)
+string r_utils::r_string_utils::lstrip(const string& str)
 {
     string retval = str;
     size_t pos = 0;
-    while(pos < retval.size() && r_utils::r_string::is_space(retval[pos])) pos++;
+    while(pos < retval.size() && r_utils::r_string_utils::is_space(retval[pos])) pos++;
     retval.erase(0, pos);
     return retval;
 }
 
-string r_utils::r_string::rstrip(const string& str)
+string r_utils::r_string_utils::rstrip(const string& str)
 {
     string retval = str;
     size_t pos = retval.size();
-    while(pos > 0 && r_utils::r_string::is_space(retval[pos - 1])) pos--;
+    while(pos > 0 && r_utils::r_string_utils::is_space(retval[pos - 1])) pos--;
     retval.erase(pos);
     return retval;
 }
 
-string r_utils::r_string::strip(const string& str)
+string r_utils::r_string_utils::strip(const string& str)
 {
-    auto retval = r_utils::r_string::rstrip(str);
-    return r_utils::r_string::lstrip(retval);
+    auto retval = r_utils::r_string_utils::rstrip(str);
+    return r_utils::r_string_utils::lstrip(retval);
 }
 
-string r_utils::r_string::strip_eol(const string& str)
+string r_utils::r_string_utils::strip_eol(const string& str)
 {    
-    if(r_utils::r_string::ends_with(str, "\r\n"))
+    if(r_utils::r_string_utils::ends_with(str, "\r\n"))
         return str.substr(0, str.size() - 2);
-    if(r_utils::r_string::ends_with(str, "\n"))
+    if(r_utils::r_string_utils::ends_with(str, "\n"))
         return str.substr(0, str.size() - 1);
     return str;
 }
 
-bool r_utils::r_string::starts_with(const std::string& str, const std::string& other)
+bool r_utils::r_string_utils::starts_with(const std::string& str, const std::string& other)
 {
     const size_t otherSize = other.size();
     return otherSize <= str.size() && str.compare(0, otherSize, other) == 0;
 }
 
-bool r_utils::r_string::ends_with(const std::string& str, const std::string& other)
+bool r_utils::r_string_utils::ends_with(const std::string& str, const std::string& other)
 {
     const size_t otherSize = other.size();
     const size_t thisSize = str.size();
@@ -486,12 +486,12 @@ bool r_utils::r_string::ends_with(const std::string& str, const std::string& oth
         (str.compare(thisSize - otherSize, otherSize, other) == 0);
 }
 
-int r_utils::r_string::s_to_int(const string& s)
+int r_utils::r_string_utils::s_to_int(const string& s)
 {
     return stoi(s);
 }
 
-unsigned int r_utils::r_string::s_to_uint(const std::string& s)
+unsigned int r_utils::r_string_utils::s_to_uint(const std::string& s)
 {
     // int's are 32 bit on linux... so...
     uint32_t val;
@@ -499,120 +499,120 @@ unsigned int r_utils::r_string::s_to_uint(const std::string& s)
     return val;
 }
 
-uint8_t r_utils::r_string::s_to_uint8(const string& s)
+uint8_t r_utils::r_string_utils::s_to_uint8(const string& s)
 {
     uint8_t val;
     sscanf(s.c_str(), "%hhu", &val);
     return val;
 }
 
-int8_t r_utils::r_string::s_to_int8(const string& s)
+int8_t r_utils::r_string_utils::s_to_int8(const string& s)
 {
     int8_t val;
     sscanf(s.c_str(), "%hhd", &val);
     return val;
 }
 
-uint16_t r_utils::r_string::s_to_uint16(const string& s)
+uint16_t r_utils::r_string_utils::s_to_uint16(const string& s)
 {
     uint16_t val;
     sscanf(s.c_str(), "%hu", &val);
     return val;
 }
 
-int16_t r_utils::r_string::s_to_int16(const string& s)
+int16_t r_utils::r_string_utils::s_to_int16(const string& s)
 {
     int16_t val;
     sscanf(s.c_str(), "%hd", &val);
     return val;
 }
 
-uint32_t r_utils::r_string::s_to_uint32(const string& s)
+uint32_t r_utils::r_string_utils::s_to_uint32(const string& s)
 {
     uint32_t val;
     sscanf(s.c_str(), "%u", &val);
     return val;
 }
 
-int32_t r_utils::r_string::s_to_int32(const string& s)
+int32_t r_utils::r_string_utils::s_to_int32(const string& s)
 {
     int32_t val;
     sscanf(s.c_str(), "%d", &val);
     return val;
 }
 
-uint64_t r_utils::r_string::s_to_uint64(const string& s)
+uint64_t r_utils::r_string_utils::s_to_uint64(const string& s)
 {
     uint64_t val;
     sscanf(s.c_str(), "%lu", &val);
     return val;
 }
 
-int64_t r_utils::r_string::s_to_int64(const string& s)
+int64_t r_utils::r_string_utils::s_to_int64(const string& s)
 {
     int64_t val;
     sscanf(s.c_str(), "%ld", &val);
     return val;
 }
 
-double r_utils::r_string::s_to_double(const string& s)
+double r_utils::r_string_utils::s_to_double(const string& s)
 {
     double val;
     sscanf(s.c_str(), "%lf", &val);
     return val;
 }
 
-string r_utils::r_string::int_to_s(int val)
+string r_utils::r_string_utils::int_to_s(int val)
 {
     return to_string(val);
 }
 
-std::string r_utils::r_string::uint_to_s(unsigned int val)
+std::string r_utils::r_string_utils::uint_to_s(unsigned int val)
 {
-    return r_string::format("%u", val);
+    return r_string_utils::format("%u", val);
 }
 
-string r_utils::r_string::int8_to_s(int8_t val)
+string r_utils::r_string_utils::int8_to_s(int8_t val)
 {
-    return r_string::format("%d", val);
+    return r_string_utils::format("%d", val);
 }
 
-string r_utils::r_string::uint8_to_s(uint8_t val)
+string r_utils::r_string_utils::uint8_to_s(uint8_t val)
 {
-    return r_string::format("%u", val);
+    return r_string_utils::format("%u", val);
 }
 
-string r_utils::r_string::int16_to_s(int16_t val)
+string r_utils::r_string_utils::int16_to_s(int16_t val)
 {
-    return r_string::format("%d", val);
+    return r_string_utils::format("%d", val);
 }
 
-string r_utils::r_string::uint16_to_s(uint16_t val)
+string r_utils::r_string_utils::uint16_to_s(uint16_t val)
 {
-    return r_string::format("%u", val);
+    return r_string_utils::format("%u", val);
 }
 
-string r_utils::r_string::int32_to_s(int32_t val)
+string r_utils::r_string_utils::int32_to_s(int32_t val)
 {
-    return r_string::format("%d", val);
+    return r_string_utils::format("%d", val);
 }
 
-string r_utils::r_string::uint32_to_s(uint32_t val)
+string r_utils::r_string_utils::uint32_to_s(uint32_t val)
 {
-    return r_string::format("%u", val);
+    return r_string_utils::format("%u", val);
 }
 
-string r_utils::r_string::int64_to_s(int64_t val)
+string r_utils::r_string_utils::int64_to_s(int64_t val)
 {
-    return r_string::format("%ld", val);
+    return r_string_utils::format("%ld", val);
 }
 
-string r_utils::r_string::uint64_to_s(uint64_t val)
+string r_utils::r_string_utils::uint64_to_s(uint64_t val)
 {
-    return r_string::format("%lu", val);
+    return r_string_utils::format("%lu", val);
 }
 
-string r_utils::r_string::double_to_s(double val)
+string r_utils::r_string_utils::double_to_s(double val)
 {
-    return r_string::format("%lf", val);
+    return r_string_utils::format("%lf", val);
 }

@@ -102,7 +102,7 @@ string r_server_response::get_body_as_string() const
 
 void r_server_response::write_response( r_stream_io& sok )
 {
-    string messageHeader = r_string::format( "RTSP/1.0 %d %s\r\n", _status, get_status_message( _status ).c_str() );
+    string messageHeader = r_string_utils::format( "RTSP/1.0 %d %s\r\n", _status, get_status_message( _status ).c_str() );
 
     // Please Note: This is NOT just getting the time, it is strategically chomping a
     // very particular character!
@@ -113,17 +113,17 @@ void r_server_response::write_response( r_stream_io& sok )
 
     string dateTime = timeString;
 
-    string dateLine = r_string::format( "Date: %s\r\n", dateTime.c_str() );
+    string dateLine = r_string_utils::format( "Date: %s\r\n", dateTime.c_str() );
 
     for( auto i : _headers )
-        messageHeader += r_string::format( "%s: %s\r\n", i.first.c_str(), i.second.c_str() );
+        messageHeader += r_string_utils::format( "%s: %s\r\n", i.first.c_str(), i.second.c_str() );
 
     size_t bodySize = _body.size();
 
     if( bodySize > 0 )
-        messageHeader += r_string::format( "Content-Length: %d\r\n", bodySize );
+        messageHeader += r_string_utils::format( "Content-Length: %d\r\n", bodySize );
 
-    messageHeader += r_string::format( "\r\n" );
+    messageHeader += r_string_utils::format( "\r\n" );
 
     sok.send( messageHeader.c_str(), messageHeader.length() );
 

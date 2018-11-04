@@ -35,7 +35,7 @@ r_nullable<string> r_query_generator::next()
     if(_start == _end)
         return result;
 
-    string url = r_string::format("/query?data_source_id=%s&type=%s&%s&start_time=%s&end_time=%s",
+    string url = r_string_utils::format("/query?data_source_id=%s&type=%s&%s&start_time=%s&end_time=%s",
                                   _dataSourceID.c_str(),
                                   _type.c_str(),
                                   (_first)?"previous_playable=true":"previous_playable=false",

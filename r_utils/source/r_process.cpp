@@ -175,7 +175,7 @@ list<r_pid> r_process::get_child_processes(const r_pid& parentPID)
     string fileName;
     while(path.read_dir(fileName))
     {
-        if(r_string::is_integer(fileName) && r_utils::r_fs::is_dir("/proc/" + fileName))
+        if(r_string_utils::is_integer(fileName) && r_utils::r_fs::is_dir("/proc/" + fileName))
         {
             string statusPath = "/proc/" + fileName + "/status";
             if(r_utils::r_fs::file_exists(statusPath))
@@ -200,18 +200,18 @@ list<r_pid> r_process::get_child_processes(const r_pid& parentPID)
 
 			            string line = lineBuffer;
 
-			            vector<string> parts = r_utils::r_string::split(line, ':');
+			            vector<string> parts = r_utils::r_string_utils::split(line, ':');
 
 			            if(parts.size() == 2)
 			            {
 			                if(parts[0] == "PPid")
 			                {
-			                    string foundPPID = r_utils::r_string::strip(parts[1]);
+			                    string foundPPID = r_utils::r_string_utils::strip(parts[1]);
 
-				                if(r_utils::r_string::s_to_int(foundPPID) == parentPID.pid)
+				                if(r_utils::r_string_utils::s_to_int(foundPPID) == parentPID.pid)
 				                {
 				                    r_pid pid;
-				                    pid.pid = r_utils::r_string::s_to_int(fileName);
+				                    pid.pid = r_utils::r_string_utils::s_to_int(fileName);
 				                    output.push_back(pid);
 				                }
 			                }
@@ -251,7 +251,7 @@ list<r_pid> r_process::get_processes_for_module(const string& moduleName)
     string procName;
     while(path.read_dir(procName))
     {
-        if(r_utils::r_string::is_integer(procName) && r_utils::r_fs::is_dir("/proc/" + procName))
+        if(r_utils::r_string_utils::is_integer(procName) && r_utils::r_fs::is_dir("/proc/" + procName))
         {
             char exe[1024];
             memset(exe,0,1024);
@@ -260,10 +260,10 @@ list<r_pid> r_process::get_processes_for_module(const string& moduleName)
             if(ret < 0)
                 R_THROW(("Unable to find processes for module(%s).",moduleName.c_str()));
             string module = exe;
-            if(r_utils::r_string::contains(module, moduleName))
+            if(r_utils::r_string_utils::contains(module, moduleName))
             {
                 r_pid pid;
-                pid.pid = r_utils::r_string::s_to_int(procName);
+                pid.pid = r_utils::r_string_utils::s_to_int(procName);
                 output.push_back( pid );
             }
         }

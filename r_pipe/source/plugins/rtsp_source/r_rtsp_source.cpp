@@ -223,7 +223,7 @@ void r_rtsp_source::commit_params()
 {
     if( _params.find( "prefer_tcp" ) != _params.end() )
     {
-        auto pref = r_string::to_lower(_params["prefer_tcp"]);
+        auto pref = r_string_utils::to_lower(_params["prefer_tcp"]);
         if( pref == "1" || pref == "true" || pref == "yes" )
             _preferTCP = true;
         else _preferTCP = false;
@@ -280,10 +280,10 @@ void r_rtsp_source::commit_params()
     if( !optionsResponse->get_header( "Public", publicHeaderValue ) )
         R_THROW(( "Unable to retrieve server Options." ));
 
-    if( !r_string::contains(publicHeaderValue, "DESCRIBE" ) ||
-        !r_string::contains(publicHeaderValue, "SETUP" ) ||
-        !r_string::contains(publicHeaderValue, "TEARDOWN" ) ||
-        !r_string::contains(publicHeaderValue, "PLAY" ) )
+    if( !r_string_utils::contains(publicHeaderValue, "DESCRIBE" ) ||
+        !r_string_utils::contains(publicHeaderValue, "SETUP" ) ||
+        !r_string_utils::contains(publicHeaderValue, "TEARDOWN" ) ||
+        !r_string_utils::contains(publicHeaderValue, "PLAY" ) )
     {
         R_THROW(( "RTSP server does not support minimum required methods(DESCRIBE, SETUP, TEARDOWN, PLAY)." ));
     }
@@ -326,7 +326,7 @@ void r_rtsp_source::commit_params()
         int rtcpPort = _sessionInfo.media_descriptions[_selectedMD].port + 1;
 
         setupRequest->set_header( "Transport",
-                                  r_string::format( "RTP/AVP;multicast;client_port=%d-%d",
+                                  r_string_utils::format( "RTP/AVP;multicast;client_port=%d-%d",
                                                     _sessionInfo.media_descriptions[_selectedMD].port,
                                                     rtcpPort ) );
 
@@ -461,7 +461,7 @@ bool r_rtsp_source::_udp_setup()
 
     unicastSetupRequest->set_uri( _rtspControl );
 
-    string transport = r_string::format( "RTP/AVP;unicast;client_port=%d-%d",
+    string transport = r_string_utils::format( "RTP/AVP;unicast;client_port=%d-%d",
                                          _udpRTPReceiver->get_bound_port(),
                                          udpRTCPReceiver->get_bound_port() );
 
@@ -502,7 +502,7 @@ vector<uint8_t> r_rtsp_source::get_sps() const
     if( _sessionInfo.media_descriptions[_selectedMD].encoded_sps.empty() )
         return vector<uint8_t>();
 
-    return r_string::from_base64(_sessionInfo.media_descriptions[_selectedMD].encoded_sps);
+    return r_string_utils::from_base64(_sessionInfo.media_descriptions[_selectedMD].encoded_sps);
 }
 
 vector<uint8_t> r_rtsp_source::get_pps() const
@@ -510,7 +510,7 @@ vector<uint8_t> r_rtsp_source::get_pps() const
     if( _sessionInfo.media_descriptions[_selectedMD].encoded_pps.empty() )
         return vector<uint8_t>();
 
-    return r_string::from_base64(_sessionInfo.media_descriptions[_selectedMD].encoded_pps);
+    return r_string_utils::from_base64(_sessionInfo.media_descriptions[_selectedMD].encoded_pps);
 }
 
 vector<uint8_t> r_rtsp_source::get_extra_data() const
@@ -569,7 +569,7 @@ void r_rtsp_source::_parse_rtsp_server_ip_and_port( const string& rtspURL,
    else
    {
       if( colon != std::string::npos )
-         port = r_string::s_to_int(temp.substr( colon+1, length ));
+         port = r_string_utils::s_to_int(temp.substr( colon+1, length ));
       else port = 554;
       ip = temp.substr( 0, colon );
    }
@@ -578,7 +578,7 @@ void r_rtsp_source::_parse_rtsp_server_ip_and_port( const string& rtspURL,
 
 string r_rtsp_source::_parse_resource_path( const string& rtspURL ) const
 {
-    vector<string> p1 = r_string::split(rtspURL, "://" );
+    vector<string> p1 = r_string_utils::split(rtspURL, "://" );
 
     if(p1.size() == 2)
         return "/" + p1[1].substr( (p1[1].find("/")+1) ); // wont this fail for paths with multiple slashes /foo/bar/baz?
@@ -588,7 +588,7 @@ string r_rtsp_source::_parse_resource_path( const string& rtspURL ) const
 
 string r_rtsp_source::_parse_resource( const string& rtspURL ) const
 {
-    vector<string> p1 = r_string::split(rtspURL, "://" );
+    vector<string> p1 = r_string_utils::split(rtspURL, "://" );
 
     if(p1.size() == 2)
         return p1[1].substr( (p1[1].rfind("/")+1) );

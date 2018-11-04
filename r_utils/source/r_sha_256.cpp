@@ -51,7 +51,7 @@ string r_sha_256::get_as_string()
     if( !_finalized )
         R_STHROW(r_internal_exception, ("Please finalize() your r_sha_256 before calling a get() method."));
 
-    return r_string::format( "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+    return r_string_utils::format( "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
                              _digest[0], _digest[1],_digest[2], _digest[3],
                              _digest[4], _digest[5], _digest[6], _digest[7],
                              _digest[8], _digest[9], _digest[10], _digest[11],

@@ -37,8 +37,8 @@ void _test_r_vss_client_r_query_generator::test_basic()
     while( auto q = g.next() )
     {
         if(first)
-            RTF_ASSERT(r_string::contains(q.value(), "previous_playable=true"));
-        else RTF_ASSERT(r_string::contains(q.value(), "previous_playable=false"));
+            RTF_ASSERT(r_string_utils::contains(q.value(), "previous_playable=true"));
+        else RTF_ASSERT(r_string_utils::contains(q.value(), "previous_playable=false"));
 
         ++numQ;
 

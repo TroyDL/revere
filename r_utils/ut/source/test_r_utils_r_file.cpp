@@ -52,7 +52,7 @@ void test_r_utils_r_file::test_conversion_op()
     {
         auto fb = r_fs::read_file("foo.txt");
         string s((char*)&fb[0], fb.size());
-        RTF_ASSERT(r_string::contains(s, "Hello World!"));
+        RTF_ASSERT(r_string_utils::contains(s, "Hello World!"));
     }
 }
 

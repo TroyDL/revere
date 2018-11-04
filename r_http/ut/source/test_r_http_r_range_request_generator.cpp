@@ -33,11 +33,11 @@ void test_r_http_r_range_request_generator::test_basic()
     {
         auto req = rrg.get();
         auto uri = req._uri.get_full_raw_uri();
-        auto outerParts = r_string::split(req._headerParts["range"], "=");
-        auto innerParts = r_string::split(outerParts[1], "-");
-        RTF_ASSERT(vals[vi] == r_string::s_to_int(innerParts[0]));
+        auto outerParts = r_string_utils::split(req._headerParts["range"], "=");
+        auto innerParts = r_string_utils::split(outerParts[1], "-");
+        RTF_ASSERT(vals[vi] == r_string_utils::s_to_int(innerParts[0]));
         ++vi;
-        RTF_ASSERT(vals[vi] == r_string::s_to_int(innerParts[1]));
+        RTF_ASSERT(vals[vi] == r_string_utils::s_to_int(innerParts[1]));
         ++vi;
         rrg.next();
     }
@@ -60,11 +60,11 @@ void test_r_http_r_range_request_generator::test_even()
     {
         auto req = rrg.get();
         auto uri = req._uri.get_full_raw_uri();
-        auto outerParts = r_string::split(req._headerParts["range"], "=");
-        auto innerParts = r_string::split(outerParts[1], "-");
-        RTF_ASSERT(vals[vi] == r_string::s_to_int(innerParts[0]));
+        auto outerParts = r_string_utils::split(req._headerParts["range"], "=");
+        auto innerParts = r_string_utils::split(outerParts[1], "-");
+        RTF_ASSERT(vals[vi] == r_string_utils::s_to_int(innerParts[0]));
         ++vi;
-        RTF_ASSERT(vals[vi] == r_string::s_to_int(innerParts[1]));
+        RTF_ASSERT(vals[vi] == r_string_utils::s_to_int(innerParts[1]));
         ++vi;
         rrg.next();
     }

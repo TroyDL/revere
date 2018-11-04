@@ -210,7 +210,7 @@ string r_rtsp_server::get_next_session_id()
 {
     unique_lock<recursive_mutex> guard( _session_id_lock );
 
-    string ID = r_string::uint32_to_s( _next_session_id );
+    string ID = r_string_utils::uint32_to_s( _next_session_id );
 
     _next_session_id++;
 
@@ -232,7 +232,7 @@ shared_ptr<r_server_response> r_rtsp_server::_handle_options( shared_ptr<r_serve
 
 shared_ptr<r_server_response> r_rtsp_server::_handle_describe( shared_ptr<r_server_request> request )
 {
-    string presentation = r_string::strip(request->get_uri());
+    string presentation = r_string_utils::strip(request->get_uri());
 
     shared_ptr<r_session_base> prototype = _locate_session_prototype( presentation );
 
@@ -240,7 +240,7 @@ shared_ptr<r_server_response> r_rtsp_server::_handle_describe( shared_ptr<r_serv
     shared_ptr<r_server_response> response = session->handle_request( request );
 
     response->set_header("Content-type","application/sdp");
-    response->set_header("Content-Base", r_string::format( "rtsp://%s:%d/%s/",
+    response->set_header("Content-Base", r_string_utils::format( "rtsp://%s:%d/%s/",
                                                            _serverIP.c_str(),
                                                            _port,
                                                            presentation.c_str()) );
@@ -254,7 +254,7 @@ void r_rtsp_server::_handle_setup( shared_ptr<r_server_request> request )
     if( !request->get_header( "Session", sessionHeader ) )
         R_STHROW( r_rtsp_exception, ( "Session header not found." ));
 
-    string presentation = r_string::strip(request->get_uri());
+    string presentation = r_string_utils::strip(request->get_uri());
 
     shared_ptr<r_session_base> prototype = _locate_session_prototype( presentation );
 

@@ -22,10 +22,10 @@ r_server_response make_jpg(const r_web_server<r_socket>& ws,
     r_packet pkt(&iframe[0], iframe.size(), false);
     decoder.decode(pkt);
     decoder.decode(r_packet(0)); // null flush packet        
-    decoder.set_output_width(r_string::s_to_uint16(args["width"]));
-    decoder.set_output_height(r_string::s_to_uint16(args["height"]));
+    decoder.set_output_width(r_string_utils::s_to_uint16(args["width"]));
+    decoder.set_output_height(r_string_utils::s_to_uint16(args["height"]));
     auto pic = decoder.get();
-    r_video_encoder e(r_av_codec_id_mjpeg, r_av_pix_fmt_yuvj420p, r_string::s_to_uint16(args["width"]), r_string::s_to_uint16(args["height"]), 15, 500000, 1, 15, get_encoder_options("baseline", "ultrafast", "zerolatency", 2));
+    r_video_encoder e(r_av_codec_id_mjpeg, r_av_pix_fmt_yuvj420p, r_string_utils::s_to_uint16(args["width"]), r_string_utils::s_to_uint16(args["height"]), 15, 500000, 1, 15, get_encoder_options("baseline", "ultrafast", "zerolatency", 2));
     e.encode_image(pic);
     e.encode_image(r_packet(0)); // null flush packet
     auto epkt = e.get();

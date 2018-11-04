@@ -109,7 +109,7 @@ void r_uri::set_full_raw_uri(const string& fullURI)
 
 void r_uri::set_resource(const string& resource)
 {
-    if(resource != r_string::uri_encode(resource))
+    if(resource != r_string_utils::uri_encode(resource))
         R_STHROW(r_http_exception_generic, ("Resource can only have alphanumeric characters."));
 
     //Assignment order ensures that the object stays in a valid state.
@@ -121,9 +121,9 @@ void r_uri::set_resource(const string& resource)
 void r_uri::set_resource_path(const string& resourcePath)
 {
     {
-        const string unslashedResourcePath = r_string::erase_all(resourcePath, '/');
+        const string unslashedResourcePath = r_string_utils::erase_all(resourcePath, '/');
 
-        if(unslashedResourcePath != r_string::uri_encode(unslashedResourcePath))
+        if(unslashedResourcePath != r_string_utils::uri_encode(unslashedResourcePath))
             R_STHROW(r_http_exception_generic, ("Resource Path can only have slashes and alphanumeric characters."));
     }
 
@@ -185,9 +185,9 @@ string r_uri::_construct_full_raw_uri(const string& resourcePath,
             iter != sortedGetArgs.end();
             iter++)
         {
-            fullRawURI.append( r_string::uri_encode(string((*iter).first)) );
+            fullRawURI.append( r_string_utils::uri_encode(string((*iter).first)) );
             fullRawURI.push_back('=');
-            fullRawURI.append( r_string::uri_encode((*iter).second) );
+            fullRawURI.append( r_string_utils::uri_encode((*iter).second) );
 
             if(++i < size)
                 fullRawURI.push_back('&');
@@ -207,22 +207,22 @@ map<string, string> r_uri::_parse_get_args(const string& fullURI)
     if(questionIndex != string::npos)
     {
         size_t argLen = fullURI.size() - (questionIndex + 1);
-        const string wholeArgs = r_string::replace_all(fullURI.substr(questionIndex+1, argLen), '?', '&');
+        const string wholeArgs = r_string_utils::replace_all(fullURI.substr(questionIndex+1, argLen), '?', '&');
 
-        const vector<string> nvPairs = r_string::split(wholeArgs, "&");
+        const vector<string> nvPairs = r_string_utils::split(wholeArgs, "&");
 
         for( auto iter = nvPairs.begin(), end  = nvPairs.end();
              iter != end;
              ++iter )
         {
-            const vector<string> nvParts = r_string::split(*iter, '=');
+            const vector<string> nvParts = r_string_utils::split(*iter, '=');
 
             if(nvParts.size() == 2)
             {
                 const string& name = nvParts[0];
                 const string& value = nvParts[1];
 
-                getArgs[r_string::uri_decode(name)] = r_string::uri_decode(value);
+                getArgs[r_string_utils::uri_decode(name)] = r_string_utils::uri_decode(value);
             }
         }
     }

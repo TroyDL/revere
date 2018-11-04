@@ -92,7 +92,7 @@ public:
 
 #define R_LOG_EXCEPTION(E) \
 R_MACRO_BEGIN \
-    auto parts = r_utils::r_string::split(std::string(E.what()), '\n'); \
+    auto parts = r_utils::r_string_utils::split(std::string(E.what()), '\n'); \
     for( auto l : parts ) \
         R_LOG_ERROR("%s",l.c_str()); \
 R_MACRO_END

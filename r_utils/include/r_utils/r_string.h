@@ -9,7 +9,7 @@
 namespace r_utils
 {
 
-namespace r_string
+namespace r_string_utils
 {
 
 std::vector<std::string> split(const std::string& str, char delim);

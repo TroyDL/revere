@@ -41,14 +41,14 @@ r_video_encoder::r_video_encoder(r_av_codec_id codec_id, r_pix_fmt format, uint1
 
     if(!_options.profile.is_null())
     {
-        if(r_string::to_lower(_options.profile.value()) == "baseline")
+        if(r_string_utils::to_lower(_options.profile.value()) == "baseline")
             _context->profile = FF_PROFILE_H264_BASELINE;
-        else if(r_string::to_lower(_options.profile.value()) == "main")
+        else if(r_string_utils::to_lower(_options.profile.value()) == "main")
             _context->profile = FF_PROFILE_H264_MAIN;
-        else if(r_string::to_lower(_options.profile.value()) == "high")
+        else if(r_string_utils::to_lower(_options.profile.value()) == "high")
             _context->profile = FF_PROFILE_H264_HIGH;
 
-        av_opt_set( _context->priv_data, "profile", r_string::to_lower(_options.profile.value()).c_str(), 0 );
+        av_opt_set( _context->priv_data, "profile", r_string_utils::to_lower(_options.profile.value()).c_str(), 0 );
     }
 
     if( !_options.preset.is_null() )

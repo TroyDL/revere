@@ -15,7 +15,7 @@ r_http_io_exception::r_http_io_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -29,7 +29,7 @@ r_http_exception_generic::r_http_exception_generic( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -50,7 +50,7 @@ r_http_exception::r_http_exception( int statusCode, const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -70,7 +70,7 @@ r_http_400_exception::r_http_400_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -89,7 +89,7 @@ r_http_401_exception::r_http_401_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -108,7 +108,7 @@ r_http_403_exception::r_http_403_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -127,7 +127,7 @@ r_http_404_exception::r_http_404_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -146,7 +146,7 @@ r_http_415_exception::r_http_415_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -165,7 +165,7 @@ r_http_453_exception::r_http_453_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -184,7 +184,7 @@ r_http_500_exception::r_http_500_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -203,7 +203,7 @@ r_http_501_exception::r_http_501_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -216,7 +216,7 @@ void r_http::throw_r_http_exception( int statusCode, const char* msg, ... )
 {
     va_list args;
     va_start( args, msg );
-    const string message = r_string::format( msg, args );
+    const string message = r_string_utils::format( msg, args );
     va_end( args );
 
     r_http::throw_r_http_exception( statusCode, message );

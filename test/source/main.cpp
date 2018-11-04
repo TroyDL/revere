@@ -83,7 +83,7 @@ struct session_description
 
 connection _parse_connection(const std::string& c)
 {
-    auto connParts = r_string::split(c, " ");
+    auto connParts = r_string_utils::split(c, " ");
     if(connParts.size() < 3)
         R_THROW(("Unable to parse connection line in sdp."));
     connection cd;
@@ -95,7 +95,7 @@ connection _parse_connection(const std::string& c)
 
 bandwidth _parse_bandwidth(const std::string& b)
 {
-    auto bwParts = r_string::split(b, ":");
+    auto bwParts = r_string_utils::split(b, ":");
     if(bwParts.size() != 2)
         R_THROW(("Unable to parse bandwidth."));
     bandwidth bw;
@@ -107,9 +107,9 @@ bandwidth _parse_bandwidth(const std::string& b)
 encryption _parse_encryption(const std::string& k)
 {
     encryption enc;
-    if(r_string::contains(k, ":"))
+    if(r_string_utils::contains(k, ":"))
     {
-        auto keyParts = r_string::split(k, ":");
+        auto keyParts = r_string_utils::split(k, ":");
         if(keyParts.size() != 2)
             R_THROW(("Unable to parse encryption line in sdp."));
         enc.method = keyParts[0];
@@ -121,11 +121,11 @@ encryption _parse_encryption(const std::string& k)
 
 void _parse_media_description(media_description& md, const std::string& m)
 {
-    auto mparts = r_string::split(m, " ");
+    auto mparts = r_string_utils::split(m, " ");
     if(mparts.size() < 4)
         R_THROW(("Unable to parse m= line in sdp"));
     md.type = mparts[0];
-    md.port = r_string::s_to_int(mparts[1]);
+    md.port = r_string_utils::s_to_int(mparts[1]);
     md.proto = mparts[2];
     md.fmt = mparts[3];
 }
@@ -134,9 +134,9 @@ session_description parse_sdp(const std::string& sdp)
 {
     session_description sdesc;
 
-    auto lines = r_string::split(sdp, "\n");
+    auto lines = r_string_utils::split(sdp, "\n");
 
-    auto md_it = find_if(lines.begin(), lines.end(), [](const string& s)->bool{return r_string::contains(s, "m=");});
+    auto md_it = find_if(lines.begin(), lines.end(), [](const string& s)->bool{return r_string_utils::contains(s, "m=");});
 
     list<string> globalLines;
 
@@ -148,7 +148,7 @@ session_description parse_sdp(const std::string& sdp)
 
     while(md_it != lines.end())
     {
-        md_it = find_if(md_it+1, lines.end(), [](const string& s)->bool{return r_string::contains(s, "m=");});
+        md_it = find_if(md_it+1, lines.end(), [](const string& s)->bool{return r_string_utils::contains(s, "m=");});
         list<string> md;
         for(; i != md_it; ++i)
             md.push_back(*i);
@@ -164,7 +164,7 @@ session_description parse_sdp(const std::string& sdp)
             sdesc.protocol_version = lv;
         else if(lt == "o=")
         {
-            auto originParts = r_string::split(lv, " ");
+            auto originParts = r_string_utils::split(lv, " ");
             size_t numParts = originParts.size();
 
             if(numParts>0)
@@ -198,7 +198,7 @@ session_description parse_sdp(const std::string& sdp)
             sdesc.enc = _parse_encryption(lv);
         else if(lt == "a=")
         {
-            if(r_string::contains(lv, ":"))
+            if(r_string_utils::contains(lv, ":"))
                 sdesc.attr.value_attributes.push_back(lv);
             else sdesc.attr.property_attributes.push_back(lv);
         }
@@ -225,28 +225,28 @@ session_description parse_sdp(const std::string& sdp)
                 mdesc.enc = _parse_encryption(lv);
             else if(lt == "a=")
             {
-                if(r_string::contains(lv, ":"))
+                if(r_string_utils::contains(lv, ":"))
                 {
                     mdesc.attr.value_attributes.push_back(lv);
                     
                     if(mdesc.codec.empty())
                     {
-                        if(r_string::starts_with(lv, "rtpmap"))
+                        if(r_string_utils::starts_with(lv, "rtpmap"))
                         {
-                            auto rtpMapParts = r_string::split(lv, " ");
+                            auto rtpMapParts = r_string_utils::split(lv, " ");
 
                             if(rtpMapParts.size() < 2)
                                 R_THROW(("Unable to parse rtpmap line in sdp."));
 
-                            if(r_string::contains(rtpMapParts[1], "/"))
+                            if(r_string_utils::contains(rtpMapParts[1], "/"))
                             {
-                                auto codecParts = r_string::split(rtpMapParts[1], "/");
+                                auto codecParts = r_string_utils::split(rtpMapParts[1], "/");
 
                                 if(codecParts.size() < 2)
                                     R_THROW(("Unable to parse codec in sdp."));
 
                                 mdesc.codec = codecParts[0];
-                                mdesc.time_base = r_string::s_to_uint64(codecParts[1]);
+                                mdesc.time_base = r_string_utils::s_to_uint64(codecParts[1]);
                             }
                             else mdesc.codec = rtpMapParts[1];
                         }
@@ -254,21 +254,21 @@ session_description parse_sdp(const std::string& sdp)
 
                     if(mdesc.encoded_sps.empty())
                     {
-                        if(r_string::contains(lv, "sprop-parameter-sets"))
+                        if(r_string_utils::contains(lv, "sprop-parameter-sets"))
                         {
-                            auto mainParts = r_string::split(lv, ";");
+                            auto mainParts = r_string_utils::split(lv, ";");
                             for(auto mp : mainParts)
                             {
-                                if(r_string::contains(mp, "sprop-parameter-sets"))
+                                if(r_string_utils::contains(mp, "sprop-parameter-sets"))
                                 {
                                     auto spv = mp.substr(mp.find("=")+1);
 
-                                    if(r_string::contains(spv, ","))
+                                    if(r_string_utils::contains(spv, ","))
                                     {
-                                        auto pparts = r_string::split(spv, ",");
+                                        auto pparts = r_string_utils::split(spv, ",");
                                         mdesc.encoded_sps = pparts[0];
 
-                                        if(r_string::contains(pparts[1], ";"))
+                                        if(r_string_utils::contains(pparts[1], ";"))
                                             mdesc.encoded_pps = pparts[1].substr(0, pparts[1].length()-1);
                                         else mdesc.encoded_pps = pparts[1];
                                     }
@@ -280,7 +280,7 @@ session_description parse_sdp(const std::string& sdp)
 
                     if(mdesc.control.empty())
                     {
-                        if(r_string::contains(lv, "control"))
+                        if(r_string_utils::contains(lv, "control"))
                             mdesc.control = lv.substr(lv.find("control:") + 8);
                     }
                 }

@@ -342,7 +342,7 @@ void test_r_http_r_client_response::TestColonsInHeaders()
 
     string headerValue = response.get_header("HeaderWithColon");
 
-    RTF_ASSERT(r_string::contains(headerValue, "This header has a : in it."));
+    RTF_ASSERT(r_string_utils::contains(headerValue, "This header has a : in it."));
 }
 
 void test_r_http_r_client_response::TestMultipleHeadersWithSameKey()

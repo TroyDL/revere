@@ -24,12 +24,12 @@ r_sqlite_pager::r_sqlite_pager(const string& columnsToInclude,
 void r_sqlite_pager::find(const r_sqlite_conn& conn, const std::string& val)
 {
     // XXX if val is empty(), assume they want to start from the beginning
-    _results = conn.exec(r_string::format("SELECT %s FROM %s %s ORDER BY %s ASC LIMIT %s;",
+    _results = conn.exec(r_string_utils::format("SELECT %s FROM %s %s ORDER BY %s ASC LIMIT %s;",
                                           _columnsToInclude.c_str(),
                                           _tableName.c_str(),
-                                          (!val.empty())?r_string::format("WHERE %s >= %s", _indexColumn.c_str(), val.c_str()).c_str():"",
+                                          (!val.empty())?r_string_utils::format("WHERE %s >= %s", _indexColumn.c_str(), val.c_str()).c_str():"",
                                           _indexColumn.c_str(),
-                                          r_string::uint32_to_s(_requestedPageSize).c_str()));
+                                          r_string_utils::uint32_to_s(_requestedPageSize).c_str()));
     _index = 0;
 }
 
@@ -45,13 +45,13 @@ void r_sqlite_pager::next(const r_sqlite_conn& conn)
 {
     if((_index + 1) >= _results.size())
     {
-        _results = conn.exec(r_string::format("SELECT %s FROM %s WHERE %s > %s ORDER BY %s ASC LIMIT %s;",
+        _results = conn.exec(r_string_utils::format("SELECT %s FROM %s WHERE %s > %s ORDER BY %s ASC LIMIT %s;",
                                               _columnsToInclude.c_str(),
                                               _tableName.c_str(),
                                               _indexColumn.c_str(),
                                               _results.back()[_indexColumn].c_str(),
                                               _indexColumn.c_str(),
-                                              r_string::uint32_to_s(_requestedPageSize).c_str()));
+                                              r_string_utils::uint32_to_s(_requestedPageSize).c_str()));
         _index = 0;
     }
     else ++_index;
@@ -64,13 +64,13 @@ void r_sqlite_pager::prev(const r_sqlite_conn& conn)
 
     if(_index == 0)
     {
-        _results = conn.exec(r_string::format("SELECT %s FROM %s WHERE %s < %s ORDER BY %s DESC LIMIT %s;",
+        _results = conn.exec(r_string_utils::format("SELECT %s FROM %s WHERE %s < %s ORDER BY %s DESC LIMIT %s;",
                                               _columnsToInclude.c_str(),
                                               _tableName.c_str(),
                                               _indexColumn.c_str(),
                                               _results.front()[_indexColumn].c_str(),
                                               _indexColumn.c_str(),
-                                              r_string::uint32_to_s(_requestedPageSize).c_str()));
+                                              r_string_utils::uint32_to_s(_requestedPageSize).c_str()));
 
         reverse(begin(_results), end(_results));
 

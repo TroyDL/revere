@@ -20,8 +20,8 @@ r_muxer::r_muxer(OUTPUT_LOCATION location, const string& fileName) :
     _format(nullptr),
     _fc(nullptr),
     _ts(0),
-    _isTS(r_string::ends_with(r_string::to_lower(_fileName), ".ts")),
-    _isMP4(r_string::ends_with(r_string::to_lower(_fileName), ".mp4")),
+    _isTS(r_string_utils::ends_with(r_string_utils::to_lower(_fileName), ".ts")),
+    _isMP4(r_string_utils::ends_with(r_string_utils::to_lower(_fileName), ".mp4")),
     _oweTrailer(false),
     _numVideoFramesWritten(0),
     _fileNum(0)
@@ -29,7 +29,7 @@ r_muxer::r_muxer(OUTPUT_LOCATION location, const string& fileName) :
     if( !r_locky::is_registered() )
         R_STHROW(r_internal_exception, ( "Please call locky::register_ffmpeg() before using this class."));
 
-    if(r_string::contains(_fileName, "rtp://"))
+    if(r_string_utils::contains(_fileName, "rtp://"))
     {
         _fc = avformat_alloc_context();
         if(!_fc)

@@ -34,7 +34,7 @@ r_client_request r_range_request_generator::get() const
     if(be >= _totalSize)
         be = (_totalSize-1);
 
-    req.add_header("Range", r_string::format("bytes=%u-%u",_pos,be));
+    req.add_header("Range", r_string_utils::format("bytes=%u-%u",_pos,be));
 
     return req;
 }

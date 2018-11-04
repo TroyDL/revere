@@ -27,9 +27,9 @@ string r_storage::contents(const string& indexPath,
 
     r_sqlite_conn dbconn(indexPath);
 
-    auto results = dbconn.exec(r_string::format("SELECT start_time, CASE WHEN end_time=0 THEN 32896105872547 ELSE end_time END as end_time FROM segment_files WHERE start_time >= %s AND end_time < %s AND data_source_id='%s' AND type='video' ORDER BY start_time;",
-                                                r_string::uint64_to_s(startTime).c_str(),
-                                                r_string::uint64_to_s(endTime).c_str(),
+    auto results = dbconn.exec(r_string_utils::format("SELECT start_time, CASE WHEN end_time=0 THEN 32896105872547 ELSE end_time END as end_time FROM segment_files WHERE start_time >= %s AND end_time < %s AND data_source_id='%s' AND type='video' ORDER BY start_time;",
+                                                r_string_utils::uint64_to_s(startTime).c_str(),
+                                                r_string_utils::uint64_to_s(endTime).c_str(),
                                                 dataSourceID.c_str()));
 
     json j;
@@ -44,10 +44,10 @@ string r_storage::contents(const string& indexPath,
     {
         if(inSeg)
         {
-            auto fileStart = r_string::s_to_uint64(r["start_time"]);
+            auto fileStart = r_string_utils::s_to_uint64(r["start_time"]);
 
             if((fileStart-segEnd) < 3000)
-                segEnd = r_string::s_to_uint64(r["end_time"]);
+                segEnd = r_string_utils::s_to_uint64(r["end_time"]);
             else
             {
                 // write segments json
@@ -60,8 +60,8 @@ string r_storage::contents(const string& indexPath,
         if(!inSeg)
         {
             inSeg = true;
-            segStart = r_string::s_to_uint64(r["start_time"]);
-            segEnd = r_string::s_to_uint64(r["end_time"]);
+            segStart = r_string_utils::s_to_uint64(r["start_time"]);
+            segEnd = r_string_utils::s_to_uint64(r["end_time"]);
         }
     }
 
@@ -80,9 +80,9 @@ vector<uint8_t> r_storage::key_before(const string& indexPath,
 
     auto epochTime = r_time::tp_to_epoch_millis(time);
 
-    auto results = dbconn.exec(r_string::format("SELECT * FROM segment_files "
+    auto results = dbconn.exec(r_string_utils::format("SELECT * FROM segment_files "
                                                 "WHERE start_time <= %s AND data_source_id='%s' AND type='video' ORDER BY start_time DESC LIMIT 1;",
-                                                r_string::uint64_to_s(epochTime).c_str(),
+                                                r_string_utils::uint64_to_s(epochTime).c_str(),
                                                 dataSourceID.c_str()));
     
     if(results.empty())
@@ -247,9 +247,9 @@ string r_storage::sdp_before(const string& indexPath,
 
     auto epochTime = r_time::tp_to_epoch_millis(time);
 
-    auto results = dbconn.exec(r_string::format("SELECT sdp FROM segment_files "
+    auto results = dbconn.exec(r_string_utils::format("SELECT sdp FROM segment_files "
                                                 "WHERE start_time <= %s AND data_source_id='%s' AND type='%s' ORDER BY start_time DESC LIMIT 1;",
-                                                r_string::uint64_to_s(epochTime).c_str(),
+                                                r_string_utils::uint64_to_s(epochTime).c_str(),
                                                 dataSourceID.c_str(),
                                                 type.c_str()));
     

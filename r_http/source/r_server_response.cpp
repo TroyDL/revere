@@ -135,12 +135,12 @@ void r_server_response::write_response(r_stream_io& socket)
         R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling write_response()."));
 
     // RStrip to remove \n added by ctime
-    string timeString = r_string::rstrip(string(cstr));
+    string timeString = r_string_utils::rstrip(string(cstr));
 
     if( (_body.size() > 0) && (_contentType.length() <= 0) )
         R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling write_response()."));
 
-    string responseHeader = r_string::format("HTTP/1.1 %d %s\r\nDate: %s\r\n",
+    string responseHeader = r_string_utils::format("HTTP/1.1 %d %s\r\nDate: %s\r\n",
                                              _status,
                                              _get_status_message(_status).c_str(),
                                              timeString.c_str() );
@@ -149,19 +149,19 @@ void r_server_response::write_response(r_stream_io& socket)
         responseHeader += string("connection: close\r\n");
 
     if( _contentType.length() > 0 )
-        responseHeader += r_string::format( "Content-Type: %s\r\n",
+        responseHeader += r_string_utils::format( "Content-Type: %s\r\n",
                                             _contentType.c_str() );
 
-    responseHeader += r_string::format("Content-Length: %d\r\n", _body.size());
+    responseHeader += r_string_utils::format("Content-Length: %d\r\n", _body.size());
 
     auto i = _additionalHeaders.begin(), end = _additionalHeaders.end();
     while( i != end )
     {
-        responseHeader += r_string::format("%s: %s\r\n", (*i).first.c_str(), (*i).second.c_str());
+        responseHeader += r_string_utils::format("%s: %s\r\n", (*i).first.c_str(), (*i).second.c_str());
         i++;
     }
 
-    responseHeader += r_string::format("\r\n");
+    responseHeader += r_string_utils::format("\r\n");
 
     socket.send(responseHeader.c_str(), responseHeader.length());
     if( !socket.valid() )
@@ -182,7 +182,7 @@ void r_server_response::write_chunk(r_stream_io& socket, size_t sizeChunk, const
     if(!_headerWritten)
         _write_header(socket);
 
-    auto chunkSizeString = r_string::format("%s;\r\n", r_string::format("%x", (unsigned int)sizeChunk).c_str());
+    auto chunkSizeString = r_string_utils::format("%s;\r\n", r_string_utils::format("%x", (unsigned int)sizeChunk).c_str());
     socket.send(chunkSizeString.c_str(), chunkSizeString.length());
     if( !socket.valid() )
         R_STHROW( r_http_io_exception, ("Socket invalid."));
@@ -213,7 +213,7 @@ void r_server_response::write_part(r_stream_io& socket,
 {
     _responseWritten = true;
 
-    auto boundaryLine = r_string::format("--%s\r\n", boundary.c_str());
+    auto boundaryLine = r_string_utils::format("--%s\r\n", boundary.c_str());
     socket.send(boundaryLine.c_str(), boundaryLine.length());
     if( !socket.valid() )
         R_STHROW( r_http_io_exception, ("Socket invalid."));
@@ -222,14 +222,14 @@ void r_server_response::write_part(r_stream_io& socket,
     {
         string headerName = (*i).first;
         string headerValue = (*i).second;
-        string headerLine = r_string::format("%s: %s\r\n",headerName.c_str(),headerValue.c_str());
+        string headerLine = r_string_utils::format("%s: %s\r\n",headerName.c_str(),headerValue.c_str());
 
         socket.send(headerLine.c_str(), headerLine.length());
         if( !socket.valid() )
             R_STHROW( r_http_io_exception, ("Socket invalid."));
     }
 
-    auto contentLength = r_string::format("Content-Length: %d\r\n", size);
+    auto contentLength = r_string_utils::format("Content-Length: %d\r\n", size);
     socket.send(contentLength.c_str(), contentLength.length());
     if( !socket.valid() )
         R_STHROW( r_http_io_exception, ("Socket invalid."));
@@ -250,7 +250,7 @@ void r_server_response::write_part(r_stream_io& socket,
 
 void r_server_response::write_part_finalizer(r_stream_io& socket, const string& boundary)
 {
-    auto finalizerLine = r_string::format("--%s--\r\n", boundary.c_str());
+    auto finalizerLine = r_string_utils::format("--%s--\r\n", boundary.c_str());
     socket.send(finalizerLine.c_str(), finalizerLine.length());
     if( !socket.valid() )
         R_STHROW( r_http_io_exception, ("Socket invalid."));
@@ -315,12 +315,12 @@ bool r_server_response::_write_header(r_stream_io& socket)
         R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling WriteResponse()."));
 
     // RStrip to remove \n added by ctime
-    string timeString = r_string::rstrip(string(cstr));
+    string timeString = r_string_utils::rstrip(string(cstr));
 
     if(_contentType.length() <= 0)
         R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling WriteChunk()."));
 
-    string responseHeader = r_string::format("HTTP/1.1 %d %s\r\nDate: %s\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n",
+    string responseHeader = r_string_utils::format("HTTP/1.1 %d %s\r\nDate: %s\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n",
                                              _status,
                                              _get_status_message(_status).c_str(),
                                              timeString.c_str(),
@@ -328,10 +328,10 @@ bool r_server_response::_write_header(r_stream_io& socket)
 
     for( auto h : _additionalHeaders )
     {
-        responseHeader += r_string::format("%s: %s\r\n",h.first.c_str(), h.second.c_str());
+        responseHeader += r_string_utils::format("%s: %s\r\n",h.first.c_str(), h.second.c_str());
     }
 
-    responseHeader += r_string::format("\r\n");
+    responseHeader += r_string_utils::format("\r\n");
 
     socket.send(responseHeader.c_str(), responseHeader.length());
     if( !socket.valid() )

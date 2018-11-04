@@ -21,7 +21,7 @@ public:
     simple_session( r_rtsp_server& server, uint64_t sessionTimeOutSeconds ) : r_session_base( server, sessionTimeOutSeconds ) {}
     virtual ~simple_session() throw() {}
     virtual shared_ptr<r_session_base> clone() const { return make_shared<simple_session>( _server ); }
-    virtual bool handles_this_presentation( const string& presentation ) { return r_string::contains(presentation, "/foo/bar"); }
+    virtual bool handles_this_presentation( const string& presentation ) { return r_string_utils::contains(presentation, "/foo/bar"); }
     virtual string get_supported_options() { return "OPTIONS, DESCRIBE, SETUP, PLAY, TEARDOWN"; }
     virtual shared_ptr<r_server_response> handle_request( shared_ptr<r_server_request> request )
     {

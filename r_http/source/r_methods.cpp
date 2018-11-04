@@ -24,7 +24,7 @@ string r_http::method_text( int method )
 
 int r_http::method_type( const string& methodText )
 {
-    string lowerMethod = r_string::to_lower(methodText);
+    string lowerMethod = r_string_utils::to_lower(methodText);
 
     if( lowerMethod == "get" )
         return METHOD_GET;

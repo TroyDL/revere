@@ -93,10 +93,10 @@ vector<map<string, string>> r_sqlite_conn::exec(const string& query) const
                     switch(sqlite3_column_type(stmt, i))
                     {
                         case SQLITE_INTEGER:
-                            val = r_string::int64_to_s(sqlite3_column_int64(stmt, i));
+                            val = r_string_utils::int64_to_s(sqlite3_column_int64(stmt, i));
                         break;
                         case SQLITE_FLOAT:
-                            val = r_string::double_to_s(sqlite3_column_double(stmt, i));
+                            val = r_string_utils::double_to_s(sqlite3_column_double(stmt, i));
                         break;
                         case SQLITE_TEXT:
                         default:
@@ -143,7 +143,7 @@ string r_sqlite_conn::last_insert_id() const
     if(!_db)
         R_STHROW(r_internal_exception, ("Cannot last_insert_id() on moved out instance of r_sqlite_conn."));
 
-    return r_string::int64_to_s(sqlite3_last_insert_rowid(_db));
+    return r_string_utils::int64_to_s(sqlite3_last_insert_rowid(_db));
 }
 
 void r_sqlite_conn::_clear() noexcept

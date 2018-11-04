@@ -38,7 +38,7 @@ unique_ptr<r_control> _create_stream(const data_source& ds)
 {
     auto control = make_unique<r_control>();
     control->add_source("source", make_shared<r_rtsp_source>());
-    if(r_string::to_lower(ds.transport_pref) != "tcp")
+    if(r_string_utils::to_lower(ds.transport_pref) != "tcp")
         control->set_param("source", "prefer_tcp", "false");
     control->set_param("source", "rtsp_url", ds.rtsp_url);
     control->set_param("source", "type", "video"); // XXX this needs to be based on the type of data source it is.
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
                                               args["data_source_id"],
                                               r_time::iso_8601_to_tp(args["start_time"]),
                                               r_time::iso_8601_to_tp(args["end_time"]),
-                                              r_string::ends_with(r_string::to_lower(args["start_time"]), "z")));
+                                              r_string_utils::ends_with(r_string_utils::to_lower(args["start_time"]), "z")));
         return response;
     });
 

@@ -42,7 +42,7 @@ public: \
     { \
         va_list args; \
         va_start( args, msg ); \
-        set_msg( r_utils::r_string::format( msg, args ) );      \
+        set_msg( r_utils::r_string_utils::format( msg, args ) );      \
         va_end( args ); \
     } \
     rtsp_##code##_exception( const std::string& msg ) : \

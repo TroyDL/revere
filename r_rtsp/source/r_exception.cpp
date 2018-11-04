@@ -15,7 +15,7 @@ r_rtsp_exception::r_rtsp_exception( const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -36,7 +36,7 @@ rtsp_exception::rtsp_exception( int statusCode, const char* msg, ... ) :
 {
     va_list args;
     va_start( args, msg );
-    set_msg( r_string::format( msg, args ) );
+    set_msg( r_string_utils::format( msg, args ) );
     va_end( args );
 }
 
@@ -50,7 +50,7 @@ void r_rtsp::throw_rtsp_exception( int statusCode, const char* msg, ... )
 {
     va_list args;
     va_start( args, msg );
-    const string message = r_string::format( msg, args );
+    const string message = r_string_utils::format( msg, args );
     va_end( args );
 
     throw_rtsp_exception( statusCode, message );

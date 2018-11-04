@@ -143,9 +143,9 @@ vector<string> r_client_response::get_methods() const
     string value;
     if( get_header("Public",value) )
     {
-        std::vector<string> methods = r_string::split(value, ',');
+        std::vector<string> methods = r_string_utils::split(value, ',');
         for( size_t i=0; i < methods.size(); ++i )
-            methods[i] = r_string::strip(methods[i]);;
+            methods[i] = r_string_utils::strip(methods[i]);;
         return methods;
     }
     R_STHROW(r_rtsp_exception, ("No \"Public\" method found!"));
@@ -163,19 +163,19 @@ size_t r_client_response::_parse_lines( vector<string>& lines )
 
     for ( size_t i = 0; i < lines.size(); ++i )
     {
-        if ( r_string::contains(lines[i], "RTSP") )
+        if ( r_string_utils::contains(lines[i], "RTSP") )
         {
-            std::vector<string> parts = r_string::split(lines[i], ' ');
+            std::vector<string> parts = r_string_utils::split(lines[i], ' ');
 
             if ( parts.size() < 2 )
                 R_STHROW(r_rtsp_exception, ("Not enough parts in status line."));
 
-            _statusCode = convert_status_code_from_int(r_string::s_to_int(parts[1]));
+            _statusCode = convert_status_code_from_int(r_string_utils::s_to_int(parts[1]));
 
             continue;
         }
 
-        std::vector<string> parts = r_string::split(lines[i], ": ");
+        std::vector<string> parts = r_string_utils::split(lines[i], ": ");
 
         if ( lines[i].empty() )
             continue;
@@ -183,8 +183,8 @@ size_t r_client_response::_parse_lines( vector<string>& lines )
         if ( parts.size() != 2 )
             R_STHROW(r_rtsp_exception, ("Wrong number of parts"));
 
-        if ( r_string::contains(lines[i], "Content-Length") )
-            result = r_string::s_to_int(parts[1]);
+        if ( r_string_utils::contains(lines[i], "Content-Length") )
+            result = r_string_utils::s_to_int(parts[1]);
 
         _headerPieces.insert(make_pair(parts[0],parts[1]));
     }

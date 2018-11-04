@@ -88,7 +88,7 @@ void test_r_utils_r_socket::test_move_constructable()
         sokB.recv( buffer, 1023 );
         sokB.close();
         string response = buffer;
-        RTF_ASSERT( r_string::contains(response, "google") );
+        RTF_ASSERT( r_string_utils::contains(response, "google") );
         RTF_ASSERT( sokA._sok._sok == -1 );
     }
     catch(const r_exception& ex)
@@ -110,7 +110,7 @@ void test_r_utils_r_socket::test_move_assignable()
     sokB.recv( buffer, 1023 );
     sokB.close();
     string response = buffer;
-    RTF_ASSERT( r_string::contains(response, "google") );
+    RTF_ASSERT( r_string_utils::contains(response, "google") );
     RTF_ASSERT( sokA._sok._sok == -1 );
 }
 
@@ -202,7 +202,7 @@ void test_r_utils_r_socket::test_buffered_socket()
 
     bufSok.close();
     string response = buffer;
-    RTF_ASSERT( r_string::contains(response, "google") );
+    RTF_ASSERT( r_string_utils::contains(response, "google") );
 }
 
 void test_r_utils_r_socket::test_hardware_address()

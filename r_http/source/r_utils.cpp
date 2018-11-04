@@ -10,7 +10,7 @@ using namespace std;
 void r_http::parse_url_parts( const string url, string& host, int& port, string& protocol, string& uri )
 {
     // Initially set port based on protocol if present...
-    if(r_string::contains(url, "https://"))
+    if(r_string_utils::contains(url, "https://"))
     {
         protocol = "https";
         port = 443;
@@ -39,10 +39,10 @@ void r_http::parse_url_parts( const string url, string& host, int& port, string&
     }
 
     // If our host part contains a colon, then override our earlier port number...
-    if(r_string::contains(host, ":"))
+    if(r_string_utils::contains(host, ":"))
     {
-        auto hostParts = r_string::split(host, ":");
-        port = r_string::s_to_int(hostParts[1]);
+        auto hostParts = r_string_utils::split(host, ":");
+        port = r_string_utils::s_to_int(hostParts[1]);
         host = hostParts[0];
     }
 }
@@ -56,7 +56,7 @@ string r_http::adjust_header_name( const string& name )
             R_STHROW( r_http_exception_generic, ("Invalid character in header value: [%c]", c) );
     }
 
-    return r_string::to_lower(name);
+    return r_string_utils::to_lower(name);
 }
 
 string r_http::adjust_header_value( const string& value )

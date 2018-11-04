@@ -87,17 +87,17 @@ size_t r_av::picture_size(r_pix_fmt fmt, uint16_t w, uint16_t h)
 
 string r_av::filename_to_content_type(const string& fileName)
 {
-    if(r_string::contains(fileName, ".mp4"))
+    if(r_string_utils::contains(fileName, ".mp4"))
         return "video/mp4";
-    else if(r_string::contains(fileName, ".ts"))
+    else if(r_string_utils::contains(fileName, ".ts"))
         return "video/ts";
-    else if(r_string::contains(fileName, ".mkv"))
+    else if(r_string_utils::contains(fileName, ".mkv"))
         return "video/mkv";
-    else if(r_string::contains(fileName, ".flv"))
+    else if(r_string_utils::contains(fileName, ".flv"))
         return "video/flv";
-    else if(r_string::contains(fileName, ".avi"))
+    else if(r_string_utils::contains(fileName, ".avi"))
         return "video/avi";
-    else if(r_string::contains(fileName, ".mov"))
+    else if(r_string_utils::contains(fileName, ".mov"))
         return "video/mov";
 
     R_THROW(("Unknown container: %s",fileName.c_str()));

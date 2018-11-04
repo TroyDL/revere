@@ -64,7 +64,7 @@ r_server_response data_sources::handle_put(const r_web_server<r_socket>& ws,
 
     r_sqlite_conn dbconn(_dataSourcesPath);
 
-    dbconn.exec(r_string::format("REPLACE INTO data_sources(id, type, rtsp_url, recording, transport_pref, auth_username, auth_password) "
+    dbconn.exec(r_string_utils::format("REPLACE INTO data_sources(id, type, rtsp_url, recording, transport_pref, auth_username, auth_password) "
                                  "VALUES(%s, '%s', '%s', '%s', '%s', '%s', '%s');",
                                  j["id"].get<string>().c_str(),
                                  j["type"].get<string>().c_str(),
@@ -85,7 +85,7 @@ r_server_response data_sources::handle_del(const r_web_server<r_socket>& ws,
 
     r_sqlite_conn dbconn(_dataSourcesPath);
 
-    dbconn.exec(r_string::format("DELETE FROM data_sources WHERE id=%s;",
+    dbconn.exec(r_string_utils::format("DELETE FROM data_sources WHERE id=%s;",
                                  j["id"].get<string>().c_str()));
 
     return r_server_response();
@@ -100,7 +100,7 @@ vector<data_source> data_sources::recording_data_sources()
 
     for(auto row : results)
     {
-        if(r_string::to_lower(row["recording"]) == "true")
+        if(r_string_utils::to_lower(row["recording"]) == "true")
         {
             data_source ds;
             ds.id = row["id"];
@@ -126,7 +126,7 @@ void data_sources::_upgrade_db(const string& dataSourcesPath)
     uint16_t version = 0;
 
     if(!results.empty())
-        version = r_string::s_to_uint16(results.front()["user_version"]);
+        version = r_string_utils::s_to_uint16(results.front()["user_version"]);
 
     switch( version )
     {

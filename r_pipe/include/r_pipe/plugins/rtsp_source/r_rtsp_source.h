@@ -3,7 +3,7 @@
 #define __r_rtsp_r_rtsp_source_h
 
 #include "r_pipe/r_source.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_udp_receiver.h"
 #include "r_utils/r_pool.h"
 #include "r_rtsp/r_client_connection.h"

@@ -3,7 +3,7 @@
 #define __r_av_r_options_h
 
 #include "r_utils/r_nullable.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 namespace r_av
 {

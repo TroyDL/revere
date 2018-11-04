@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.12)
 
-add_library (r_utils include/r_utils/r_string.h
+add_library (r_utils include/r_utils/r_string_utils.h
                      include/r_utils/r_logger.h
                      include/r_utils/r_stack_trace.h
                      include/r_utils/r_socket_address.h
@@ -23,7 +23,7 @@ add_library (r_utils include/r_utils/r_string.h
                      include/r_utils/r_blob_tree.h
                      include/r_utils/r_process.h
                      include/r_utils/r_server_threaded.h # header only
-                     source/r_string.cpp
+                     source/r_string_utils.cpp
                      source/r_logger.cpp
                      source/r_stack_trace.cpp
                      source/r_socket_address.cpp

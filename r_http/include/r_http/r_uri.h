@@ -3,7 +3,7 @@
 #define _r_http_r_uri_h
 
 #include "r_utils/r_exception.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include <map>
 
 namespace r_http

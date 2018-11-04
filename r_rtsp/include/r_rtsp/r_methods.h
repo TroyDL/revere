@@ -2,7 +2,7 @@
 #ifndef r_rtsp_methods_h
 #define r_rtsp_methods_h
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 namespace r_rtsp
 {

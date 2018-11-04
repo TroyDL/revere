@@ -3,7 +3,7 @@
 #define r_utils_r_byte_ptr_h
 
 #include "r_utils/r_exception.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include <string.h>
 #include <cstddef>
 

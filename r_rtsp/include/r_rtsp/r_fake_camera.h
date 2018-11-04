@@ -4,7 +4,7 @@
 
 #include "r_rtsp/r_rtsp_server.h"
 #include "r_rtsp/r_session_base.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_file.h"
 #include "r_av/r_demuxer.h"
 #include "r_av/r_muxer.h"

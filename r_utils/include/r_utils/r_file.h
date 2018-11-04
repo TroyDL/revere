@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_exception.h"
 #include <stdlib.h>
 #include <memory>

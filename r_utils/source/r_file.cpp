@@ -1,6 +1,6 @@
 
 #include "r_utils/r_file.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include <random>
 #include <fcntl.h>
 #include <sys/statvfs.h>

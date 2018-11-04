@@ -2,7 +2,7 @@
 #include "test_r_vss_client_r_query_generator.h"
 #include "r_vss_client/r_query_generator.h"
 #include "r_utils/r_time_utils.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 using namespace r_vss_client;
 using namespace r_utils;

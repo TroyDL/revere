@@ -1,7 +1,7 @@
 
 #include "r_rtsp/r_methods.h"
 #include "r_rtsp/r_exception.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 using namespace r_rtsp;
 using namespace r_utils;

@@ -3,7 +3,7 @@
 #include "r_http/r_http_exception.h"
 #include "r_http/r_utils.h"
 #include "r_utils/r_socket.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 #include <iostream>
 

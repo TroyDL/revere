@@ -4,7 +4,7 @@
 #include "r_storage/r_file_index.h"
 #include "r_db/r_sqlite_conn.h"
 #include "r_utils/r_time_utils.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_byte_ptr.h"
 #include "r_utils/r_blob_tree.h"
 #include "r_utils/3rdparty/json/json.h"

@@ -2,7 +2,7 @@
 #ifndef r_rtsp_r_client_connection_h
 #define r_rtsp_r_client_connection_h
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_socket.h"
 #include "r_rtsp/r_client_response.h"
 #include "r_rtsp/r_client_request.h"

@@ -3,7 +3,7 @@
 #define r_http_r_range_request_generator_h
 
 #include "r_http/r_client_request.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 class test_r_http_r_range_request_generator;
 

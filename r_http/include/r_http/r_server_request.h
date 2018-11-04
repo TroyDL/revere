@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 #include "r_utils/interfaces/r_stream_io.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_nullable.h"
 #include "r_http/r_uri.h"
 #include "r_http/r_methods.h"

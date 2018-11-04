@@ -6,7 +6,7 @@
 #include "r_pipe/r_media_object.h"
 #include "r_pipe/r_filter.h"
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_nullable.h"
 
 #include <memory>

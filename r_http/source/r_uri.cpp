@@ -4,7 +4,7 @@
 #include <map>
 #include <iostream>
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_http/r_http_exception.h"
 
 using namespace std;

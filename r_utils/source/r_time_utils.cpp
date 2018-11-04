@@ -1,6 +1,6 @@
 
 #include "r_utils/r_time_utils.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_exception.h"
 #include <string.h>
 

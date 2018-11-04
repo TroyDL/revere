@@ -1,7 +1,7 @@
 #ifndef _r_utils_r_process_h
 #define _r_utils_r_process_h
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_file.h"
 
 #include <unistd.h>

@@ -3,7 +3,7 @@
 #define _r_http_r_client_request_h
 
 #include "r_utils/interfaces/r_stream_io.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 #include <unordered_map>
 #include <memory>

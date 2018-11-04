@@ -2,7 +2,7 @@
 #include "framework.h"
 #include "test_r_utils_r_socket.h"
 #include "r_utils/r_socket.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -2,7 +2,7 @@
 #ifndef r_rtsp_r_client_request_h
 #define r_rtsp_r_client_request_h
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/interfaces/r_stream_io.h"
 #include "r_rtsp/r_methods.h"
 #include <memory>

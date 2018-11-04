@@ -1,7 +1,7 @@
 
 #include "r_db/r_sqlite_conn.h"
 #include "r_utils/r_exception.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include <unistd.h>
 
 using namespace r_db;

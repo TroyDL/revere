@@ -2,7 +2,7 @@
 #ifndef __r_storage_r_append_file_h
 #define __r_storage_r_append_file_h
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_memory_map.h"
 #include "r_utils/r_socket.h"
 #include "r_utils/r_file.h"

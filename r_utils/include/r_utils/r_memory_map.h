@@ -2,7 +2,7 @@
 #ifndef __r_utils_r_memory_map_h
 #define __r_utils_r_memory_map_h
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_byte_ptr.h"
 
 namespace r_utils

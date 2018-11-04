@@ -3,7 +3,7 @@
 #include "r_storage/r_append_file.h"
 #include "r_db/r_sqlite_conn.h"
 #include "r_db/r_sqlite_pager.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include <chrono>
 
 using namespace r_storage;

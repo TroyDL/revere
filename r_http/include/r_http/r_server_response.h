@@ -4,7 +4,7 @@
 
 #include "r_http/r_status_codes.h"
 #include "r_utils/interfaces/r_stream_io.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include <vector>
 #include <list>
 #include <map>

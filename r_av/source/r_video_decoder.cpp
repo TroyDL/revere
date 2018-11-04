@@ -2,7 +2,7 @@
 #include "r_av/r_video_decoder.h"
 #include "r_av/r_utils.h"
 #include "r_av/r_locky.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 extern "C"
 {

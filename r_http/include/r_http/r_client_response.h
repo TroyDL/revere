@@ -7,7 +7,7 @@
 #include <map>
 #include <functional>
 #include "r_utils/interfaces/r_stream_io.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 
 namespace r_http
 {

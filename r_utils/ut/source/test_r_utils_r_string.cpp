@@ -1,6 +1,6 @@
 
 #include "test_r_utils_r_string.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_utils/r_exception.h"
 #include <limits.h>
 #include <string.h>

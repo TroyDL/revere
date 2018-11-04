@@ -1,6 +1,6 @@
 
 #include "r_utils/r_logger.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include <exception>
 
 using namespace r_utils;

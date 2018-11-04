@@ -7,7 +7,7 @@
 #include "r_utils/r_file_lock.h"
 #include "r_utils/r_file.h"
 #include "r_utils/r_nullable.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_db/r_sqlite_conn.h"
 #include "r_db/r_sqlite_pager.h"
 #include <functional>

@@ -2,7 +2,7 @@
 #define __r_pipe_r_filter_h
 
 #include "r_pipe/r_stateful.h"
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "r_av/r_packet.h"
 #include <memory>
 

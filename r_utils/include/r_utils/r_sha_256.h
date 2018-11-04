@@ -2,7 +2,7 @@
 #ifndef r_utils_r_sha_256_h
 #define r_utils_r_sha_256_h
 
-#include "r_utils/r_string.h"
+#include "r_utils/r_string_utils.h"
 #include "openssl/sha.h"
 
 namespace r_utils

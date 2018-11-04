@@ -64,7 +64,7 @@ void r_media_parser::current_data(std::chrono::system_clock::time_point& time, s
 
     uint64_t doubleWord = idx.consume<uint64_t>();
     uint64_t frameEpoch = r_networking::r_ntohll(doubleWord);
-    time = r_time::epoch_millis_to_tp(frameEpoch);
+    time = r_time_utils::epoch_millis_to_tp(frameEpoch);
 
     uint32_t word = idx.consume<uint32_t>();
     uint32_t frameOfs = r_networking::r_ntohl(word);

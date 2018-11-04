@@ -110,8 +110,8 @@ int main(int argc, char* argv[])
         auto args = request.get_uri().get_get_args();
         response.set_body(r_storage::contents(cfg["storage_config"]["index_path"].get<string>(),
                                               args["data_source_id"],
-                                              r_time::iso_8601_to_tp(args["start_time"]),
-                                              r_time::iso_8601_to_tp(args["end_time"]),
+                                              r_time_utils::iso_8601_to_tp(args["start_time"]),
+                                              r_time_utils::iso_8601_to_tp(args["end_time"]),
                                               r_string_utils::ends_with(r_string_utils::to_lower(args["start_time"]), "z")));
         return response;
     });
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
         auto args = request.get_uri().get_get_args();
         auto frame = r_storage::key_before(cfg["storage_config"]["index_path"].get<string>(),
                                            args["data_source_id"],
-                                           r_time::iso_8601_to_tp(args["time"]));
+                                           r_time_utils::iso_8601_to_tp(args["time"]));
         response.set_content_type("application/octet-stream");
         response.set_body(std::move(frame));
         return response;
@@ -137,8 +137,8 @@ int main(int argc, char* argv[])
                                        args["data_source_id"],
                                        args["type"],
                                        previousPlayable,
-                                       r_time::iso_8601_to_tp(args["start_time"]),
-                                       r_time::iso_8601_to_tp(args["end_time"]));
+                                       r_time_utils::iso_8601_to_tp(args["start_time"]),
+                                       r_time_utils::iso_8601_to_tp(args["end_time"]));
         response.set_content_type("application/octet-stream");
         response.set_body(std::move(result));
         return response;
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
         auto sdp = r_storage::sdp_before(cfg["storage_config"]["index_path"].get<string>(),
                                          args["data_source_id"],
                                          args["type"],
-                                         r_time::iso_8601_to_tp(args["time"]));
+                                         r_time_utils::iso_8601_to_tp(args["time"]));
         response.set_content_type("application/sdp");
         response.set_body(std::move(sdp));
         return response;

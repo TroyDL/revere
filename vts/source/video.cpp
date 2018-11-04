@@ -34,7 +34,7 @@ r_server_response make_video(const r_web_server<r_socket>& ws,
 
     auto sdp = r_vss_client::fetch_sdp_before(args["data_source_id"],
                                               "video",
-                                              r_time::iso_8601_to_tp(args["start_time"]));
+                                              r_time_utils::iso_8601_to_tp(args["start_time"]));
 
     auto sdesc = r_rtsp::parse_sdp(sdp);
 
@@ -55,8 +55,8 @@ r_server_response make_video(const r_web_server<r_socket>& ws,
     r_vss_client::r_query_generator qg(args["data_source_id"],
                                        "video",
                                        10000,
-                                       r_time::iso_8601_to_tp(args["start_time"]),
-                                       r_time::iso_8601_to_tp(args["end_time"]));
+                                       r_time_utils::iso_8601_to_tp(args["start_time"]),
+                                       r_time_utils::iso_8601_to_tp(args["end_time"]));
 
     int64_t ts = 0;
     int64_t increment = 0;

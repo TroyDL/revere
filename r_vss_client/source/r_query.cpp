@@ -22,8 +22,8 @@ vector<uint8_t> r_vss_client::query(const std::string& dataSourceID,
                                      dataSourceID.c_str(),
                                      type.c_str(),
                                      (previousPlayable==true)?"true":"true",
-                                     r_time::tp_to_iso_8601(start, false).c_str(),
-                                     r_time::tp_to_iso_8601(end, false).c_str()));
+                                     r_time_utils::tp_to_iso_8601(start, false).c_str(),
+                                     r_time_utils::tp_to_iso_8601(end, false).c_str()));
 
     r_socket sok;
     sok.connect("127.0.0.1", 11002);

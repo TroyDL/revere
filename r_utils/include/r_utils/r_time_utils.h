@@ -8,7 +8,7 @@
 namespace r_utils
 {
 
-namespace r_time
+namespace r_time_utils
 {
 
 std::chrono::system_clock::time_point iso_8601_to_tp(const std::string& str);

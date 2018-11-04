@@ -57,7 +57,7 @@ retry:
     uint32_t currentAvgDelta = 0;
     currentAvgDelta = (_numDeltas>0)?(accumulate(begin(_deltas), begin(_deltas)+_numDeltas, currentAvgDelta) / _numDeltas):0;
     
-    uint64_t outputTS = r_time::tp_to_epoch_millis(_currentStreamBase);
+    uint64_t outputTS = r_time_utils::tp_to_epoch_millis(_currentStreamBase);
 
     _streamBaseUpdateCountdown--;
     if( _streamBaseUpdateCountdown <= 0 )
@@ -66,9 +66,9 @@ retry:
 
         uint64_t currentDelta = _rtpDelta + currentAvgDelta;
 
-        uint64_t currentStreamTime = r_time::tp_to_epoch_millis(_currentStreamBase) + r_time::convert_clock_freq(currentDelta, _sourceClockRate, MILLIS_IN_SECOND);
+        uint64_t currentStreamTime = r_time_utils::tp_to_epoch_millis(_currentStreamBase) + r_time_utils::convert_clock_freq(currentDelta, _sourceClockRate, MILLIS_IN_SECOND);
 
-        uint64_t currentTime = r_time::tp_to_epoch_millis(system_clock::now());
+        uint64_t currentTime = r_time_utils::tp_to_epoch_millis(system_clock::now());
 
         if( currentStreamTime > currentTime )
         {
@@ -95,7 +95,7 @@ retry:
         }
     }
 
-    outputTS += r_time::convert_clock_freq(_rtpDelta, _sourceClockRate, MILLIS_IN_SECOND);
+    outputTS += r_time_utils::convert_clock_freq(_rtpDelta, _sourceClockRate, MILLIS_IN_SECOND);
 
     if( outputTS <= _lastTS )
         outputTS = _lastTS+1;

@@ -39,8 +39,8 @@ r_nullable<string> r_query_generator::next()
                                   _dataSourceID.c_str(),
                                   _type.c_str(),
                                   (_first)?"previous_playable=true":"previous_playable=false",
-                                  r_time::tp_to_iso_8601(_start, false).c_str(),
-                                  r_time::tp_to_iso_8601(_next, false).c_str());
+                                  r_time_utils::tp_to_iso_8601(_start, false).c_str(),
+                                  r_time_utils::tp_to_iso_8601(_next, false).c_str());
 
     _first = false;
 

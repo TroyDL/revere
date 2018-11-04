@@ -40,7 +40,7 @@ static time_t _dst_offset()
     return abs(julDiff - janDiff);
 }
 
-system_clock::time_point r_utils::r_time::iso_8601_to_tp(const string& str)
+system_clock::time_point r_utils::r_time_utils::iso_8601_to_tp(const string& str)
 {
 	const size_t tDex = str.find('T');
 
@@ -131,7 +131,7 @@ system_clock::time_point r_utils::r_time::iso_8601_to_tp(const string& str)
 	return time_point_result;
 }
 
-string r_utils::r_time::tp_to_iso_8601(const system_clock::time_point& tp, bool UTC)
+string r_utils::r_time_utils::tp_to_iso_8601(const system_clock::time_point& tp, bool UTC)
 {
 	auto utcTime = system_clock::to_time_t(tp);
 	auto tpFromUTC = system_clock::from_time_t(utcTime);
@@ -169,12 +169,12 @@ string r_utils::r_time::tp_to_iso_8601(const system_clock::time_point& tp, bool 
 	return result;
 }
 
-uint64_t r_utils::r_time::tp_to_epoch_millis(const chrono::system_clock::time_point& tp)
+uint64_t r_utils::r_time_utils::tp_to_epoch_millis(const chrono::system_clock::time_point& tp)
 {
 	return duration_cast<milliseconds>(tp.time_since_epoch()).count();
 }
 
-chrono::system_clock::time_point r_utils::r_time::epoch_millis_to_tp(uint64_t t)
+chrono::system_clock::time_point r_utils::r_time_utils::epoch_millis_to_tp(uint64_t t)
 {
 	return system_clock::time_point() + milliseconds(t);
 }

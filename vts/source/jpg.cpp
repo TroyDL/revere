@@ -16,7 +16,7 @@ r_server_response make_jpg(const r_web_server<r_socket>& ws,
                            const r_server_request& request)
 {
     auto args = request.get_uri().get_get_args();
-    auto iframe = r_vss_client::fetch_key_before(args["data_source_id"], r_time::iso_8601_to_tp(args["time"]));
+    auto iframe = r_vss_client::fetch_key_before(args["data_source_id"], r_time_utils::iso_8601_to_tp(args["time"]));
     // XXX NOTE: we shouldn't assume h.264 here.
     r_video_decoder decoder(r_av_codec_id_h264, r_av_pix_fmt_yuvj420p, get_decoder_options(2));
     r_packet pkt(&iframe[0], iframe.size(), false);

@@ -22,8 +22,8 @@ string r_storage::contents(const string& indexPath,
                            const system_clock::time_point& end,
                            bool utc)
 {
-    auto startTime = r_time::tp_to_epoch_millis(start);
-    auto endTime = r_time::tp_to_epoch_millis(end);
+    auto startTime = r_time_utils::tp_to_epoch_millis(start);
+    auto endTime = r_time_utils::tp_to_epoch_millis(end);
 
     r_sqlite_conn dbconn(indexPath);
 
@@ -51,8 +51,8 @@ string r_storage::contents(const string& indexPath,
             else
             {
                 // write segments json
-                j["data"]["segments"] += {{"end_time", (segEnd==32896105872547)?"0":r_time::tp_to_iso_8601(r_time::epoch_millis_to_tp(segEnd), utc)},
-                                          {"start_time", r_time::tp_to_iso_8601(r_time::epoch_millis_to_tp(segStart), utc)}};
+                j["data"]["segments"] += {{"end_time", (segEnd==32896105872547)?"0":r_time_utils::tp_to_iso_8601(r_time_utils::epoch_millis_to_tp(segEnd), utc)},
+                                          {"start_time", r_time_utils::tp_to_iso_8601(r_time_utils::epoch_millis_to_tp(segStart), utc)}};
                 inSeg = false;
             }
         }
@@ -66,8 +66,8 @@ string r_storage::contents(const string& indexPath,
     }
 
     if(inSeg)
-        j["data"]["segments"] += {{"end_time", (segEnd==32896105872547)?"0":r_time::tp_to_iso_8601(r_time::epoch_millis_to_tp(segEnd), utc)},
-                                  {"start_time", r_time::tp_to_iso_8601(r_time::epoch_millis_to_tp(segStart), utc)}};
+        j["data"]["segments"] += {{"end_time", (segEnd==32896105872547)?"0":r_time_utils::tp_to_iso_8601(r_time_utils::epoch_millis_to_tp(segEnd), utc)},
+                                  {"start_time", r_time_utils::tp_to_iso_8601(r_time_utils::epoch_millis_to_tp(segStart), utc)}};
 
     return j.dump();
 }
@@ -78,7 +78,7 @@ vector<uint8_t> r_storage::key_before(const string& indexPath,
 {
     r_sqlite_conn dbconn(indexPath);
 
-    auto epochTime = r_time::tp_to_epoch_millis(time);
+    auto epochTime = r_time_utils::tp_to_epoch_millis(time);
 
     auto results = dbconn.exec(r_string_utils::format("SELECT * FROM segment_files "
                                                 "WHERE start_time <= %s AND data_source_id='%s' AND type='video' ORDER BY start_time DESC LIMIT 1;",
@@ -86,7 +86,7 @@ vector<uint8_t> r_storage::key_before(const string& indexPath,
                                                 dataSourceID.c_str()));
     
     if(results.empty())
-        R_STHROW(r_not_found_exception, ("No files found near %s for dataSourceID %s", r_time::tp_to_iso_8601(time, false).c_str(), dataSourceID.c_str()));
+        R_STHROW(r_not_found_exception, ("No files found near %s for dataSourceID %s", r_time_utils::tp_to_iso_8601(time, false).c_str(), dataSourceID.c_str()));
 
     r_append_file file(results.front()["path"]);
 
@@ -132,8 +132,8 @@ vector<uint8_t> r_storage::query(const string& indexPath,
 
     auto fileIter = index.get_iterator("start_time", dataSourceID, type);
 
-    auto epochStart = r_time::tp_to_epoch_millis(start);
-    auto epochEnd = r_time::tp_to_epoch_millis(end);
+    auto epochStart = r_time_utils::tp_to_epoch_millis(start);
+    auto epochEnd = r_time_utils::tp_to_epoch_millis(end);
 
     fileIter.find(epochStart);
 
@@ -245,7 +245,7 @@ string r_storage::sdp_before(const string& indexPath,
 {
     r_sqlite_conn dbconn(indexPath);
 
-    auto epochTime = r_time::tp_to_epoch_millis(time);
+    auto epochTime = r_time_utils::tp_to_epoch_millis(time);
 
     auto results = dbconn.exec(r_string_utils::format("SELECT sdp FROM segment_files "
                                                 "WHERE start_time <= %s AND data_source_id='%s' AND type='%s' ORDER BY start_time DESC LIMIT 1;",
@@ -254,7 +254,7 @@ string r_storage::sdp_before(const string& indexPath,
                                                 type.c_str()));
     
     if(results.empty())
-        R_STHROW(r_not_found_exception, ("No files found near %s for dataSourceID %s", r_time::tp_to_iso_8601(time, false).c_str(), dataSourceID.c_str()));
+        R_STHROW(r_not_found_exception, ("No files found near %s for dataSourceID %s", r_time_utils::tp_to_iso_8601(time, false).c_str(), dataSourceID.c_str()));
 
     return results.front()["sdp"];
 }

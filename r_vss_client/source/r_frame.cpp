@@ -16,7 +16,7 @@ vector<uint8_t> r_vss_client::fetch_key_before(const string& dataSourceID, const
     r_client_request request("127.0.0.1", 11002);
     request.set_uri(r_string_utils::format("/key_before?data_source_id=%s&time=%s",
                                      dataSourceID.c_str(),
-                                     r_time::tp_to_iso_8601(time, false).c_str()));
+                                     r_time_utils::tp_to_iso_8601(time, false).c_str()));
 
     r_socket sok;
     sok.connect("127.0.0.1", 11002);

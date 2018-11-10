@@ -110,11 +110,12 @@ void _fill_file_systems(const r_engine_config& cfg)
 
 
 // {
-//     "config": {
+//     "storage_config": {
 //         "file_allocation_bytes": "10485760",           #optional
 //         "max_files_in_dir": "10000",                   #optional
 //         "max_indexes_per_file": "3200",                #optional
 //         "index_path": "/data/vss/index",
+//         "data_sources_path": "/data/vss/data_sources",
 //         "file_systems": [
 //             {
 //                 "name": "fs1",

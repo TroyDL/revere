@@ -12,15 +12,15 @@ bool r_locky::_registered = false;
 
 void r_locky::register_ffmpeg()
 {
-    avcodec_register_all();
+    //avcodec_register_all();
     avdevice_register_all();
-    avfilter_register_all();
+    //avfilter_register_all();
 
-    av_register_all();
+    //av_register_all();
 
     avformat_network_init();
 
-    av_lockmgr_register( r_locky::_r_locky_cb );
+    //av_lockmgr_register( r_locky::_r_locky_cb );
 
     _registered = true;
 
@@ -31,7 +31,7 @@ void r_locky::unregister_ffmpeg()
 {
     avformat_network_deinit();
 
-    av_lockmgr_register( nullptr );
+    //av_lockmgr_register( nullptr );
 
     r_locky::_locks.clear();
 

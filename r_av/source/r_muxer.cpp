@@ -49,7 +49,7 @@ r_muxer::r_muxer(OUTPUT_LOCATION location, const string& fileName) :
     }
 
     if(_fc->oformat->flags & AVFMT_GLOBALHEADER)
-        _fc->flags |= CODEC_FLAG_GLOBAL_HEADER;
+        _fc->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 }
 
 r_muxer::r_muxer(r_muxer&& obj) noexcept

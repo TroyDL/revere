@@ -9,7 +9,6 @@ set (CMAKE_CXX_FLAGS_DEBUG "-std=c++14 -pthread -Wall -Wfatal-errors -O0 -ggdb")
 set (CMAKE_CXX_FLAGS_RELEASE "-std=c++14 -pthread -Wall -Wfatal-errors -O3")
 
 # libs
-add_subdirectory (bento4)
 add_subdirectory (r_utils)
 add_subdirectory (r_db)
 add_subdirectory (r_storage)

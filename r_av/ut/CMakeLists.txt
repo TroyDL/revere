@@ -5,11 +5,13 @@ add_executable (r_av_ut include/framework.h
                         include/test_r_av_r_muxer.h
                         include/test_r_av_r_video_decoder.h
                         include/test_r_av_r_video_encoder.h
+                        include/test_r_av_r_transcoder.h
                         source/framework.cpp
                         source/test_r_av_r_demuxer.cpp
                         source/test_r_av_r_muxer.cpp
                         source/test_r_av_r_video_decoder.cpp
-                        source/test_r_av_r_video_encoder.cpp)
+                        source/test_r_av_r_video_encoder.cpp
+                        source/test_r_av_r_transcoder.cpp)
 
 target_include_directories (r_av_ut PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
                                            ${CMAKE_CURRENT_SOURCE_DIR}/../include)

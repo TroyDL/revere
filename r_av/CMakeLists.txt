@@ -9,6 +9,7 @@ add_library (r_av include/r_av/r_packet.h
                   include/r_av/r_video_decoder.h
                   include/r_av/r_utils.h
                   include/r_av/r_video_encoder.h
+                  include/r_av/r_transcoder.h
                   source/r_packet.cpp
                   source/r_packet_factory.cpp
                   source/r_demuxer.cpp
@@ -36,6 +37,6 @@ find_library(FFMPEG_LIBAVCODEC NAMES libavcodec.so PATHS ${CMAKE_CURRENT_SOURCE_
 find_library(FFMPEG_LIBAVUTIL NAMES libavutil.so PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../ffmpeg/artifacts/lib)
 find_library(FFMPEG_LIBAVFILTER NAMES libavfilter.so PATHS ${CMAKE_CURRENT_SOURCE_DIR}/../ffmpeg/artifacts/lib)
 
-target_link_libraries (r_av ap4 ${FFMPEG_LIBSWSCALE} ${FFMPEG_LIBAVDEVICE} ${FFMPEG_LIBAVFORMAT} ${FFMPEG_LIBAVCODEC} ${FFMPEG_LIBAVUTIL} ${FFMPEG_LIBAVFILTER} ${X264_LIB} r_utils)
+target_link_libraries (r_av ${FFMPEG_LIBSWSCALE} ${FFMPEG_LIBAVDEVICE} ${FFMPEG_LIBAVFORMAT} ${FFMPEG_LIBAVCODEC} ${FFMPEG_LIBAVUTIL} ${FFMPEG_LIBAVFILTER} ${X264_LIB} r_utils)
 
 add_subdirectory (ut)

@@ -22,6 +22,13 @@ public:
         _speed(speed),
         _decodeSkipping(decodeSkipping)
     {
+        // When the input and output framerates were specified with single integers, this was how we did it...
+        // _outputFramesPerInputFrame( (((double)outputFrameRate) / (((double)inputFrameRate) * speed)) ),
+
+        AVRational inputRational = { inputTimeBaseNum, inputTimeBaseDen };
+        AVRational outputRational = { outputTimeBaseNum, outputTimeBaseDen };
+
+        _outputFramesPerInputFrame = av_q2d( inputRational ) / (av_q2d( outputRational ) * _speed);
     }
 
     // The job of this method is to decode frames until it is time to make an output frame. If the output
@@ -43,6 +50,8 @@ public:
                 if(si == streamIndex)
                 {
                     _step += _outputFramesPerInputFrame;
+
+                    printf("_step = %f\n",_step);
 
                     if(_step > 1.0 || !_decodeSkipping)
                         decoder.decode(avDeMuxer.get());
@@ -66,7 +75,7 @@ public:
 
         auto encodeBuffer = encoder.get();
 
-        muxer.write_packet(encodeBuffer, streamIndex, encoder.last_was_key());
+        muxer.write_packet(encodeBuffer, streamIndex, encodeBuffer.is_key());
     }
 
     static int64_t compute_num_output_frames(int64_t numInputFrames,

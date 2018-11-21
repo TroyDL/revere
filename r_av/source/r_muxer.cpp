@@ -109,6 +109,11 @@ r_muxer& r_muxer::operator=(r_muxer&& obj) noexcept
     return *this;
 }
 
+AVCodecParameters* r_muxer::get_codec_parameters(int streamIndex) const
+{
+    return _fc->streams[streamIndex]->codecpar;
+}
+
 int r_muxer::add_stream(const r_stream_options& soptions)
 {
     r_muxer_stream stream;
@@ -125,10 +130,6 @@ int r_muxer::add_stream(const r_stream_options& soptions)
             R_STHROW(r_internal_exception, ("Required option \"time_base_num\" missing."));
         if(stream.options.time_base_den.is_null())
             R_STHROW(r_internal_exception, ("Required option \"time_base_den\" missing."));
-        if(stream.options.frame_rate_num.is_null())
-            R_STHROW(r_internal_exception, ("Required option \"frame_rate_num\" missing."));
-        if(stream.options.frame_rate_den.is_null())
-            R_STHROW(r_internal_exception, ("Required option \"frame_rate_den\" missing."));
         if(stream.options.width.is_null())
             R_STHROW(r_internal_exception, ("Required option \"width\" missing."));
         if(stream.options.height.is_null())
@@ -148,8 +149,6 @@ int r_muxer::add_stream(const r_stream_options& soptions)
         stream.st->codecpar->height = stream.options.height.value();
         stream.st->time_base.num = stream.options.time_base_num.value();
         stream.st->time_base.den = stream.options.time_base_den.value();
-        stream.st->r_frame_rate.num = stream.options.frame_rate_num.value();
-        stream.st->r_frame_rate.den = stream.options.frame_rate_den.value();
 
         if(!stream.options.format.is_null())
             stream.st->codecpar->format = (AVPixelFormat)r_av::r_av_pix_fmt_to_ffmpeg_pix_fmt((r_pix_fmt)stream.options.format.value());
@@ -214,6 +213,8 @@ void r_muxer::set_extradata(const std::vector<uint8_t>& ed, int streamIndex)
 
 void r_muxer::write_packet(const r_packet& input, int streamIndex, bool keyFrame)
 {
+    auto inputPkt = input;
+
     if(streamIndex >= (int)_streams.size())
         R_STHROW(r_internal_exception, ("Invalid stream index."));
 
@@ -243,20 +244,12 @@ void r_muxer::write_packet(const r_packet& input, int streamIndex, bool keyFrame
     av_init_packet(&pkt);
 
     pkt.stream_index = _streams[streamIndex].st->index;
-    pkt.data = input.map();
-    pkt.size = (int)input.get_data_size();
-    pkt.pts = _ts;
-    pkt.dts = _ts;
-
-    // This is our input time_base (a fraction describing how many pts ticks are in
-    // one second of our inputs ts units).
-    AVRational tb;
-    tb.num = 1;
-    tb.den = input.get_ts_freq();
-
-    // convert our input timestamp from its timebase into our output timebase and then
-    // increment our _ts by that much
-    _ts += av_rescale_q(input.get_duration(), tb, _streams[streamIndex].st->time_base);
+    pkt.data = inputPkt.map();
+    pkt.size = (int)inputPkt.get_data_size();
+    inputPkt.rescale_time_base(make_pair(_streams[streamIndex].st->time_base.num, _streams[streamIndex].st->time_base.den));
+    pkt.pts = inputPkt.get_pts();
+    pkt.dts = inputPkt.get_dts();
+    pkt.duration = inputPkt.get_duration();
 
     pkt.flags |= (keyFrame) ? AV_PKT_FLAG_KEY : 0;
 

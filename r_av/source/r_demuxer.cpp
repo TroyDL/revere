@@ -28,8 +28,10 @@ r_demuxer::r_demuxer(const string& fileName, bool annexBFilter) :
     _streamTypes(),
     _videoStreamIndex(STREAM_TYPE_UNKNOWN),
     _audioPrimaryStreamIndex(STREAM_TYPE_UNKNOWN),
+    _currentStreamIndex(STREAM_TYPE_UNKNOWN),
     _bsf(nullptr),
-    _pf(std::make_shared<r_packet_factory_default>())
+    _pf(std::make_shared<r_packet_factory_default>()),
+    _outputTimeBases()
 {
     if(!r_locky::is_registered())
         R_STHROW(r_internal_exception, ("Please call locky::register_ffmpeg() before using this class."));
@@ -59,8 +61,10 @@ r_demuxer::r_demuxer(const uint8_t* buffer,
     _streamTypes(),
     _videoStreamIndex(STREAM_TYPE_UNKNOWN),
     _audioPrimaryStreamIndex(STREAM_TYPE_UNKNOWN),
+    _currentStreamIndex(STREAM_TYPE_UNKNOWN),
     _bsf(nullptr),
-    _pf(std::make_shared<r_packet_factory_default>())
+    _pf(std::make_shared<r_packet_factory_default>()),
+    _outputTimeBases()
 {
     if(!r_locky::is_registered())
         R_STHROW(r_internal_exception, ("Please call locky::register_ffmpeg() before using this class."));
@@ -105,8 +109,10 @@ r_demuxer::r_demuxer(r_demuxer&& obj) noexcept
     _streamTypes = std::move(obj._streamTypes);
     _videoStreamIndex = std::move(obj._videoStreamIndex);
     _audioPrimaryStreamIndex = std::move(obj._audioPrimaryStreamIndex);
+    _currentStreamIndex = std::move(obj._currentStreamIndex);
     _bsfc = std::move(obj._bsfc);
     _pf = std::move(obj._pf);
+    _outputTimeBases = std::move(obj._outputTimeBases);
 }
 
 r_demuxer::~r_demuxer() noexcept
@@ -143,8 +149,10 @@ r_demuxer& r_demuxer::operator=(r_demuxer&& obj) noexcept
     _streamTypes = std::move(obj._streamTypes);
     _videoStreamIndex = std::move(obj._videoStreamIndex);
     _audioPrimaryStreamIndex = std::move(obj._audioPrimaryStreamIndex);
+    _currentStreamIndex = std::move(obj._currentStreamIndex);
     _bsfc = std::move(obj._bsfc);
     _pf = std::move(obj._pf);
+    _outputTimeBases = std::move(obj._outputTimeBases);
 
     return *this;
 }
@@ -192,6 +200,11 @@ pair<int,int> r_demuxer::get_frame_rate(int streamIndex) const
     return make_pair(_context->streams[streamIndex]->r_frame_rate.num, _context->streams[streamIndex]->r_frame_rate.den);
 }
 
+void r_demuxer::set_output_time_base(int streamIndex, const pair<int, int>& tb)
+{
+    _outputTimeBases[streamIndex] = tb;
+}
+
 r_av_codec_id r_demuxer::get_stream_codec_id(int streamIndex) const
 {
     return ffmpeg_codec_id_to_r_av_codec_id(_context->streams[streamIndex]->codecpar->codec_id);
@@ -234,7 +247,7 @@ bool r_demuxer::read_frame(int& streamIndex)
 
     if(av_read_frame(_context, &_deMuxPkt) >= 0)
     {
-        streamIndex = _deMuxPkt.stream_index;
+        streamIndex = _currentStreamIndex = _deMuxPkt.stream_index;
 
         if(streamIndex == _videoStreamIndex)
             _optional_annexb_filter();
@@ -284,13 +297,13 @@ r_packet r_demuxer::get() const
     pkt.set_pts(srcPkt->pts);
     pkt.set_dts(srcPkt->dts);
     pkt.set_duration(srcPkt->duration);
-
-    auto timeBase = get_time_base(srcPkt->stream_index);
-
-    pkt.set_ts_freq(timeBase.second);
+    pkt.set_time_base(get_time_base(srcPkt->stream_index));
 
     if(is_key())
         pkt.set_key(true);
+
+    if(_outputTimeBases.find(_currentStreamIndex) != _outputTimeBases.end())
+        pkt.rescale_time_base(_outputTimeBases.at(_currentStreamIndex));
 
     return pkt;
 }

@@ -30,14 +30,18 @@ r_video_encoder::r_video_encoder(r_av_codec_id codec_id, r_pix_fmt format, uint1
     // massive amount of option setting here...
     _context->codec_id = r_av_codec_id_to_ffmpeg_codec_id(_codecID);
     _context->codec_type = AVMEDIA_TYPE_VIDEO;
-    _context->pix_fmt = r_av_pix_fmt_to_ffmpeg_pix_fmt(_pixFormat);
+    
+    // XXX example transcoder shows pix_fmt coming from either _codec->pix_fmts[] OR decoders pix_fmt!
+    _context->pix_fmt = (_codec->pix_fmts)?_codec->pix_fmts[0]:r_av_pix_fmt_to_ffmpeg_pix_fmt(_pixFormat);
     _context->width = w;
     _context->height = h;
-
     _context->gop_size = gop_size;
     _context->bit_rate = bit_rate;
     _context->time_base.num = time_base_num;
     _context->time_base.den = time_base_den;
+    _context->max_b_frames = 0;
+
+    _context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER; //   XXX depends on muxer->format->oformat->flags
 
     if(!_options.profile.is_null())
     {
@@ -130,6 +134,8 @@ r_video_encoder::r_encoder_state r_video_encoder::encode_image(const r_packet& i
     frame->width = _context->width;
     frame->height = _context->height;
 
+    frame->pts = input.get_pts();
+
     if(!input.empty())
     {
         uint8_t* pic = input.map();
@@ -197,6 +203,10 @@ r_video_encoder::r_encoder_state r_video_encoder::encode_image(const r_packet& i
 
     _output = _pf->get(outputSize);
     _output.set_key(key);
+    _output.set_pts(pkt->pts);
+    _output.set_dts(pkt->dts);
+    _output.set_duration(pkt->duration);
+    _output.set_time_base(get_time_base());
 
     uint8_t* writer = _output.map();
  

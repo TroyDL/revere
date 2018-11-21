@@ -44,11 +44,13 @@ public:
     void set_dts(int64_t dts);
     int64_t get_dts() const;
 
-    void set_ts_freq(uint32_t freq);
-    uint32_t get_ts_freq() const;
+    void set_time_base(const std::pair<int, int>& tb);
+    std::pair<int, int> get_time_base() const;
 
     void set_duration(uint32_t duration);
     uint32_t get_duration() const;
+
+    void rescale_time_base(const std::pair<int, int>& tb);
 
     void set_key(bool key);
     bool is_key() const;
@@ -72,7 +74,7 @@ private:
     size_t _dataSize;
     int64_t _pts;
     int64_t _dts;
-    uint32_t _ticksInSecond;
+    std::pair<int, int> _timeBase;
     bool _key;
     uint16_t _width;
     uint16_t _height;

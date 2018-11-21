@@ -40,6 +40,7 @@ void test_r_av_r_demuxer::setup()
         {
             int index = i % NUM_FRAMES_IN_GOP;
             r_packet pkt(gop[index].frame, gop[index].frameSize, false);
+            pkt.set_time_base({1, 90000});
             pkt.set_pts(ts);
             pkt.set_dts(ts);
             pkt.set_duration(3000);
@@ -71,6 +72,7 @@ void test_r_av_r_demuxer::setup()
         {
             int index = i % NUM_FRAMES_IN_GOP;
             r_packet pkt( gop[index].frame, gop[index].frameSize, false );
+            pkt.set_time_base({1, 90000});
             pkt.set_pts(ts);
             pkt.set_dts(ts);
             pkt.set_duration(3000);
@@ -198,7 +200,6 @@ void test_r_av_r_demuxer::test_multi_stream_mp4()
     auto frameRate = deMuxer.get_frame_rate(videoStreamIndex);
     RTF_ASSERT(frameRate.first == 24000 && frameRate.second == 1001);
     auto timeBase = deMuxer.get_time_base(videoStreamIndex);
-    printf("timeBase.first = %d, timeBase.second = %d\n",timeBase.first,timeBase.second);
 
     int audioStreamIndex = deMuxer.get_primary_audio_stream_index();
     RTF_ASSERT(audioStreamIndex >= 0 && audioStreamIndex != videoStreamIndex);
@@ -233,4 +234,21 @@ void test_r_av_r_demuxer::test_move()
         r_demuxer dmA("big.mp4");
         r_demuxer dmB = std::move(dmA);
     }
+}
+
+void test_r_av_r_demuxer::test_pts()
+{
+    r_demuxer dm("this_world_is_a_lie.mkv");
+    int videoStreamIndex = dm.get_video_stream_index();
+    auto tb = dm.get_time_base(videoStreamIndex);
+    RTF_ASSERT(tb.first == 1 && tb.second == 1000);
+    dm.set_output_time_base(videoStreamIndex, {1, 90000});
+    int si = 0;
+    do { dm.read_frame(si); } while(si != videoStreamIndex);
+    auto pkt_1 = dm.get();
+    do { dm.read_frame(si); } while(si != videoStreamIndex);
+    auto pkt_2 = dm.get();
+    int64_t delta = pkt_2.get_pts() - pkt_1.get_pts();
+    int64_t fps = 90000 / delta;
+    RTF_ASSERT(fps == 23 || fps == 24);
 }

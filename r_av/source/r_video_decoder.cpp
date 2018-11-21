@@ -24,7 +24,9 @@ r_video_decoder::r_video_decoder(r_av_codec_id codec_id, r_pix_fmt format, const
     _scaler(nullptr),
     _outputWidth(0),
     _outputHeight(0),
-    _format(format)
+    _format(format),
+    _outputPkt(),
+    _inputPkt()
 {
     if( !r_locky::is_registered() )
         R_STHROW(r_internal_exception, ( "Please call locky::register_ffmpeg() before using this class."));
@@ -59,7 +61,9 @@ r_video_decoder::r_video_decoder(AVCodecParameters* codecpar, r_av_codec_id code
     _scaler(nullptr),
     _outputWidth(0),
     _outputHeight(0),
-    _format(format)
+    _format(format),
+    _outputPkt(),
+    _inputPkt()
 {
     if( !r_locky::is_registered() )
         R_STHROW(r_internal_exception, ( "Please call locky::register_ffmpeg() before using this class."));
@@ -108,6 +112,10 @@ r_video_decoder::r_video_decoder(r_video_decoder&& obj) noexcept
     obj._outputHeight = 0;
     _format = std::move(obj._format);
     obj._format = r_av_pix_fmt_yuv420p;
+    _outputPkt = std::move(obj._outputPkt);
+    obj._outputPkt = r_packet();
+    _inputPkt = std::move(obj._inputPkt);
+    obj._inputPkt = r_packet();
 }
 
 r_video_decoder::~r_video_decoder() noexcept
@@ -138,16 +146,22 @@ r_video_decoder& r_video_decoder::operator=(r_video_decoder&& obj) noexcept
     obj._outputHeight = 0;
     _format = std::move(obj._format);
     obj._format = r_av_pix_fmt_yuv420p;
+    _outputPkt = std::move(obj._outputPkt);
+    obj._outputPkt = r_packet();
+    _inputPkt = std::move(obj._inputPkt);
+    obj._inputPkt = r_packet();
 
     return *this;
 }
 
 r_video_decoder::r_decoder_state r_video_decoder::decode(const r_packet& pkt)
 {
+    _inputPkt = pkt;
+
     AVPacket inputPacket;
     av_init_packet( &inputPacket );
 
-    if(pkt.empty())
+    if(_inputPkt.empty())
     {
         // flush packet
         inputPacket.data = nullptr;
@@ -155,8 +169,11 @@ r_video_decoder::r_decoder_state r_video_decoder::decode(const r_packet& pkt)
     }
     else
     {
-        inputPacket.data = pkt.map();
-        inputPacket.size = (int)pkt.get_data_size();
+        inputPacket.data = _inputPkt.map();
+        inputPacket.size = (int)_inputPkt.get_data_size();
+        inputPacket.pts = _inputPkt.get_pts();
+        inputPacket.dts = _inputPkt.get_dts();
+        inputPacket.duration = _inputPkt.get_duration();
     }
 
     auto sendResult = avcodec_send_packet(_context, &inputPacket);
@@ -198,6 +215,8 @@ r_video_decoder::r_decoder_state r_video_decoder::decode(const r_packet& pkt)
         av_strerror(sendResult, errbuf, 4096);
         R_STHROW(r_internal_exception, ("Unknown error returned from avcodec_send_packet(): %s",errbuf));
     }
+
+    _frame->pts = inputPacket.pts;
 
     return r_decoder_state_accepted;
 }
@@ -246,10 +265,11 @@ r_packet r_video_decoder::get()
         _outputHeight = _context->height;
 
     auto pictureSize = picture_size(_format, _outputWidth, _outputHeight);
-    r_packet pkt = _pf->get( pictureSize );
-    pkt.set_data_size( pictureSize );
-    pkt.set_width( _outputWidth );
-    pkt.set_height( _outputHeight );
+    _outputPkt = _pf->get( pictureSize );
+    _outputPkt.migrate_md_from(_inputPkt);
+    _outputPkt.set_data_size( pictureSize );
+    _outputPkt.set_width( _outputWidth );
+    _outputPkt.set_height( _outputHeight );
 
     if( _scaler == nullptr )
     {
@@ -270,7 +290,7 @@ r_packet r_video_decoder::get()
                                             _context->width, _context->height, _outputWidth, _outputHeight ));
     }
 
-    uint8_t* dest = pkt.map();
+    uint8_t* dest = _outputPkt.map();
 
     uint8_t* fields[3];
     int fieldWidths[3];
@@ -303,7 +323,7 @@ r_packet r_video_decoder::get()
     if( ret <= 0 )
         R_STHROW(r_internal_exception, ( "Unable to create image." ));
 
-    return pkt;
+    return _outputPkt;
 }
 
 void r_video_decoder::_destroy_scaler()

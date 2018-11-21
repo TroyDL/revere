@@ -881,6 +881,10 @@ r_packet r_rtsp_source::_dequeue()
 
     for( auto i = _packetCache.begin(); i != frameEnd; ++i )
     {
+        pair<int, int> timeBase;
+        timeBase.first = 1;
+        timeBase.second = (int)_sessionInfo.media_descriptions[_selectedMD].time_base;
+        pkt.set_time_base(timeBase);
         pkt.set_pts( r_rtsp::rtp_parse_timestamp( &(*(*i))[0], (*i)->size() ) );
 
         uint16_t seq = r_rtsp::rtp_parse_sequence( &(*(*i))[0], (*i)->size() );

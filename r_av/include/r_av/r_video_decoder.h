@@ -6,6 +6,7 @@
 #include "r_av/r_packet_factory.h"
 #include "r_av/r_options.h"
 #include "r_av/r_demuxer.h"
+#include <utility>
 
 extern "C"
 {
@@ -48,6 +49,7 @@ public:
     uint16_t get_output_width() const { return _outputWidth; }
     void set_output_height(uint16_t h);
     uint16_t get_output_height() const { return _outputHeight; }
+    std::pair<int, int> get_time_base() const { return std::make_pair((int)_context->time_base.num, (int)_context->time_base.den); }
 
     r_packet get();
 
@@ -65,6 +67,8 @@ private:
     uint16_t _outputWidth;
     uint16_t _outputHeight;
     r_pix_fmt _format;
+    r_packet _outputPkt;
+    r_packet _inputPkt;
 };
 
 }

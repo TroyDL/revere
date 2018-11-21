@@ -12,6 +12,7 @@ public:
       TEST(test_r_av_r_demuxer::test_get_container_statistics);
       TEST(test_r_av_r_demuxer::test_multi_stream_mp4);
       TEST(test_r_av_r_demuxer::test_move);
+      TEST(test_r_av_r_demuxer::test_pts);
     RTF_FIXTURE_END();
 
     virtual ~test_r_av_r_demuxer() throw() {}
@@ -25,4 +26,5 @@ public:
     void test_get_container_statistics();
     void test_multi_stream_mp4();
     void test_move();
+    void test_pts();
 };

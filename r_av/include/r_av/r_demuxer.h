@@ -5,8 +5,8 @@
 #include "r_av/r_packet_factory.h"
 #include "r_av/r_options.h"
 #include "r_utils/r_nullable.h"
-#include <utility>
 #include <vector>
+#include <map>
 
 extern "C"
 {
@@ -78,6 +78,7 @@ public:
 
     std::pair<int,int> get_time_base(int streamIndex) const;  // how many ticks in 1 second?
     std::pair<int,int> get_frame_rate(int streamIndex) const;
+    void set_output_time_base(int streamIndex, const std::pair<int, int>& tb);
     r_av_codec_id get_stream_codec_id(int streamIndex) const;
     r_pix_fmt get_pix_format(int streamIndex) const;
     std::pair<int,int> get_resolution(int streamIndex) const;
@@ -118,9 +119,11 @@ private:
     std::vector<r_stream_info> _streamTypes;
     int _videoStreamIndex;
     int _audioPrimaryStreamIndex;
+    int _currentStreamIndex;
     AVBitStreamFilterContext* _bsfc;
     AVBSFContext *_bsf;
     std::shared_ptr<r_packet_factory> _pf;
+    std::map<int, std::pair<int, int>> _outputTimeBases;
 };
 
 }

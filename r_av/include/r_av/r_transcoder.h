@@ -51,8 +51,6 @@ public:
                 {
                     _step += _outputFramesPerInputFrame;
 
-                    printf("_step = %f\n",_step);
-
                     if(_step > 1.0 || !_decodeSkipping)
                         decoder.decode(avDeMuxer.get());
                 }
@@ -65,11 +63,11 @@ public:
     }
 
     template<class T>
-    void encode_yuv420p_and_mux(T& encoder,
-                                r_muxer& muxer,
-                                int streamIndex,
-                                const r_packet& pic,
-                                r_video_encoder::r_encoder_packet_type type = r_video_encoder::r_encoder_packet_type_auto )
+    void encode_and_mux(T& encoder,
+                        r_muxer& muxer,
+                        int streamIndex,
+                        const r_packet& pic,
+                        r_video_encoder::r_encoder_packet_type type = r_video_encoder::r_encoder_packet_type_auto)
     {
         encoder.encode_image(pic, type);
 

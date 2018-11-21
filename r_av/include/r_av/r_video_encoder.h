@@ -48,6 +48,7 @@ public:
     r_packet get() { return _output; }
 
     std::vector<uint8_t> get_extradata() const { return _extraData; }
+    std::pair<int, int> get_time_base() const { return std::make_pair((int)_context->time_base.num, (int)_context->time_base.den); }
 
 private:
     void _clear() noexcept;

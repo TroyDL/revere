@@ -167,7 +167,9 @@ private:
                 {
                     elapsedStreamTicks += p.get_pts() - lastTS;
 
-                    auto elapsedStreamMillis = (int64_t)(((double)elapsedStreamTicks)/(double)p.get_ts_freq()*1000);
+                    auto timeBase = p.get_time_base();
+
+                    auto elapsedStreamMillis = (int64_t)(((double)elapsedStreamTicks)/(double)timeBase.second*1000);
 
                     if(elapsedStreamMillis > elapsedMillis)
                         usleep((elapsedStreamMillis - elapsedMillis)*1000);

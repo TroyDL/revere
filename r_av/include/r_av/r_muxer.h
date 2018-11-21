@@ -40,6 +40,8 @@ public:
     r_muxer& operator=(const r_muxer&) = delete;
     r_muxer& operator=(r_muxer&& obj) noexcept;
 
+    AVCodecParameters* get_codec_parameters(int streamIndex) const;
+
     int add_stream(const r_stream_options& soptions);
 
     void set_extradata(const std::vector<uint8_t>& ed, int streamIndex);

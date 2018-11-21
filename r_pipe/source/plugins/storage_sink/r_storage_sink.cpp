@@ -23,7 +23,7 @@ r_storage_sink::r_storage_sink(const string& indexPath, const string& dataSource
 r_av::r_packet r_storage_sink::process(r_av::r_packet& pkt)
 {
     if(!_st)
-        _st = make_shared<r_stream_time>(pkt.get_ts_freq());
+        _st = make_shared<r_stream_time>(pkt.get_time_base().second);
 
     if(pkt.is_key() && !_frames.empty())
     {

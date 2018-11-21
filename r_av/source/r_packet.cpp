@@ -9,6 +9,7 @@ extern "C"
 
 using namespace r_av;
 using namespace r_utils;
+using namespace std;
 
 static const size_t PADDING = 16;
 
@@ -20,7 +21,7 @@ r_packet::r_packet(size_t sz) :
     _dataSize(0),
     _pts(0),
     _dts(0),
-    _ticksInSecond(90000),
+    _timeBase(),
     _key(false),
     _width(0),
     _height(0),
@@ -41,7 +42,7 @@ r_packet::r_packet(r_filter_state fs) :
     _dataSize(0),
     _pts(0),
     _dts(0),
-    _ticksInSecond(90000),
+    _timeBase(),
     _key(false),
     _width(0),
     _height(0),
@@ -59,7 +60,7 @@ r_packet::r_packet(uint8_t* src, size_t sz, bool owning) :
     _dataSize(sz),
     _pts(0),
     _dts(0),
-    _ticksInSecond(90000),
+    _timeBase(),
     _key(false),
     _width(0),
     _height(0),
@@ -86,7 +87,7 @@ r_packet::r_packet(const r_packet& obj) :
     _dataSize(0),
     _pts(0),
     _dts(0),
-    _ticksInSecond(90000),
+    _timeBase(),
     _key(false),
     _width(0),
     _height(0),
@@ -123,7 +124,7 @@ r_packet::r_packet(r_packet&& obj) noexcept
     _dataSize = std::move(obj._dataSize);
     _pts = std::move(obj._pts);
     _dts = std::move(obj._dts);
-    _ticksInSecond = std::move(obj._ticksInSecond);
+    _timeBase = std::move(obj._timeBase);
     _key = std::move(obj._key);
     _width = std::move(obj._width);
     _height = std::move(obj._height);
@@ -176,7 +177,7 @@ r_packet& r_packet::operator = (r_packet&& obj) throw()
     _dataSize = std::move(obj._dataSize);
     _pts = std::move(obj._pts);
     _dts = std::move(obj._dts);
-    _ticksInSecond = std::move(obj._ticksInSecond);
+    _timeBase = std::move(obj._timeBase);
     _key = std::move(obj._key);
     _width = std::move(obj._width);
     _height = std::move(obj._height);
@@ -217,7 +218,7 @@ void r_packet::migrate_md_from(const r_packet& obj)
 {
     _pts = obj._pts;
     _dts = obj._dts;
-    _ticksInSecond = obj._ticksInSecond;
+    _timeBase = obj._timeBase;
     _key = obj._key;
     _width = obj._width;
     _height = obj._height;
@@ -246,14 +247,14 @@ int64_t r_packet::get_dts() const
     return _dts;
 }
 
-void r_packet::set_ts_freq(uint32_t freq)
+void r_packet::set_time_base(const pair<int, int>& tb)
 {
-    _ticksInSecond = freq;
+    _timeBase = tb;
 }
 
-uint32_t r_packet::get_ts_freq() const
+pair<int, int> r_packet::get_time_base() const
 {
-    return _ticksInSecond;
+    return _timeBase;
 }
 
 void r_packet::set_duration(uint32_t duration)
@@ -264,6 +265,29 @@ void r_packet::set_duration(uint32_t duration)
 uint32_t r_packet::get_duration() const
 {
     return _duration;
+}
+
+void r_packet::rescale_time_base(const std::pair<int, int>& tb)
+{
+    {
+        int64_t wholeBases = (_pts > _timeBase.second) ? _pts / _timeBase.second : 0;
+        double part = ((double)(_pts % _timeBase.second)) / (double)_timeBase.second;
+
+        _pts = (wholeBases * tb.second) + (int64_t)(part * tb.second);
+    }
+
+    {
+        int64_t wholeBases = (_dts > _timeBase.second) ? _dts / _timeBase.second : 0;
+        double part = ((double)(_dts % _timeBase.second)) / (double)_timeBase.second;
+
+        _dts = (wholeBases * tb.second) + (int64_t)(part * tb.second);
+    }
+
+    {
+        _duration = (int64_t)((((double)_duration) / _timeBase.second) * tb.second);
+    }
+
+    _timeBase = tb;
 }
 
 void r_packet::set_key(bool key)
@@ -307,7 +331,7 @@ void r_packet::_clear() throw()
     _dataSize = 0;
     _pts = 0;
     _dts = 0;
-    _ticksInSecond = 90000;
+    _timeBase = pair<int, int>();
     _width = 0;
     _height = 0;
     _filterState = r_filter_state_default;

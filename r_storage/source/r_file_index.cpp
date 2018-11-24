@@ -31,21 +31,20 @@ void r_file_index::allocate(const string& indexPath)
 
 void r_file_index::create_invalid_segment_file(r_sqlite_conn& conn, const std::string& path, const std::string& dataSourceID)
 {
-    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
-        uint64_t oldestStart = _oldest_start_time(conn);
-        conn.exec(r_string_utils::format("INSERT INTO segment_files(valid, "
-                                                            "path, "
-                                                            "start_time, "
-                                                            "end_time, "
-                                                            "data_source_id, "
-                                                            "type, "
-                                                            "sdp) "
-                                                            "VALUES(0, '%s', %s, %s, '%s', 'none', '');",
-                                                            path.c_str(),
-                                                            r_string_utils::uint64_to_s(oldestStart - 2000).c_str(),
-                                                            r_string_utils::uint64_to_s(oldestStart - 1000).c_str(),
-                                                            dataSourceID.c_str()));
-    });
+    // Note: this method doesnt need a transaction because it is called from r_storage_engine which takes care of transactions.
+    uint64_t oldestStart = _oldest_start_time(conn);
+    conn.exec(r_string_utils::format("INSERT INTO segment_files(valid, "
+                                                        "path, "
+                                                        "start_time, "
+                                                        "end_time, "
+                                                        "data_source_id, "
+                                                        "type, "
+                                                        "sdp) "
+                                                        "VALUES(0, '%s', %s, %s, '%s', 'none', '');",
+                                                        path.c_str(),
+                                                        r_string_utils::uint64_to_s(oldestStart - 2000).c_str(),
+                                                        r_string_utils::uint64_to_s(oldestStart - 1000).c_str(),
+                                                        dataSourceID.c_str()));
 }
 
 segment_file r_file_index::recycle_append(uint64_t startTime, const string& dataSourceID, const string& type, const string& sdp)

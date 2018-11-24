@@ -173,7 +173,10 @@ int main(int argc, char* argv[])
             streams[s.id].controls.erase(s.type);
 
         for(auto s : starting)
+        {
+            printf("starting %s\n",s.id.c_str());
             streams[s.id].controls[s.type] = _create_stream(s);
+        }
 
         current = recordingInDB;
 

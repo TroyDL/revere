@@ -62,7 +62,7 @@ r_server_response data_sources::handle_put(const r_web_server<r_socket>& ws,
 {
     auto j = json::parse(request.get_body_as_string());
 
-    r_sqlite_conn dbconn(_dataSourcesPath);
+    r_sqlite_conn dbconn(_dataSourcesPath, true);
 
     dbconn.exec(r_string_utils::format("REPLACE INTO data_sources(id, type, rtsp_url, recording, transport_pref, auth_username, auth_password) "
                                  "VALUES(%s, '%s', '%s', '%s', '%s', '%s', '%s');",
@@ -83,7 +83,7 @@ r_server_response data_sources::handle_del(const r_web_server<r_socket>& ws,
 {
     auto j = json::parse(request.get_body_as_string());
 
-    r_sqlite_conn dbconn(_dataSourcesPath);
+    r_sqlite_conn dbconn(_dataSourcesPath, true);
 
     dbconn.exec(r_string_utils::format("DELETE FROM data_sources WHERE id=%s;",
                                  j["id"].get<string>().c_str()));
@@ -119,7 +119,7 @@ vector<data_source> data_sources::recording_data_sources()
 
 void data_sources::_upgrade_db(const string& dataSourcesPath)
 {
-    r_sqlite_conn conn(dataSourcesPath);
+    r_sqlite_conn conn(dataSourcesPath, true);
 
     auto results = conn.exec("PRAGMA user_version;");
 

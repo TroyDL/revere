@@ -707,6 +707,7 @@ void r_rtsp_source::_wm_rtsp_interleaved()
     }
 #endif
 
+    if(channel == 0)
     {
         unique_lock<mutex> g(_packetCacheLock);
         _needSort = false;

@@ -8,7 +8,7 @@ using namespace r_db;
 using namespace r_utils;
 using namespace std;
 
-static const int DEFAULT_NUM_RETRIES = 60;
+static const int DEFAULT_NUM_RETRIES = 120;
 static const int BASE_SLEEP_MICROS = 4000;
 
 r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :

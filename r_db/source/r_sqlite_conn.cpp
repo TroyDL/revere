@@ -8,14 +8,14 @@ using namespace r_db;
 using namespace r_utils;
 using namespace std;
 
-static const int DEFAULT_NUM_RETRIES = 120;
-static const int BASE_SLEEP_MICROS = 4000;
+static const int DEFAULT_NUM_OPEN_RETRIES = 5;
+static const int BASE_SLEEP_MICROS = 500000;
 
 r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
     _db(nullptr),
     _rw(rw)
 {
-    int numRetries = DEFAULT_NUM_RETRIES;
+    int numRetries = DEFAULT_NUM_OPEN_RETRIES;
 
     while(numRetries > 0)
     {
@@ -32,7 +32,7 @@ r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
         if(_db != nullptr)
             _clear();
 
-        usleep(((DEFAULT_NUM_RETRIES-numRetries)+1) * BASE_SLEEP_MICROS);
+        usleep(((DEFAULT_NUM_OPEN_RETRIES-numRetries)+1) * BASE_SLEEP_MICROS);
 
         --numRetries;
     }
@@ -163,19 +163,4 @@ void r_sqlite_conn::_clear() noexcept
 
         _db = nullptr;
     }
-}
-
-int r_sqlite_conn::_sqlite3_busy_handlerS(void* obj, int callCount)
-{
-    return ((r_sqlite_conn*)obj)->_sqlite3_busy_handler(callCount);
-}
-
-int r_sqlite_conn::_sqlite3_busy_handler(int callCount)
-{
-    if(callCount >= DEFAULT_NUM_RETRIES)
-        return 0;
-
-    usleep(callCount * BASE_SLEEP_MICROS);
-
-    return 1;
 }

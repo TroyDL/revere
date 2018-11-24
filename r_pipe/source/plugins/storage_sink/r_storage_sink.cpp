@@ -25,6 +25,9 @@ r_av::r_packet r_storage_sink::process(r_av::r_packet& pkt)
     if(!_st)
         _st = make_shared<r_stream_time>(pkt.get_time_base().second);
 
+    // We queue up a gop in _frames. We write when we get the next gops key (but
+    // we dont write that key, we queue it in _frames after we write all the
+    // _frames).
     if(pkt.is_key() && !_frames.empty())
     {
         for(auto& f : _frames)
@@ -32,7 +35,7 @@ r_av::r_packet r_storage_sink::process(r_av::r_packet& pkt)
             auto ts = _st->current(f.get_pts());
 
             if(_file && !_file->fits(_gopSize, _frames.size()))
-            {
+            {   
                 _index.update_end_time(_sf, _file->last_key());
                 _sf = _index.recycle_append(ts, _dataSourceID, _type, f.get_sdp());
                 printf("RECORDING TO FILE B: %s\n", _sf.path.c_str());

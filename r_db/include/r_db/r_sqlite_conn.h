@@ -28,11 +28,9 @@ public:
 
 private:
     void _clear() noexcept;
-    static int _sqlite3_busy_handlerS(void* obj, int callCount);
-    int _sqlite3_busy_handler(int callCount);
 
-    bool _rw;
     sqlite3* _db;
+    bool _rw;
 };
 
 template<typename T>

@@ -31,19 +31,21 @@ void r_file_index::allocate(const string& indexPath)
 
 void r_file_index::create_invalid_segment_file(r_sqlite_conn& conn, const std::string& path, const std::string& dataSourceID)
 {
-    uint64_t oldestStart = _oldest_start_time(conn);
-    conn.exec(r_string_utils::format("INSERT INTO segment_files(valid, "
-                                                         "path, "
-                                                         "start_time, "
-                                                         "end_time, "
-                                                         "data_source_id, "
-                                                         "type, "
-                                                         "sdp) "
-                                                         "VALUES(0, '%s', %s, %s, '%s', 'none', '');",
-                                                          path.c_str(),
-                                                          r_string_utils::uint64_to_s(oldestStart - 2000).c_str(),
-                                                          r_string_utils::uint64_to_s(oldestStart - 1000).c_str(),
-                                                          dataSourceID.c_str()));
+    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
+        uint64_t oldestStart = _oldest_start_time(conn);
+        conn.exec(r_string_utils::format("INSERT INTO segment_files(valid, "
+                                                            "path, "
+                                                            "start_time, "
+                                                            "end_time, "
+                                                            "data_source_id, "
+                                                            "type, "
+                                                            "sdp) "
+                                                            "VALUES(0, '%s', %s, %s, '%s', 'none', '');",
+                                                            path.c_str(),
+                                                            r_string_utils::uint64_to_s(oldestStart - 2000).c_str(),
+                                                            r_string_utils::uint64_to_s(oldestStart - 1000).c_str(),
+                                                            dataSourceID.c_str()));
+    });
 }
 
 segment_file r_file_index::recycle_append(uint64_t startTime, const string& dataSourceID, const string& type, const string& sdp)
@@ -146,16 +148,19 @@ void r_file_index::_fix_end_times() const
 {
     r_sqlite_conn conn(_indexPath, true);
 
-    auto results = conn.exec("SELECT * FROM segment_files WHERE end_time=0;");
+    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
 
-    for(auto row : results)
-    {
-        r_append_file f(row["path"]);
+        auto results = conn.exec("SELECT * FROM segment_files WHERE end_time=0;");
 
-        conn.exec(r_string_utils::format("UPDATE segment_files SET end_time=%s WHERE id=%s;",
-                                   r_string_utils::uint64_to_s(f.last_key()).c_str(),
-                                   row["id"].c_str()));
-    }
+        for(auto row : results)
+        {
+            r_append_file f(row["path"]);
+
+            conn.exec(r_string_utils::format("UPDATE segment_files SET end_time=%s WHERE id=%s;",
+                                    r_string_utils::uint64_to_s(f.last_key()).c_str(),
+                                    row["id"].c_str()));
+        }
+    });
 }
 
 void r_file_index::_upgrade_db(const std::string& indexPath)

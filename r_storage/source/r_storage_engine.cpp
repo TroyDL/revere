@@ -91,7 +91,7 @@ void _fill_file_systems(const r_engine_config& cfg)
 
     random_shuffle(begin(paths), end(paths));
 
-    r_sqlite_conn conn(cfg.index_path);
+    r_sqlite_conn conn(cfg.index_path, true);
     conn.exec("BEGIN");
     size_t flushCounter = 0;
     for(auto path : paths)

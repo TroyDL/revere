@@ -11,14 +11,17 @@ using namespace std;
 static const int DEFAULT_NUM_RETRIES = 60;
 static const int BASE_SLEEP_MICROS = 4000;
 
-r_sqlite_conn::r_sqlite_conn(const string& fileName) :
-    _db(nullptr)
+r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
+    _db(nullptr),
+    _rw(rw)
 {
     int numRetries = DEFAULT_NUM_RETRIES;
 
     while(numRetries > 0)
     {
-        int flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_NOMUTEX;
+        int flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX;
+
+        flags |= (_rw)?SQLITE_OPEN_READWRITE:SQLITE_OPEN_READONLY;
 
         if(sqlite3_open_v2(fileName.c_str(), &_db, flags, nullptr ) == SQLITE_OK)
         {
@@ -38,9 +41,11 @@ r_sqlite_conn::r_sqlite_conn(const string& fileName) :
 }
 
 r_sqlite_conn::r_sqlite_conn(r_sqlite_conn&& obj) noexcept :
-    _db(std::move(obj._db))
+    _db(std::move(obj._db)),
+    _rw(std::move(obj._rw))
 {
     obj._db = nullptr;
+    obj._rw = false;
 }
 
 r_sqlite_conn::~r_sqlite_conn() noexcept
@@ -54,6 +59,9 @@ r_sqlite_conn& r_sqlite_conn::operator=(r_sqlite_conn&& obj) noexcept
 
     _db = std::move(obj._db);
     obj._db = nullptr;
+
+    _rw = std::move(obj._rw);
+    obj._rw = false;
 
     return *this;
 }

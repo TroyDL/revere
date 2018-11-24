@@ -48,7 +48,7 @@ void r_file_index::create_invalid_segment_file(r_sqlite_conn& conn, const std::s
 
 segment_file r_file_index::recycle_append(uint64_t startTime, const string& dataSourceID, const string& type, const string& sdp)
 {
-    r_sqlite_conn conn(_indexPath);
+    r_sqlite_conn conn(_indexPath, true);
 
     segment_file sf;
 
@@ -85,7 +85,7 @@ segment_file r_file_index::recycle_append(uint64_t startTime, const string& data
 
 void r_file_index::update_end_time(segment_file& sf, uint64_t endTime)
 {
-    r_sqlite_conn conn(_indexPath);
+    r_sqlite_conn conn(_indexPath, true);
 
     conn.exec(r_string_utils::format("UPDATE segment_files SET "
                                "end_time=%s "
@@ -98,7 +98,7 @@ void r_file_index::update_end_time(segment_file& sf, uint64_t endTime)
 
 void r_file_index::free(uint64_t keyA, uint64_t keyB, const std::string& type)
 {
-    r_sqlite_conn conn(_indexPath);
+    r_sqlite_conn conn(_indexPath, true);
 
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
         r_sqlite_pager pager("*", "segment_files", "start_time", 5);
@@ -144,7 +144,7 @@ uint64_t r_file_index::_oldest_start_time(const r_sqlite_conn& conn) const
 
 void r_file_index::_fix_end_times() const
 {
-    r_sqlite_conn conn(_indexPath);
+    r_sqlite_conn conn(_indexPath, true);
 
     auto results = conn.exec("SELECT * FROM segment_files WHERE end_time=0;");
 
@@ -160,7 +160,7 @@ void r_file_index::_fix_end_times() const
 
 void r_file_index::_upgrade_db(const std::string& indexPath)
 {
-    r_sqlite_conn conn(indexPath);
+    r_sqlite_conn conn(indexPath, true);
 
     auto results = conn.exec("PRAGMA user_version;");
 

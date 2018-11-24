@@ -11,8 +11,7 @@ REGISTER_TEST_FIXTURE(test_r_db_r_sqlite_conn);
 
 void test_r_db_r_sqlite_conn::setup()
 {
-    remove("test.db");
-    r_sqlite_conn conn("test.db");
+    r_sqlite_conn conn("test.db", true);
 }
 
 void test_r_db_r_sqlite_conn::teardown()
@@ -27,7 +26,7 @@ void test_r_db_r_sqlite_conn::test_ctor()
 
 void test_r_db_r_sqlite_conn::test_insert()
 {
-    r_sqlite_conn conn("test.db");
+    r_sqlite_conn conn("test.db", true);
     conn.exec("CREATE TABLE worker_bees(sesa_id TEXT, name TEST, id INTEGER PRIMARY KEY AUTOINCREMENT);");
     conn.exec("INSERT INTO worker_bees(sesa_id, name) VALUES('120129', 'Tony Di Croce');");
     auto pk = conn.last_insert_id();
@@ -41,7 +40,7 @@ void test_r_db_r_sqlite_conn::test_insert()
 
 void test_r_db_r_sqlite_conn::test_paging()
 {
-    r_sqlite_conn conn("test.db");
+    r_sqlite_conn conn("test.db", true);
 
     r_sqlite_transaction(conn, [](const r_sqlite_conn& conn){
         conn.exec("CREATE TABLE worker_bees(sesa_id TEXT, name TEST, id INTEGER PRIMARY KEY AUTOINCREMENT);");

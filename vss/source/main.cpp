@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
             for(auto& sc : sh.second.controls)
                 if(!sc.second->healthy())
                 {
-                    printf("FOUND UNHEALTHY\n");
+                    printf("FOUND UNHEALTHY: %s\n", sh.first.c_str());
                     _remove_unhealthy(current, sh.first, sc.first);
                 }
         }

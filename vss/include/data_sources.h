@@ -10,6 +10,7 @@
 struct data_source
 {
     std::string id;
+    std::string data_source_id;
     std::string type;
     std::string rtsp_url;
     bool recording;

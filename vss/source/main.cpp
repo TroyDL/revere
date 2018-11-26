@@ -175,6 +175,9 @@ int main(int argc, char* argv[])
         // returns records in current but not in recordingInDB
         auto stopping = r_funky::set_diff(current, recordingInDB);
 
+        // streams key should be by data_source.data_source_id
+        //    but stream_host.controls should be by data_source.id
+
         for(auto s : stopping)
             streams[s.id].controls.erase(s.type);
 
@@ -195,8 +198,8 @@ again:
                 {
                     printf("FOUND UNHEALTHY: %s\n", sh.first.c_str());
                     _remove_unhealthy(current, sh.first, sc.first);
-		    streams.erase(sh.first);
-		    goto again;
+		            streams.erase(sh.first);
+		            goto again;
                 }
             }
         }

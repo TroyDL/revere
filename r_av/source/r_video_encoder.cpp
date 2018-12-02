@@ -40,10 +40,12 @@ r_video_encoder::r_video_encoder(r_av_codec_id codec_id, r_pix_fmt format, uint1
     _context->time_base.num = time_base_num;
     _context->time_base.den = time_base_den;
     _context->max_b_frames = 0;
+    //_context->qmin = 2;
+    //_context->qmax = 31;
 
     _context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER; //   XXX depends on muxer->format->oformat->flags
 
-    if(!_options.profile.is_null())
+    if(!_options.profile.is_null() && _options.profile.value().length() > 0)
     {
         if(r_string_utils::to_lower(_options.profile.value()) == "baseline")
             _context->profile = FF_PROFILE_H264_BASELINE;
@@ -55,10 +57,10 @@ r_video_encoder::r_video_encoder(r_av_codec_id codec_id, r_pix_fmt format, uint1
         av_opt_set( _context->priv_data, "profile", r_string_utils::to_lower(_options.profile.value()).c_str(), 0 );
     }
 
-    if( !_options.preset.is_null() )
+    if( !_options.preset.is_null() && _options.preset.value().length() > 0)
         av_opt_set( _context->priv_data, "preset", _options.preset.value().c_str(), 0 );
 
-    if( !_options.tune.is_null() )
+    if( !_options.tune.is_null() && _options.tune.value().length() > 0)
         av_opt_set( _context->priv_data, "tune", _options.tune.value().c_str(), 0 );
 
     if( !_options.thread_count.is_null() )
@@ -199,9 +201,8 @@ r_video_encoder::r_encoder_state r_video_encoder::encode_image(const r_packet& i
     av_frame_free(&frame);
 
     bool key = pkt->flags & AV_PKT_FLAG_KEY;
-    auto outputSize = (key)?pkt->size + _extraData.size():pkt->size;
 
-    _output = _pf->get(outputSize);
+    _output = _pf->get(pkt->size);
     _output.set_key(key);
     _output.set_pts(pkt->pts);
     _output.set_dts(pkt->dts);
@@ -210,17 +211,10 @@ r_video_encoder::r_encoder_state r_video_encoder::encode_image(const r_packet& i
 
     uint8_t* writer = _output.map();
  
-    if(key)
-    {
-        memcpy(writer, &_extraData[0], _extraData.size());
-        writer += _extraData.size();
-    }
-
     memcpy(writer, pkt->data, pkt->size);
-
     _output.set_width(_context->width);
     _output.set_height(_context->height);
-    _output.set_data_size(outputSize);
+    _output.set_data_size(pkt->size);
 
     av_packet_free(&pkt);
 

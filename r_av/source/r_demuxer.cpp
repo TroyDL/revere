@@ -277,22 +277,12 @@ bool r_demuxer::is_key() const
 
 r_packet r_demuxer::get() const
 {
-    r_packet pkt(r_filter_state_default);
-
     const AVPacket* srcPkt = (_bsf && _deMuxPkt.stream_index == _videoStreamIndex) ? &_filterPkt : &_deMuxPkt;
 
-    if(_bsf && (srcPkt->stream_index == _videoStreamIndex))
-    {
-        pkt = _pf->get((size_t)srcPkt->size);
-        pkt.set_data_size(srcPkt->size);
-        memcpy(pkt.map(), srcPkt->data, srcPkt->size);
-    }
-    else
-    {
-        pkt = _pf->get((size_t)srcPkt->size);
-        pkt.set_data_size(srcPkt->size);
-        memcpy(pkt.map(), srcPkt->data, srcPkt->size);
-    }
+    r_packet pkt(r_filter_state_default);
+    pkt = _pf->get((size_t)srcPkt->size);
+    pkt.set_data_size(srcPkt->size);
+    memcpy(pkt.map(), srcPkt->data, srcPkt->size);
 
     pkt.set_pts(srcPkt->pts);
     pkt.set_dts(srcPkt->dts);
@@ -322,12 +312,8 @@ struct r_stream_statistics r_demuxer::get_video_stream_statistics(const string& 
     r_demuxer dm(fileName);
 
     int videoStreamIndex = dm.get_video_stream_index();
-    auto frameRate = dm.get_frame_rate(videoStreamIndex);
-    result.frameRate = frameRate.first / frameRate.second;
-    //result.frameRate = (((double)1.0) / dm.get_duration(videoStreamIndex));
-    pair<int,int> tb = dm.get_time_base(videoStreamIndex);
-    result.timeBaseNum = tb.first;
-    result.timeBaseDen = tb.second;
+    result.frameRate.set_value(dm.get_frame_rate(videoStreamIndex));
+    result.timeBase.set_value(dm.get_time_base(videoStreamIndex));
 
     int streamIndex = 0;
     while(dm.read_frame(streamIndex))
@@ -364,7 +350,7 @@ struct r_stream_statistics r_demuxer::get_video_stream_statistics(const string& 
 
     uint32_t avgSize = sum / frameSizes.size();
 
-    result.averageBitRate = (uint32_t)((avgSize * (frameRate.first / frameRate.second)) * 8);
+    result.averageBitRate = (uint32_t)((avgSize * (result.frameRate.value().first / result.frameRate.value().second)) * 8);
 
     result.numFrames = currentIndex;
 

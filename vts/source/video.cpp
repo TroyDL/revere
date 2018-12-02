@@ -90,6 +90,8 @@ r_server_response make_video(const r_web_server<r_socket>& ws,
 
                 r_packet pkt(const_cast<uint8_t*>(p), frameSize, false);
 
+                pkt.set_time_base(make_pair(1, sdesc.media_descriptions[sdpVideoIndex].time_base));
+
                 if(!streamCreated)
                 {
                     streamCreated = true;
@@ -111,8 +113,6 @@ r_server_response make_video(const r_web_server<r_socket>& ws,
                     soptions.time_base_num = 1;
                     // I can probably just use 90000 here instead of the value from the sdp... But this works too...
                     soptions.time_base_den = sdesc.media_descriptions[sdpVideoIndex].time_base;
-                    soptions.frame_rate_num = stats.frame_rate_num;
-                    soptions.frame_rate_den = stats.frame_rate_den;
 
                     increment = (sdesc.media_descriptions[sdpVideoIndex].time_base / ((double)soptions.frame_rate_num.value() / (double)soptions.frame_rate_den.value()));
 

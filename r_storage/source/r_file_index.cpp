@@ -1,7 +1,6 @@
 
 #include "r_storage/r_file_index.h"
 #include "r_storage/r_append_file.h"
-#include "r_db/r_sqlite_conn.h"
 #include "r_db/r_sqlite_pager.h"
 #include "r_utils/r_string_utils.h"
 #include <chrono>
@@ -46,7 +45,7 @@ void r_file_index::create_invalid_segment_file(r_sqlite_conn& conn, const std::s
                                                         r_string_utils::uint64_to_s(oldestStart - 1000).c_str(),
                                                         dataSourceID.c_str()));
 }
-
+#if 0
 segment_file r_file_index::recycle_append(uint64_t startTime, const string& dataSourceID, const string& type, const string& sdp)
 {
     r_sqlite_conn conn(_indexPath, true);
@@ -83,6 +82,7 @@ segment_file r_file_index::recycle_append(uint64_t startTime, const string& data
 
     return sf;
 }
+#endif
 
 void r_file_index::update_end_time(segment_file& sf, uint64_t endTime)
 {

@@ -143,16 +143,16 @@ public:
 
         bool valid()
         {
-            if(!_idxSet)
-                R_STHROW(r_utils::r_not_found_exception, ("Please initialize iterator to valid location."));
-
-            uint64_t numIndexes = 0;
-            _db->_read_num_indexes(numIndexes);
-
-            if(numIndexes > 0)
+            if(_idxSet)
             {
-                if((_idx >= 0) && (_idx < numIndexes))
-                    return true;
+                uint64_t numIndexes = 0;
+                _db->_read_num_indexes(numIndexes);
+
+                if(numIndexes > 0)
+                {
+                    if((_idx >= 0) && (_idx < numIndexes))
+                        return true;
+                }
             }
 
             return false;

@@ -34,26 +34,34 @@ r_av::r_packet r_storage_sink::process(r_av::r_packet& pkt)
         {
             auto ts = _st->current(f.get_pts());
 
-            if(_file && !_file->fits(_gopSize, _frames.size()))
-            {   
-                _index.update_end_time(_sf, _file->last_key());
-                _sf = _index.recycle_append(ts, _dataSourceID, _type, f.get_sdp());
-                printf("RECORDING TO FILE B: %s\n", _sf.path.c_str());
-                fflush(stdout);
-                r_append_file::reset(_sf.path, _dataSourceID);        
-                _file = make_shared<r_append_file>(_sf.path);            
-            }
-
             if(!_file)
             {
-                _sf = _index.recycle_append(ts, _dataSourceID, _type, f.get_sdp());
-                printf("RECORDING TO FILE A: %s\n", _sf.path.c_str());
-                fflush(stdout);
-                r_append_file::reset(_sf.path, _dataSourceID);
-                _file = make_shared<r_append_file>(_sf.path);
+                _sf = _index.recycle_append(ts, _dataSourceID, _type, f.get_sdp(), [&](const segment_file& sf){
+                    printf("RECORDING TO FILE A: %s\n", sf.path.c_str());
+                    fflush(stdout);
+                    r_append_file::reset(sf.path, _dataSourceID);
+                    _file = make_shared<r_append_file>(sf.path);
+                    _file->append(ts, (f.is_key())?r_storage::FLAG_KEY:0, f.map(), f.get_data_size());
+                });
             }
-
-            _file->append(ts, (f.is_key())?r_storage::FLAG_KEY:0, f.map(), f.get_data_size());
+            else
+            {
+                if(!_file->fits(_gopSize, _frames.size()))
+                {
+                    _index.update_end_time(_sf, _file->last_key());
+                    _sf = _index.recycle_append(ts, _dataSourceID, _type, f.get_sdp(), [&](const segment_file& sf){
+                        printf("RECORDING TO FILE B: %s\n", sf.path.c_str());
+                        fflush(stdout);
+                        r_append_file::reset(sf.path, _dataSourceID);        
+                        _file = make_shared<r_append_file>(sf.path);
+                        _file->append(ts, (f.is_key())?r_storage::FLAG_KEY:0, f.map(), f.get_data_size());
+                    });
+                }
+                else
+                {
+                    _file->append(ts, (f.is_key())?r_storage::FLAG_KEY:0, f.map(), f.get_data_size());
+                }
+            }
         }
 
         _frames.clear();

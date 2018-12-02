@@ -119,50 +119,50 @@ void test_r_storage_r_file_index::test_recycle_append()
 
     RTF_ASSERT(_num_valid(conn) == 0);
 
-    auto sf = db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    auto sf = db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
     RTF_ASSERT(_num_valid(conn) == 1);
 
     RTF_ASSERT(sf.path == "/mnt/fs1/10");
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
-    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
     RTF_ASSERT(_num_valid(conn) == 10);
 
-    sf = db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    sf = db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
     
     RTF_ASSERT(sf.path == "/mnt/fs1/10");
 
     RTF_ASSERT(_num_valid(conn) == 10);
 
-    sf = db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    sf = db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     now += 1000;
 
     RTF_ASSERT(sf.path == "/mnt/fs1/9");
@@ -190,7 +190,7 @@ void test_r_storage_r_file_index::test_update_end_time()
 
     RTF_ASSERT(_num_valid(conn) == 0);
 
-    auto sf = db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    auto sf = db.recycle_append(now, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
 
     auto result = conn.exec("SELECT * FROM segment_files ORDER BY start_time DESC LIMIT 1;");
 
@@ -221,16 +221,16 @@ void test_r_storage_r_file_index::test_free()
     db.create_invalid_segment_file(conn, "/mnt/fs1/9", "487cffdf-1cb4-4f0b-b220-b88502a6c096");
     db.create_invalid_segment_file(conn, "/mnt/fs1/10", "487cffdf-1cb4-4f0b-b220-b88502a6c096");
 
-    db.recycle_append(1551976959065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976960065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976961065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976962065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976963065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976964065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976965065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976966065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976967065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
-    db.recycle_append(1551976968065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    db.recycle_append(1551976959065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976960065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976961065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976962065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976963065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976964065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976965065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976966065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976967065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
+    db.recycle_append(1551976968065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
 
 #if 0
     _print(conn);
@@ -267,25 +267,25 @@ void test_r_storage_r_file_index::test_basic_iteration()
 
     // 1551976959065 this time is about 10 years in the future...
 
-    auto sf = db.recycle_append(1551976959065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    auto sf = db.recycle_append(1551976959065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976959565);
-    sf = db.recycle_append(1551976960065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    sf = db.recycle_append(1551976960065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976960565);
-    sf = db.recycle_append(1551976961065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    sf = db.recycle_append(1551976961065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976961565);
-    sf = db.recycle_append(1551976962065, "0c080d75-96e1-4d75-bdf1-ec68152fd081", "video", "sdp");
+    sf = db.recycle_append(1551976962065, "0c080d75-96e1-4d75-bdf1-ec68152fd081", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976962565);
-    sf = db.recycle_append(1551976963065, "0c080d75-96e1-4d75-bdf1-ec68152fd081", "md", "sdp");
+    sf = db.recycle_append(1551976963065, "0c080d75-96e1-4d75-bdf1-ec68152fd081", "md", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976963565);
-    sf = db.recycle_append(1551976964065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    sf = db.recycle_append(1551976964065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976964565);
-    sf = db.recycle_append(1551976965065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    sf = db.recycle_append(1551976965065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976965565);
-    sf = db.recycle_append(1551976966065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    sf = db.recycle_append(1551976966065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976966565);
-    sf = db.recycle_append(1551976967065, "0c080d75-96e1-4d75-bdf1-ec68152fd081", "video", "sdp");
+    sf = db.recycle_append(1551976967065, "0c080d75-96e1-4d75-bdf1-ec68152fd081", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976967565);
-    sf = db.recycle_append(1551976968065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp");
+    sf = db.recycle_append(1551976968065, "9fac8f69-7b5a-43ef-afe5-e8830b0f7657", "video", "sdp", [](const segment_file& sf){});
     db.update_end_time(sf, 1551976968565);
 
     auto iter = db.get_iterator("start_time", "0c080d75-96e1-4d75-bdf1-ec68152fd081", "video");

@@ -94,6 +94,12 @@ vector<uint8_t> r_storage::key_before(const string& indexPath,
 
     iter.find(epochTime);
 
+    if(!iter.valid()) // if find() failed, just go to the end of the file.
+    {
+        iter.end(); // end is invalid(), so backup
+        iter.prev();
+    }
+
     uint64_t key;
     uint32_t flags, payloadLen;
     const uint8_t* payload;

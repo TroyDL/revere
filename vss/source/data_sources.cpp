@@ -38,7 +38,7 @@ r_server_response data_sources::handle_get(const r_web_server<r_socket>& ws,
     for(auto r : results)
     {
         j["data"]["data_sources"] += {{"id", r["id"]},
-                                      {"data_source_id", r["data_source_id"]},
+                                      {"camera_id", r["camera_id"]},
                                       {"type", r["type"]},
                                       {"rtsp_url", r["rtsp_url"]},
                                       {"recording", r["recording"]},
@@ -65,10 +65,10 @@ r_server_response data_sources::handle_put(const r_web_server<r_socket>& ws,
 
     r_sqlite_conn dbconn(_dataSourcesPath, true);
 
-    dbconn.exec(r_string_utils::format("REPLACE INTO data_sources(id, data_source_id, type, rtsp_url, recording, transport_pref, auth_username, auth_password) "
+    dbconn.exec(r_string_utils::format("REPLACE INTO data_sources(id, camera_id, type, rtsp_url, recording, transport_pref, auth_username, auth_password) "
                                        "VALUES(%s, %s, '%s', '%s', '%s', '%s', '%s', '%s');",
                                        j["id"].get<string>().c_str(),
-                                       j["data_source_id"].get<string>().c_str(),
+                                       j["camera_id"].get<string>().c_str(),
                                        j["type"].get<string>().c_str(),
                                        j["rtsp_url"].get<string>().c_str(),
                                        j["recording"].get<string>().c_str(),
@@ -106,7 +106,7 @@ vector<data_source> data_sources::recording_data_sources()
         {
             data_source ds;
             ds.id = row["id"];
-            ds.data_source_id = row["data_source_id"];
+            ds.camera_id = row["camera_id"];
             ds.type = row["type"];
             ds.rtsp_url = row["rtsp_url"];
             ds.recording = true;
@@ -138,7 +138,7 @@ void data_sources::_upgrade_db(const string& dataSourcesPath)
     {
         R_LOG_NOTICE("upgrade data_sources to version: 1");
         conn.exec("CREATE TABLE IF NOT EXISTS data_sources(id VARCHAR PRIMARY KEY, "
-                                                    "data_source_id VARCHAR, "
+                                                    "camera_id VARCHAR, "
                                                     "type VARCHAR, "
                                                     "rtsp_url VARCHAR, "
                                                     "recording VARCHAR, "

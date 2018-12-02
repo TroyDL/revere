@@ -19,7 +19,7 @@ r_server_response make_jpg(const r_web_server<r_socket>& ws,
     fflush(stdout);
     auto args = request.get_uri().get_get_args();
     if(args.find("time") == args.end())
-	args["time"] = r_time_utils::tp_to_iso_8601(system_clock::now() - seconds(5), false);
+	args["time"] = r_time_utils::tp_to_iso_8601(system_clock::now(), false);
     auto iframe = r_vss_client::fetch_key_before(args["data_source_id"], r_time_utils::iso_8601_to_tp(args["time"]));
     printf("iframe.size = %lu\n",iframe.size());
     // XXX NOTE: we shouldn't assume h.264 here.

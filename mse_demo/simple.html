@@ -14,7 +14,8 @@
     (function() {
       var sourceBuffer;
       var video = document.querySelector('video');
-      var index = 1;
+      var index = 0;
+      var timestampOffset = 0;
 
       if (!window.MediaSource) {
         console.error('No Media Source API available');
@@ -26,9 +27,20 @@
       ms.addEventListener('sourceopen', onMediaSourceOpen);
 
       function onMediaSourceOpen() {
-        sourceBuffer = ms.addSourceBuffer('video/mp4; codecs="avc1.4d401f"');
+        sourceBuffer = ms.addSourceBuffer('video/mp4; codecs="avc1.4d4034"');
+        sourceBuffer.mode = 'sequence';
+        sourceBuffer.addEventListener('updateend', nextSegment);
 
-        GET("mse.mp4", appendToBuffer);
+        GET(index.toString() + ".mp4", appendToBuffer);
+        index++;
+      }
+
+      function nextSegment() {
+        GET(index.toString() + ".mp4", appendToBuffer);
+        index++;
+        if(index >= 5) {
+          sourceBuffer.removeEventListener('updateend', nextSegment);
+        }
       }
 
       function appendToBuffer(videoChunk) {

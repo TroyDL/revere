@@ -11,6 +11,7 @@
 #include "r_av/r_options.h"
 #include <memory>
 #include <future>
+#include <utility>
 
 namespace r_rtsp
 {
@@ -54,10 +55,6 @@ private:
 
             auto sleepMicros = (int64_t)(1000000.f / ((double)inputFrameRate.first / inputFrameRate.second));
             printf("sleepMicros = %s\n",r_utils::r_string_utils::int64_to_s(sleepMicros).c_str());
-            //auto sleepMicros = ((double)inputTimeBase.first / (double)inputTimeBase.second) * 1000000;
-
-//            auto runStartTime = std::chrono::steady_clock::now();
-//            int64_t elapsedStreamTicks = 0;
 
             while(_running)
             {
@@ -68,31 +65,12 @@ private:
                     _dm = std::make_shared<r_av::r_demuxer>(_mediaPath);
                     continue;
                 }
+
                 auto p = _dm->get();
 
                 _vm->write_packet(p, outputVideoStreamIndex, p.is_key());
 
-                usleep(66666);
-#if 0
-                auto elapsedTime = std::chrono::steady_clock::now() - runStartTime;
-                auto elapsedMillis = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
-
-                static bool lastTSValid = false;
-                static uint32_t lastTS = 0;
-
-                if(lastTSValid)
-                {
-                    elapsedStreamTicks += p.get_pts() - lastTS;
-
-                    auto elapsedStreamMillis = (int64_t)(((double)elapsedStreamTicks)/(double)p.get_ts_freq()*1000);
-
-                    if(elapsedStreamMillis > elapsedMillis)
-                        usleep((elapsedStreamMillis - elapsedMillis)*1000);
-                }
-
-                lastTS = p.get_pts();
-                lastTSValid = true;
-#endif
+                usleep(sleepMicros);
             }
 
         }

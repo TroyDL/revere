@@ -53,19 +53,14 @@ unique_ptr<r_control> _create_stream(const data_source& ds)
     return control;
 }
 
-void _remove_unhealthy(vector<data_source>& current, const std::string& dataSourceID, const std::string& type)
+void _remove_unhealthy(vector<data_source>& current, const std::string& id, const std::string& type)
 {
-    bool removedSome = false;
-    printf("size before = %lu\n",current.size());
-    for(auto i = current.begin(), e = current.end(); i != e; ++i)
+    for(auto i = current.begin(), e = current.end(); i != e; )
     {
-        if(i->id == dataSourceID && i->type == type)
-        {
+        if(i->id == id && i->type == type)
             i = current.erase(i);
-            removedSome = true;
-        }
+        else ++i;
     }
-    printf("size after = %lu, removedSome = %s\n",current.size(),(removedSome)?"true":"false");
 }
 
 int main(int argc, char* argv[])
@@ -125,6 +120,11 @@ int main(int argc, char* argv[])
     ws.add_route(METHOD_GET, "/key_before", [&](const r_web_server<r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_server_request& request)->r_server_response {
         r_server_response response;
         auto args = request.get_uri().get_get_args();
+
+
+        auto dsID = args["data_source_id"];
+        auto tm = args["time"];
+
         auto frame = r_storage::key_before(cfg["storage_config"]["index_path"].get<string>(),
                                            args["data_source_id"],
                                            r_time_utils::iso_8601_to_tp(args["time"]));
@@ -175,11 +175,23 @@ int main(int argc, char* argv[])
         // returns records in current but not in recordingInDB
         auto stopping = r_funky::set_diff(current, recordingInDB);
 
-        // streams key should be by data_source.data_source_id
-        //    but stream_host.controls should be by data_source.id
+        // XXX If camera goes UNHEALTHY its never restarted.
 
         for(auto s : stopping)
+        {
+            // NOTE: stopping should also remove from current
             streams[s.id].controls.erase(s.type);
+        }
+        
+        for(auto s : current)
+        {
+            if(streams[s.id].controls[s.type] && !streams[s.id].controls[s.type]->healthy())
+            {
+                printf("FOUND UNHEALTHY: %s\n", s.id.c_str());
+                _remove_unhealthy(current, s.id, s.type);
+                streams[s.id].controls.erase(s.type);
+            }
+        }
 
         for(auto s : starting)
         {
@@ -188,21 +200,6 @@ int main(int argc, char* argv[])
         }
 
         current = recordingInDB;
-
-again:
-        for(auto& sh : streams)
-        {
-            for(auto& sc : sh.second.controls)
-            {
-                if(!sc.second->healthy())
-                {
-                    printf("FOUND UNHEALTHY: %s\n", sh.first.c_str());
-                    _remove_unhealthy(current, sh.first, sc.first);
-		            streams.erase(sh.first);
-		            goto again;
-                }
-            }
-        }
 
         usleep(5000000);
     }

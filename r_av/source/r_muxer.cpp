@@ -292,8 +292,9 @@ vector<uint8_t> r_muxer::finalize_buffer()
 void r_muxer::_write_header()
 {
     AVDictionary* opts = NULL;
+
     if(_isMP4)
-        av_dict_set(&opts, "movflags", "frag_keyframe+empty_moov", 0);
+        av_dict_set(&opts, "movflags","empty_moov+omit_tfhd_offset+frag_keyframe+default_base_moof+isml", 0);
 
     if(avformat_write_header(_fc, (_isMP4)?&opts:nullptr) != 0)
         R_STHROW(r_internal_exception, ("Unable to write header."));

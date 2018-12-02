@@ -7,6 +7,7 @@
 #include "r_utils/r_nullable.h"
 #include <vector>
 #include <map>
+#include <utility>
 
 extern "C"
 {
@@ -20,9 +21,8 @@ namespace r_av
 struct r_stream_statistics
 {
     r_utils::r_nullable<uint32_t> averageBitRate;
-    r_utils::r_nullable<double> frameRate;
-    r_utils::r_nullable<int> timeBaseNum;
-    r_utils::r_nullable<int> timeBaseDen;
+    r_utils::r_nullable<std::pair<int, int>> frameRate;
+    r_utils::r_nullable<std::pair<int, int>> timeBase;
     r_utils::r_nullable<uint16_t> gopSize;
     r_utils::r_nullable<uint32_t> numFrames;
 };

@@ -270,14 +270,14 @@ uint32_t r_packet::get_duration() const
 void r_packet::rescale_time_base(const std::pair<int, int>& tb)
 {
     {
-        int64_t wholeBases = (_pts > _timeBase.second) ? _pts / _timeBase.second : 0;
+        int64_t wholeBases = (_pts >= _timeBase.second) ? _pts / _timeBase.second : 0;
         double part = ((double)(_pts % _timeBase.second)) / (double)_timeBase.second;
 
         _pts = (wholeBases * tb.second) + (int64_t)(part * tb.second);
     }
 
     {
-        int64_t wholeBases = (_dts > _timeBase.second) ? _dts / _timeBase.second : 0;
+        int64_t wholeBases = (_dts >= _timeBase.second) ? _dts / _timeBase.second : 0;
         double part = ((double)(_dts % _timeBase.second)) / (double)_timeBase.second;
 
         _dts = (wholeBases * tb.second) + (int64_t)(part * tb.second);

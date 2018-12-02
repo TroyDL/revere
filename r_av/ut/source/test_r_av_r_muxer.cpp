@@ -84,8 +84,8 @@ void test_r_av_r_muxer::setup()
 
 void test_r_av_r_muxer::teardown()
 {
-//    remove("a.mp4");
-//    remove("b.mp4");
+    remove("a.mp4");
+    remove("b.mp4");
     r_locky::unregister_ffmpeg();
 }
 

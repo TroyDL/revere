@@ -114,7 +114,10 @@ r_media_stats r_media_parser::get_stats()
         ++numFrames;
 
         if(lastValid)
-            accumDuration += duration_cast<microseconds>(ft - lastFrameTime).count();
+        {
+            auto delta = (int64_t)duration_cast<microseconds>(ft - lastFrameTime).count();
+            accumDuration += delta;
+        }
 
         lastValid = true;
         lastFrameTime = ft;

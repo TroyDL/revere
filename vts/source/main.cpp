@@ -15,6 +15,7 @@
 
 #include "video.h"
 #include "jpg.h"
+#include "stream_segment.h"
 
 using namespace r_utils;
 using namespace r_http;
@@ -56,6 +57,15 @@ int main(int argc, char* argv[])
     ws.add_route(METHOD_GET, "/jpg_before", make_jpg);
 
     ws.add_route(METHOD_GET, "/video", make_video);
+
+    ws.add_route(METHOD_GET, "/stream_segment", make_stream_segment);
+
+    ws.add_route(METHOD_GET, "/test.html", [](const r_web_server<r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_server_request& request)->r_server_response {
+        r_server_response response;
+        response.set_body(r_fs::read_file("test.html"));
+        response.set_content_type("text/html");
+        return response;
+    });
 
     ws.start();
 

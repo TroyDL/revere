@@ -10,6 +10,7 @@
 #include <thread>
 #include <functional>
 #include <list>
+#include <future>
 
 namespace r_utils
 {
@@ -21,6 +22,7 @@ private:
     struct conn_context
     {
         bool done {false};
+        std::chrono::steady_clock::time_point doneTP;
         r_buffered_socket<SOK_T> connected;
         std::thread th;
     };
@@ -100,7 +102,7 @@ public:
                 if( cc->connected.buffer_recv() )
                 {
                     _connectedContexts.remove_if( []( const std::shared_ptr<struct conn_context>& context )->bool {
-                        if( context->done )
+                        if( context->done && ((std::chrono::steady_clock::now() - context->doneTP) > std::chrono::seconds(20)) )
                         {
                             context->th.join();
                             return true;
@@ -147,6 +149,8 @@ private:
         try
         {
             _connCB( cc->connected );
+            cc->doneTP = std::chrono::steady_clock::now();
+            FULL_MEM_BARRIER();
             cc->done = true;
         }
         catch(...)

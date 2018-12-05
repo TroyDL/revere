@@ -28,19 +28,23 @@ r_query_generator::~r_query_generator() noexcept
 {
 }
 
-r_nullable<string> r_query_generator::next()
+r_nullable<string> r_query_generator::next(r_pp_mode m)
 {
     r_nullable<string> result;
 
     if(_start == _end)
         return result;
 
+    bool pp = true;
+    if(((m == r_pp_auto) && !_first) || (m == r_pp_false))
+        pp = false;
+
     string url = r_string_utils::format("/query?data_source_id=%s&type=%s&%s&start_time=%s&end_time=%s",
-                                  _dataSourceID.c_str(),
-                                  _type.c_str(),
-                                  (_first)?"previous_playable=true":"previous_playable=false",
-                                  r_time_utils::tp_to_iso_8601(_start, false).c_str(),
-                                  r_time_utils::tp_to_iso_8601(_next, false).c_str());
+                                        _dataSourceID.c_str(),
+                                        _type.c_str(),
+                                        (pp)?"previous_playable=true":"previous_playable=false",
+                                        r_time_utils::tp_to_iso_8601(_start, false).c_str(),
+                                        r_time_utils::tp_to_iso_8601(_next, false).c_str());
 
     _first = false;
 

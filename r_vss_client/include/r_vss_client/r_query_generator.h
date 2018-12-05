@@ -13,6 +13,12 @@ namespace r_vss_client
 class r_query_generator final
 {
 public:
+    enum r_pp_mode
+    {
+        r_pp_auto,
+        r_pp_true,
+        r_pp_false
+    };
     r_query_generator(const std::string& dataSourceID,
                       const std::string& type,
                       uint64_t requestSize,
@@ -26,7 +32,7 @@ public:
     r_query_generator& operator=(const r_query_generator&) = default;
     r_query_generator& operator=(r_query_generator&&) = default;
 
-    r_utils::r_nullable<std::string> next();
+    r_utils::r_nullable<std::string> next(r_pp_mode m = r_pp_auto);
 
 private:
     std::string _dataSourceID;

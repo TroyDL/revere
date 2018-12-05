@@ -45,16 +45,15 @@ private:
             auto resolution = _dm->get_resolution(inputVideoStreamIndex);
             vsoptions.width = resolution.first;
             vsoptions.height = resolution.second;
-            auto inputTimeBase = _dm->get_time_base(inputVideoStreamIndex);
-            vsoptions.time_base_num = inputTimeBase.first;
-            vsoptions.time_base_den = inputTimeBase.second;
+            vsoptions.time_base_num = 1;
+            vsoptions.time_base_den = 90000;
             auto inputFrameRate = _dm->get_frame_rate(inputVideoStreamIndex);
-            vsoptions.frame_rate_num = inputFrameRate.first;
-            vsoptions.frame_rate_den = inputFrameRate.second;
             auto outputVideoStreamIndex = _vm->add_stream(vsoptions);
 
             auto sleepMicros = (int64_t)(1000000.f / ((double)inputFrameRate.first / inputFrameRate.second));
-            printf("sleepMicros = %s\n",r_utils::r_string_utils::int64_to_s(sleepMicros).c_str());
+
+            std::chrono::steady_clock::time_point lastTP;
+            bool lastTPValid = false;
 
             while(_running)
             {
@@ -70,7 +69,17 @@ private:
 
                 _vm->write_packet(p, outputVideoStreamIndex, p.is_key());
 
-                usleep(sleepMicros);
+                auto now = std::chrono::steady_clock::now();
+
+                if(lastTPValid)
+                {
+                    int64_t overhead = std::chrono::duration_cast<std::chrono::microseconds>(now-lastTP).count();
+                    auto sleepTime = (sleepMicros > overhead)?sleepMicros-overhead:0;
+                    usleep(sleepTime);
+                }
+
+                lastTP = now;
+                lastTPValid = true;
             }
 
         }
@@ -81,6 +90,7 @@ private:
 
             printf("FIX HARD CODED 127.0.0.1!\n");
             fflush(stdout);
+
 
             _vm = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
                                                   r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));

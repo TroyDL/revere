@@ -22,5 +22,6 @@ add_subdirectory (r_vss_client)
 # services
 add_subdirectory (vss) # video storage service
 add_subdirectory (vts) # video transcode service
+add_subdirectory (commander)
 add_subdirectory (fakie) # fake camera
 add_subdirectory (test)

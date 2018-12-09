@@ -248,7 +248,23 @@ static string _get_first_interface_name()
     return string(names.front());
 }
 
-r_discovery::r_discovery(const string& serialNumber, const string& packageVersion, const string& serverIP, int serverPort) :
+r_discovery::r_discovery(const string& deviceType,
+                         const string& friendlyName,
+                         const string& manufacturer,
+                         const string& manufacturerURL,
+                         const string& modelDescription,
+                         const string& modelURL,
+                         const string& modelName,
+                         const string& serialNumber,
+                         const string& packageVersion,
+                         const string& serverIP,
+                         int serverPort) :
+    _deviceType(deviceType),
+    _friendlyName(friendlyName),
+    _manufacturer(manufacturer),
+    _manufacturerURL(manufacturerURL),
+    _modelDescription(modelDescription),
+    _modelURL(modelURL),
     _serialNumber(serialNumber),
     _packageVersion(packageVersion),
     _worker(),
@@ -260,8 +276,6 @@ r_discovery::r_discovery(const string& serialNumber, const string& packageVersio
     _deviceChangedCB(),
     _serverIP(serverIP),
     _serverPort(serverPort),
-    _gatewayIPs(),
-    _gatewayIPSChanged(),
     _webServer(_serverPort, _serverIP)
 {
     auto ifname = _get_first_interface_name();
@@ -340,10 +354,8 @@ vector<string> r_discovery::get_devices() const
     return devices;
 }
 
-void r_discovery::start_discoverable(function<void(const r_discovery& disco)> gatewayIPSChanged)
+void r_discovery::start_discoverable()
 {
-    _gatewayIPSChanged = gatewayIPSChanged;
-
     _webServer.start();
 
     _running = true;
@@ -528,33 +540,6 @@ r_server_response r_discovery::_discoverable_get_device(const r_web_server<r_soc
 {
     R_LOG_NOTICE("GET /Device.xml\n");
 
-    auto userAgent = request.get_header( "User-Agent" );
-
-    if( !userAgent.is_null() )
-    {
-        if(r_string_utils::contains(r_string_utils::to_lower(userAgent.value()), "hermes"))
-        {
-            // User-Agent: type=hermes;id=4de8ac41-9fcc-4fed-9a64-3e0589d76df5
-            auto uaparts = r_string_utils::split(userAgent.value(), ";");
-
-            map<string, string> nvpairs;
-            for( auto p : uaparts )
-            {
-                auto nvparts = r_string_utils::split(p, "=");
-                nvpairs[nvparts[0]] = nvparts[1];
-            }
-
-            if(!nvpairs.empty())
-            {
-                unique_lock<recursive_mutex> g(_discoveryStateLock);
-                _gatewayIPs[nvpairs["gateway_id"]] = conn.get_peer_ip();
-            }
-
-            if( _gatewayIPSChanged )
-                _gatewayIPSChanged(*this);
-        }
-    }
-
     auto ifname = _get_first_interface_name();
 
     auto udn = r_string_utils::format("uuid:%s", r_networking::r_get_device_uuid(ifname).c_str());
@@ -571,18 +556,25 @@ r_server_response r_discovery::_discoverable_get_device(const r_web_server<r_soc
                                        "<minor>0</minor>\r\n"
                                        "</specVersion>\r\n"
                                        "<device>\r\n"
-                                       "<deviceType>urn:schemas-upnp-org:device:Monitor:1</deviceType>\r\n"
-                                       "<friendlyName>KM10N-%s</friendlyName>\r\n"
-                                       "<manufacturer>Schneider Electric</manufacturer>\r\n"
-                                       "<manufacturerURL>http://www.schneider-electric.com</manufacturerURL>\r\n"
-                                       "<modelDescription>MultiSight Network Monitor KM10N</modelDescription>\r\n"
-                                       "<modelURL>http://www.multisight.com</modelURL>\r\n"
-                                       "<modelName>KM10N</modelName>\r\n"
+                                       "<deviceType>%s</deviceType>\r\n"
+                                       "<friendlyName>%s</friendlyName>\r\n"
+                                       "<manufacturer>%s</manufacturer>\r\n"
+                                       "<manufacturerURL>%s</manufacturerURL>\r\n"
+                                       "<modelDescription>%s</modelDescription>\r\n"
+                                       "<modelURL>%s</modelURL>\r\n"
+                                       "<modelName>%s</modelName>\r\n"
                                        "<serialNumber>%s</serialNumber>\r\n"
                                        "<MAC>%s</MAC>\r\n"
                                        "<UDN>%s</UDN>\r\n"
                                        "</device>\r\n"
                                        "</root>\r\n",
+                                       _deviceType.c_str(),
+                                       _friendlyName.c_str(),
+                                       _manufacturer.c_str(),
+                                       _manufacturerURL.c_str(),
+                                       _modelDescription.c_str(),
+                                       _modelURL.c_str(),
+                                       _modelName.c_str(),
                                        _serialNumber.c_str(),
                                        _serialNumber.c_str(),
                                        mac.c_str(),

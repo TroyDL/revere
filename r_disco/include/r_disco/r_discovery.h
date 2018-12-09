@@ -23,7 +23,17 @@ namespace r_disco
 class r_discovery final
 {
 public:
-    r_discovery(const std::string& serialNumber, const std::string& packageVersion, const std::string& serverIP = r_utils::ip4_addr_any, int serverPort = 80);
+    r_discovery(const std::string& deviceType,
+                const std::string& friendlyName,
+                const std::string& manufacturer,
+                const std::string& manufacturerURL,
+                const std::string& modelDescription,
+                const std::string& modelURL,
+                const std::string& modelName,
+                const std::string& serialNumber,
+                const std::string& packageVersion,
+                const std::string& serverIP = r_utils::ip4_addr_any,
+                int serverPort = 80);
     r_discovery(const r_discovery&) = delete;
     ~r_discovery() throw();
 
@@ -36,8 +46,7 @@ public:
 
     // Use start_discoverable to respond to listen for MSEARCHs and respond by sending
     // NOTIFYs.
-    void start_discoverable(std::function<void(const r_discovery& disco)> gatewayIPSChanged);
-    std::map<std::string, std::string> gateway_ips() const { std::unique_lock<std::recursive_mutex> g(_discoveryStateLock); return _gatewayIPs; };
+    void start_discoverable();
 
     void stop();
 
@@ -50,6 +59,13 @@ private:
     r_http::r_server_response _discoverable_get_device(const r_http::r_web_server<r_utils::r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_http::r_server_request& request);
     r_http::r_server_response _discoverable_get_manifest(const r_http::r_web_server<r_utils::r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_http::r_server_request& request);
 
+    std::string _deviceType;
+    std::string _friendlyName;
+    std::string _manufacturer;
+    std::string _manufacturerURL;
+    std::string _modelDescription;
+    std::string _modelURL;
+    std::string _modelName;
     std::string _serialNumber;
     std::string _packageVersion;
     std::thread _worker;
@@ -64,8 +80,6 @@ private:
 
     std::string _serverIP;
     int _serverPort;
-    std::map<std::string, std::string> _gatewayIPs;
-    std::function<void(const r_discovery& disco)> _gatewayIPSChanged;
 
     r_http::r_web_server<r_utils::r_socket> _webServer;
 };

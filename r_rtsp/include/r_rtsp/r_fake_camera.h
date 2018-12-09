@@ -47,35 +47,63 @@ private:
             vsoptions.height = resolution.second;
             vsoptions.time_base_num = 1;
             vsoptions.time_base_den = 90000;
-            auto inputFrameRate = _dm->get_frame_rate(inputVideoStreamIndex);
             auto outputVideoStreamIndex = _vm->add_stream(vsoptions);
 
-            auto sleepMicros = (int64_t)(1000000.f / ((double)inputFrameRate.first / inputFrameRate.second));
+            auto streamStartTime = std::chrono::steady_clock::now();
+            int64_t videoStreamTime = 0;
+            double videoStreamTimeSeconds = 0.0;
 
             std::chrono::steady_clock::time_point lastTP;
             bool lastTPValid = false;
 
-            while(_running)
+            while(_running && _playVideo)
             {
                 int inputStreamIndex = -1;
                 bool more = _dm->read_frame(inputStreamIndex);
                 if(!more)
                 {
                     _dm = std::make_shared<r_av::r_demuxer>(_mediaPath);
+
+                    _vm = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
+                                                        r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));
+                    outputVideoStreamIndex = _vm->add_stream(vsoptions);
                     continue;
                 }
 
                 auto p = _dm->get();
 
+                videoStreamTime += p.get_duration();
+                videoStreamTimeSeconds = (((double)videoStreamTime) / (double)p.get_time_base().second);
                 _vm->write_packet(p, outputVideoStreamIndex, p.is_key());
+
+                // A frame of video has a duration. "stream time" is the sum of the durations of all the frames we've emitted since we started streaming.
+                // We also have the elaped wall clock time since we started streaming. Ideally, these should be the same thing... but the reality is that sometimes
+                // we emit a frame and our "stream time" is ahead of our elapsed wall clock time. We can solve this by sleeping for the delta (correction in below code)
+                // between these two times.
+                // But if thats all we did, the video and audio would be choppy because this loop takes time to run... so we also time our loop and subtract that from
+                // our sleep amount...
 
                 auto now = std::chrono::steady_clock::now();
 
-                if(lastTPValid)
+                auto secondsSincePlay = (double)std::chrono::duration_cast<std::chrono::milliseconds>(now - streamStartTime).count() / 1000;
+
+                if((videoStreamTimeSeconds > secondsSincePlay))
                 {
-                    int64_t overhead = std::chrono::duration_cast<std::chrono::microseconds>(now-lastTP).count();
-                    auto sleepTime = (sleepMicros > overhead)?sleepMicros-overhead:0;
-                    usleep(sleepTime);
+                    auto correction = videoStreamTimeSeconds - secondsSincePlay;
+
+                    uint32_t sleepMicros = (uint32_t)(correction * 1000 * 1000);
+
+                    if(lastTPValid)
+                    {
+                        int64_t overhead = std::chrono::duration_cast<std::chrono::microseconds>(now-lastTP).count();
+
+                        if(overhead < sleepMicros)
+                            sleepMicros -= overhead;
+                        else sleepMicros = 0;
+                    }
+
+                    if(sleepMicros > 0)
+                        usleep(sleepMicros);
                 }
 
                 lastTP = now;
@@ -92,11 +120,13 @@ private:
             fflush(stdout);
 
 
-            _vm = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
-                                                  r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));
+            if(_playVideo)
+                _vm = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
+                                                    r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));
 
-            _am = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
-                                                  r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _audioRtpPort.c_str()));
+            if(_playAudio)
+                _am = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
+                                                    r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _audioRtpPort.c_str()));
 
             r_av::r_stream_options vsoptions;
             vsoptions.type = "video";
@@ -105,13 +135,11 @@ private:
             auto resolution = _dm->get_resolution(inputVideoStreamIndex);
             vsoptions.width = resolution.first;
             vsoptions.height = resolution.second;
-            auto inputTimeBase = _dm->get_time_base(inputVideoStreamIndex);
-            vsoptions.time_base_num = inputTimeBase.first;
-            vsoptions.time_base_den = inputTimeBase.second;
-            auto inputFrameRate = _dm->get_frame_rate(inputVideoStreamIndex);
-            vsoptions.frame_rate_num = inputFrameRate.first;
-            vsoptions.frame_rate_den = inputFrameRate.second;
-            auto outputVideoStreamIndex = _vm->add_stream(vsoptions);
+            vsoptions.time_base_num = 1;
+            vsoptions.time_base_den = 90000;
+            int outputVideoStreamIndex = -1;
+            if(_playVideo)
+                outputVideoStreamIndex = _vm->add_stream(vsoptions);
 
             printf("FIX HARD CODED bits_per_raw_sample, channels and sample_rate.");
             fflush(stdout);
@@ -121,14 +149,20 @@ private:
             asoptions.bits_per_raw_sample = 32;
             asoptions.channels = 2;
             asoptions.sample_rate = 44100;
-            auto outputAudioStreamIndex = _am->add_stream(asoptions);
+            asoptions.time_base_num = 1;
+            asoptions.time_base_den = 90000;
+            int outputAudioStreamIndex = -1;
+            if(_playAudio)
+                outputAudioStreamIndex = _am->add_stream(asoptions);
 
-            auto sleepMicros = (int64_t)(1000000.f / ((double)inputFrameRate.first / inputFrameRate.second));
-            printf("sleepMicros = %s\n",r_utils::r_string_utils::int64_to_s(sleepMicros).c_str());
-            //auto sleepMicros = ((double)inputTimeBase.first / (double)inputTimeBase.second) * 1000000;
+            auto streamStartTime = std::chrono::steady_clock::now();
+            int64_t videoStreamTime = 0;
+            int64_t audioStreamTime = 0;
+            double videoStreamTimeSeconds = 0.0;
+            double audioStreamTimeSeconds = 0.0;
 
-            auto runStartTime = std::chrono::steady_clock::now();
-            int64_t elapsedStreamTicks = 0;
+            std::chrono::steady_clock::time_point lastTP;
+            bool lastTPValid = false;
 
             while(_running)
             {
@@ -137,34 +171,73 @@ private:
                 if(!more)
                 {
                     _dm = std::make_shared<r_av::r_demuxer>(_mediaPath);
+
+                    if(_playVideo)
+                    {
+                        _vm = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
+                                                            r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _videoRtpPort.c_str()));
+                        outputVideoStreamIndex = _vm->add_stream(vsoptions);
+                    }
+
+                    if(_playAudio)
+                    {
+                        _am = std::make_shared<r_av::r_muxer>(r_av::r_muxer::OUTPUT_LOCATION_RTP,
+                                                            r_utils::r_string_utils::format("rtp://%s:%s", "127.0.0.1", _audioRtpPort.c_str()));
+                        outputAudioStreamIndex = _am->add_stream(asoptions);
+                    }
+
                     continue;
                 }
                 auto p = _dm->get();
 
                 if(inputStreamIndex == inputVideoStreamIndex)
-                    _vm->write_packet(p, outputVideoStreamIndex, p.is_key());
-                else _am->write_packet(p, outputAudioStreamIndex, true);
-
-                auto elapsedTime = std::chrono::steady_clock::now() - runStartTime;
-                auto elapsedMillis = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedTime).count();
-
-                static bool lastTSValid = false;
-                static uint32_t lastTS = 0;
-
-                if(lastTSValid)
                 {
-                    elapsedStreamTicks += p.get_pts() - lastTS;
-
-                    auto timeBase = p.get_time_base();
-
-                    auto elapsedStreamMillis = (int64_t)(((double)elapsedStreamTicks)/(double)timeBase.second*1000);
-
-                    if(elapsedStreamMillis > elapsedMillis)
-                        usleep((elapsedStreamMillis - elapsedMillis)*1000);
+                    videoStreamTime += p.get_duration();
+                    videoStreamTimeSeconds = (((double)videoStreamTime) / (double)p.get_time_base().second);
+                    if(_playVideo)
+                        _vm->write_packet(p, outputVideoStreamIndex, p.is_key());
+                }
+                else
+                {
+                    audioStreamTime += p.get_duration();
+                    audioStreamTimeSeconds = (((double)audioStreamTime) / (double)p.get_time_base().second);
+                    if(_playAudio)
+                        _am->write_packet(p, outputAudioStreamIndex, true);
                 }
 
-                lastTS = p.get_pts();
-                lastTSValid = true;
+                // A frame of video has a duration. "stream time" is the sum of the durations of all the frames we've emitted since we started streaming.
+                // We also have the elaped wall clock time since we started streaming. Ideally, these should be the same thing... but the reality is that sometimes
+                // we emit a frame and our "stream time" is ahead of our elapsed wall clock time. We can solve this by sleeping for the delta (correction in below code)
+                // between these two times.
+                // But if thats all we did, the video and audio would be choppy because this loop takes time to run... so we also time our loop and subtract that from
+                // our sleep amount... Finally, since there are two streams we need to make sure we're sleeping only if both of their stream times are ahead of the
+                // elapsed wall clock time since we started streaming.
+
+                auto now = std::chrono::steady_clock::now();
+
+                auto secondsSincePlay = (double)std::chrono::duration_cast<std::chrono::milliseconds>(now - streamStartTime).count() / 1000;
+
+                if((videoStreamTimeSeconds > secondsSincePlay) && (audioStreamTimeSeconds > secondsSincePlay))
+                {
+                    auto correction = (videoStreamTimeSeconds > audioStreamTimeSeconds)?videoStreamTimeSeconds - secondsSincePlay:audioStreamTimeSeconds - secondsSincePlay;
+
+                    uint32_t sleepMicros = (uint32_t)(correction * 1000 * 1000);
+
+                    if(lastTPValid)
+                    {
+                        int64_t overhead = std::chrono::duration_cast<std::chrono::microseconds>(now-lastTP).count();
+
+                        if(overhead < sleepMicros)
+                            sleepMicros -= overhead;
+                        else sleepMicros = 0;
+                    }
+
+                    if(sleepMicros > 0)
+                        usleep(sleepMicros);
+                }
+
+                lastTP = now;
+                lastTPValid = true;
             }
         }
     }
@@ -180,6 +253,10 @@ public:
         _running(false),
         _videoRtpPort(),
         _videoRtcpPort(),
+        _playVideo(false),
+        _audioRtpPort(),
+        _audioRtcpPort(),
+        _playAudio(false),
         _mediaPath(),
         _interleaved(false)
     {
@@ -254,6 +331,7 @@ public:
 
                         _videoRtpPort = portParts[0];
                         _videoRtcpPort = portParts[1];
+                        _playVideo = true;
                     }
                 }
             }
@@ -270,6 +348,7 @@ public:
 
                         _audioRtpPort = portParts[0];
                         _audioRtcpPort = portParts[1];
+                        _playAudio = true;
                     }
                 }
             }
@@ -308,8 +387,10 @@ private:
     bool _running;
     std::string _videoRtpPort;
     std::string _videoRtcpPort;
+    bool _playVideo;
     std::string _audioRtpPort;
     std::string _audioRtcpPort;
+    bool _playAudio;
     std::string _mediaPath;
     bool _interleaved;
 };

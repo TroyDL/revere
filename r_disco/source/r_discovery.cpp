@@ -7,6 +7,7 @@
 #include "r_utils/r_socket.h"
 #include "r_http/r_server_request.h"
 #include "r_http/r_server_response.h"
+#include "r_disco/r_argus_device_info_agent.h"
 
 #include <algorithm>
 #include <functional>
@@ -104,7 +105,7 @@ static void _send_msearch_response(const string& destIP,
         string response = r_string_utils::format("HTTP/1.1 200 OK\r\n"
                                            "CACHE-CONTROL: max-age=1800\r\n"
                                            "LOCATION: http://%s:%d/Device.xml\r\n"
-                                           "SERVER: argus-discserver\r\n"
+                                           "SERVER: discserver\r\n"
                                            "ST: upnp:rootdevice\r\n"
                                            "USN: %s::upnp:argusdevice\r\n\r\n",
                                            serverIP.c_str(),
@@ -165,39 +166,6 @@ static void _send_notify(const string& deviceID,
     }
 
     ::close(clientSok);
-}
-
-static bool _is_argus_device(const string& msg)
-{
-    auto lowerMsg = r_string_utils::to_lower(msg);
-
-    if(r_string_utils::contains(lowerMsg, "location") && r_string_utils::contains(lowerMsg, "argus"))
-        return true;
-
-    return false;
-}
-
-static r_nullable<string> _parse_location(const string& msg)
-{
-    r_nullable<string> result;
-
-    auto parts = r_string_utils::split(msg, "\n");
-    for(auto& line : parts)
-    {
-        if(r_string_utils::contains(r_string_utils::to_lower(line), "location"))
-        {
-            auto firstColon = line.find(":");
-
-            if(firstColon == string::npos)
-                continue;
-
-            auto location = r_string_utils::strip(line.substr(firstColon+1, line.length()-firstColon));
-            if(r_string_utils::contains(r_string_utils::to_lower(location), "http"))
-                result.set_value(location);
-        }
-    }
-
-    return result;
 }
 
 static void _set_socket_options(int sok)
@@ -276,7 +244,8 @@ r_discovery::r_discovery(const string& deviceType,
     _deviceChangedCB(),
     _serverIP(serverIP),
     _serverPort(serverPort),
-    _webServer(_serverPort, _serverIP)
+    _webServer(_serverPort, _serverIP),
+    _recognizer()
 {
     auto ifname = _get_first_interface_name();
 
@@ -320,6 +289,8 @@ r_discovery::r_discovery(const string& deviceType,
 
     _webServer.add_route(METHOD_GET, "/Device.xml", std::bind(&r_discovery::_discoverable_get_device, this, _1, _2, _3));
     _webServer.add_route(METHOD_GET, "/Manifest.xml", std::bind(&r_discovery::_discoverable_get_manifest, this, _1, _2, _3));
+
+    _recognizer.register_device_info_agent(make_shared<r_argus_device_info_agent>());
 }
 
 r_discovery::~r_discovery() throw()
@@ -341,9 +312,9 @@ void r_discovery::start_discovery(std::function<void(const r_discovery& disco)> 
     _worker = thread(&r_discovery::_discovery_entry, this);
 }
 
-vector<string> r_discovery::get_devices() const
+vector<r_device_info> r_discovery::get_devices() const
 {
-    vector<string> devices;
+    vector<r_device_info> devices;
 
     {
         unique_lock<recursive_mutex> g(_discoveryStateLock);
@@ -421,15 +392,10 @@ void r_discovery::_discovery_entry()
 
             string msg((char*)&buffer[0],strlen((char*)&buffer[0]));
 
-            if(_is_argus_device(msg))
-            {
-                auto nlocation = _parse_location(msg);
+            auto di = _recognizer.get_device_info(msg);
 
-                if(nlocation.is_null())
-                    continue;
-
-                _update_cache(nlocation.value());
-            }
+            if(!di.is_null())
+                _update_cache(di.value());
         }
     }
 }
@@ -452,7 +418,7 @@ int r_discovery::_cache_drop_old()
     return dropped;
 }
 
-void r_discovery::_update_cache(const string& loc)
+void r_discovery::_update_cache(const r_device_info& di)
 {
     int expired = 0, erased = 0;
 
@@ -462,9 +428,9 @@ void r_discovery::_update_cache(const string& loc)
         // Drop anything from cache older than DEVICE_EXPIRATION_SECONDS...
         expired = _cache_drop_old();
 
-        erased = _deviceCache.erase(loc);
+        erased = _deviceCache.erase(di);
 
-        _deviceCache.insert(make_pair(loc, steady_clock::now()));
+        _deviceCache.insert(make_pair(di, steady_clock::now()));
     }
 
     if((expired > 0) || (erased == 0))

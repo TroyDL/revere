@@ -9,6 +9,8 @@
 #include "r_http/r_web_server.h"
 #include "r_http/r_server_request.h"
 #include "r_http/r_server_response.h"
+#include "r_disco/r_recognizer.h"
+#include "r_disco/r_device_info.h"
 
 #include <thread>
 #include <map>
@@ -42,7 +44,7 @@ public:
     // Use start_discovery to detect devices by periodically sending MSEARCHs and
     // listening for NOTIFYs.
     void start_discovery(std::function<void(const r_discovery& disco)> deviceChangedCB);
-    std::vector<std::string> get_devices() const;
+    std::vector<r_device_info> get_devices() const;
 
     // Use start_discoverable to respond to listen for MSEARCHs and respond by sending
     // NOTIFYs.
@@ -53,7 +55,7 @@ public:
 private:
     void _discovery_entry();
     int _cache_drop_old();
-    void _update_cache(const std::string& loc);
+    void _update_cache(const r_device_info& di);
 
     void _discoverable_entry();
     r_http::r_server_response _discoverable_get_device(const r_http::r_web_server<r_utils::r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_http::r_server_request& request);
@@ -75,13 +77,14 @@ private:
 
     mutable std::recursive_mutex _discoveryStateLock;
 
-    std::map<std::string,std::chrono::steady_clock::time_point> _deviceCache;
+    std::map<r_device_info,std::chrono::steady_clock::time_point> _deviceCache;
     std::function<void(const r_discovery& disco)> _deviceChangedCB;
 
     std::string _serverIP;
     int _serverPort;
 
     r_http::r_web_server<r_utils::r_socket> _webServer;
+    r_recognizer _recognizer;
 };
 
 }

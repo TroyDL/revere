@@ -35,7 +35,7 @@ vector<string> get_recording_camera_ids()
 
         for(auto ds : j["data"]["data_sources"])
         {
-            if(ds["recording"].get<string>() == "1")
+            if(ds["recording"].get<string>() == "true")
                 recordingIDs.push_back(ds["id"].get<string>());
         }
     }

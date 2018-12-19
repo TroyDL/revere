@@ -47,6 +47,7 @@ void start_vss_recording(const string& uniqueID, const string& rtspURL, const st
         r_client_request req("127.0.0.1", 11002);
         req.set_uri("/data_sources");
         req.set_method(r_http::METHOD_PUT);
+        req.set_content_type("application/json");
         auto body = r_string_utils::format("{ \"id\": \"%s\", "
                                          "\"type\": \"%s\", "
                                          "\"rtsp_url\": \"%s\", "
@@ -57,7 +58,7 @@ void start_vss_recording(const string& uniqueID, const string& rtspURL, const st
                                          uniqueID.c_str(),
                                          type.c_str(),
                                          rtspURL.c_str(),
-                                         "1",
+                                         "true",
                                          transportPref.c_str(),
                                          authUserName.c_str(),
                                          authPassword.c_str());

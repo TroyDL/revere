@@ -72,7 +72,7 @@ READ_BEGIN:
 
         {
             char* writer = &lineBuf[0];
-            _clean_socket(socket, &writer);
+//            _clean_socket(socket, &writer);
 
             // Get initial header line
             _read_header_line(socket, writer, true);
@@ -83,7 +83,7 @@ READ_BEGIN:
         /// Now, read the rest of the header lines...
         do
         {
-            memset(lineBuf, 0, MAX_HEADER_LINE);
+            memset(lineBuf, 0, MAX_HEADER_LINE+1);
             _read_header_line(socket, lineBuf, false);
 
         } while(!_add_line(requestLines, lineBuf));
@@ -157,6 +157,8 @@ void r_client_response::_read_header_line(r_stream_io& socket, char* writer, boo
     bool lineDone = false;
     size_t bytesReadThisLine = 0;
 
+    bool maybeTerminator = true;
+
     // Get initial header line
     while(!lineDone && (bytesReadThisLine + 1) < MAX_HEADER_LINE)
     {
@@ -164,10 +166,14 @@ void r_client_response::_read_header_line(r_stream_io& socket, char* writer, boo
 
         ++bytesReadThisLine;
 
-        if(*writer == '\n')
-            lineDone = true;
-
+        auto justRead = *writer;
         ++writer;
+
+        if(justRead != '\r' && justRead != '\n')
+            maybeTerminator = false;
+
+        if((!maybeTerminator && (justRead == '\n')) || (maybeTerminator && (justRead == '\n')))
+            lineDone = true;
     }
 
     if(!lineDone)

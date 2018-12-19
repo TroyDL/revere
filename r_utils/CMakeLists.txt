@@ -22,6 +22,7 @@ add_library (r_utils include/r_utils/r_string_utils.h
                      include/r_utils/r_functional.h
                      include/r_utils/r_blob_tree.h
                      include/r_utils/r_process.h
+                     include/r_utils/r_args.h
                      include/r_utils/r_server_threaded.h # header only
                      source/r_string_utils.cpp
                      source/r_logger.cpp
@@ -43,7 +44,8 @@ add_library (r_utils include/r_utils/r_string_utils.h
                      source/r_algorithms.cpp
                      source/r_blob_tree.cpp
                      source/r_time_utils.cpp
-                     source/r_process.cpp)
+                     source/r_process.cpp
+                     source/r_args.cpp)
 
 target_include_directories (r_utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

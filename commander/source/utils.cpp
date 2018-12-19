@@ -30,16 +30,19 @@ vector<string> get_recording_camera_ids()
         res.read_response(sok);
 
         responseBody = res.get_body_as_string();
+
+        auto j = json::parse(responseBody);
+
+        for(auto ds : j["data"]["data_sources"])
+        {
+            if(ds["recording"].get<string>() == "1")
+                recordingIDs.push_back(ds["id"].get<string>());
+        }
     }
     catch(exception& ex)
     {
         R_LOG_NOTICE("%s", ex.what());
     }
-
-    auto j = json::parse(responseBody);
-
-    for(auto ds : j["data"]["data_sources"])
-        recordingIDs.push_back(ds["camera_id"].get<string>());
 
     return recordingIDs;
 }

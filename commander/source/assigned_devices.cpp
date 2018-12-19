@@ -41,7 +41,6 @@ r_server_response assigned_devices::handle_get(const r_web_server<r_socket>& ws,
                                           {"rtsp_url", r["rtsp_url"]}};
     }
 
-
     r_server_response response;
 
     response.set_body(j.dump());

@@ -18,8 +18,8 @@ vector<uint8_t> r_vss_client::fetch_key_before(const string& dataSourceID, const
                                      dataSourceID.c_str(),
                                      r_time_utils::tp_to_iso_8601(time, false).c_str()));
 
-    r_socket sok;
-    sok.set_io_timeout(30000);
+    r_buffered_socket<r_socket> sok;
+    sok.inner().set_io_timeout(30000);
     sok.connect("127.0.0.1", 11002);
 
     request.write_request(sok);

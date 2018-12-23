@@ -75,30 +75,9 @@ vector<map<string, string>> r_sqlite_conn::exec(const string& query) const
 
     sqlite3_stmt* stmt = nullptr;
 
-    bool prepared = false;
-    int prepareTries = 10;
-
-    int rc = SQLITE_OK;
-
-    while(!prepared && prepareTries > 0)
-    {
-        rc = sqlite3_prepare_v2(_db, query.c_str(), query.length(), &stmt, nullptr);
-        if(rc == SQLITE_OK)
-        {
-            prepared = true;
-            continue;
-        }
-        else if(rc == SQLITE_LOCKED || rc == SQLITE_BUSY)
-        {
-            usleep(250000);
-        }
-        else R_STHROW(r_internal_exception, ("sqlite3_prepare_v2(%s) failed with: %s", query.c_str(), sqlite3_errmsg(_db)));
-
-        --prepareTries;
-    }
-
-    if(!prepared)
-        R_STHROW(r_internal_exception, ("sqlite3_prepare_v2(%s) totally failed.", query.c_str()));
+    int rc = sqlite3_prepare_v2(_db, query.c_str(), query.length(), &stmt, nullptr);
+    if(rc != SQLITE_OK)
+        R_STHROW(r_internal_exception, ("sqlite3_prepare_v2(%s) failed with: %s", query.c_str(), sqlite3_errmsg(_db)));
 
     try
     {

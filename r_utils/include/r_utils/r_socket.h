@@ -92,7 +92,7 @@ public:
         MAX_BACKLOG = 5
     };
 
-    inline r_socket() : _sok(), _ioTimeOut(5000) {}
+    inline r_socket() : _sok(), _ioTimeOut(10000) {}
     inline r_socket( r_socket&& obj ) noexcept :
         _sok( std::move(obj._sok) ),
         _ioTimeOut( std::move(obj._ioTimeOut ))

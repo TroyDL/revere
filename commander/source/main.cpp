@@ -41,7 +41,7 @@ void start_vss_recording(const string& uniqueID, const string& rtspURL, const st
 {
     try
     {
-        r_socket sok;
+        r_buffered_socket<r_socket> sok;
         sok.connect("127.0.0.1", 11002);
 
         r_client_request req("127.0.0.1", 11002);

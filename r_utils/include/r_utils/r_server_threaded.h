@@ -109,7 +109,6 @@ public:
                         }
                         return false;
                     });
-
                     cc->done = false;
 
                     FULL_MEM_BARRIER();
@@ -149,15 +148,19 @@ private:
         try
         {
             _connCB( cc->connected );
-            cc->doneTP = std::chrono::steady_clock::now();
-            FULL_MEM_BARRIER();
-            cc->done = true;
+        }
+        catch(std::exception& ex)
+        {
+            printf("%s\n",ex.what());
         }
         catch(...)
         {
-            if( !cc->done )
-                throw;
+            printf("Unknown exception while responding to request.");
         }
+
+        cc->doneTP = std::chrono::steady_clock::now();
+        FULL_MEM_BARRIER();
+        cc->done = true;
     }
 
     r_buffered_socket<SOK_T> _bufferedServerSocket;

@@ -54,3 +54,29 @@ void test_r_http_r_web_server::test_basic()
 
     RTF_ASSERT(response.get_body_as_string() == "hello" );
 }
+
+void test_r_http_r_web_server::test_partial_route()
+{
+    int port = RTF_NEXT_PORT();
+
+    r_web_server<r_socket> ws( port );
+
+    ws.add_route(METHOD_GET, "/hi", [](const r_web_server<r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_server_request& request)->r_server_response {
+        auto resource = request.get_uri().get_resource();
+        r_server_response response;
+        response.set_content_type("text/plain");
+        response.set_body(resource);
+        return response;
+    });
+
+    ws.start();
+
+    usleep(100000);
+
+    r_client_request request("127.0.0.1", port);
+    request.set_uri("/hi/hello");
+    auto response = _send_request(port, request);
+
+    RTF_ASSERT(response.get_body_as_string() == "hello" );
+
+}

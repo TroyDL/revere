@@ -24,13 +24,24 @@ using namespace std;
 using namespace std::chrono;
 
 static const int SERVER_PORT = 11003;
-
+static string WEB_DOCUMENT_ROOT = "cirrus";
 bool running = true;
 
 void handle_sigterm(int sig)
 {
     if(sig == SIGTERM)
         running = false;
+}
+
+string get_mime_type(const string& resource)
+{
+    if(r_string_utils::contains(resource, ".html"))
+        return "text/html";
+    else if(r_string_utils::contains(resource, ".css"))
+        return "text/css";
+    else if(r_string_utils::contains(resource, ".js"))
+        return "application/javascript";
+    else return "text/plain";
 }
 
 int main(int argc, char* argv[])
@@ -60,10 +71,13 @@ int main(int argc, char* argv[])
 
     ws.add_route(METHOD_GET, "/stream_segment", make_stream_segment);
 
-    ws.add_route(METHOD_GET, "/test.html", [](const r_web_server<r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_server_request& request)->r_server_response {
+    ws.add_route(METHOD_GET, "/", [](const r_web_server<r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_server_request& request)->r_server_response {
+        auto iru = request.get_uri();
+        auto resource = iru.get_resource();
+        auto resource_path = WEB_DOCUMENT_ROOT + iru.get_full_resource_path();
         r_server_response response;
-        response.set_body(r_fs::read_file("test.html"));
-        response.set_content_type("text/html");
+        response.set_body(r_fs::read_file(resource_path));
+        response.set_content_type(get_mime_type(resource));
         return response;
     });
 

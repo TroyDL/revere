@@ -22,7 +22,8 @@ string r_vss_client::fetch_sdp_before(const string& dataSourceID,
                                      r_time_utils::tp_to_iso_8601(time, false).c_str(),
                                      type.c_str()));
 
-    r_socket sok;
+    r_buffered_socket<r_socket> sok;
+    sok.inner().set_io_timeout(30000);
     sok.connect("127.0.0.1", 11002);
 
     request.write_request(sok);

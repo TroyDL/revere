@@ -119,15 +119,18 @@ int main(int argc, char* argv[])
 
     ws.add_route(METHOD_GET, "/key_before", [&](const r_web_server<r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_server_request& request)->r_server_response {
         r_server_response response;
-        auto args = request.get_uri().get_get_args();
-
+        auto args = request.get_uri().get_get_args(); 
 
         auto dsID = args["data_source_id"];
         auto tm = args["time"];
 
+        printf("before key_before()\n");
+        fflush(stdout);
         auto frame = r_storage::key_before(cfg["storage_config"]["index_path"].get<string>(),
                                            args["data_source_id"],
                                            r_time_utils::iso_8601_to_tp(args["time"]));
+        printf("after key_before()\n");
+        fflush(stdout);
         response.set_content_type("application/octet-stream");
         response.set_body(std::move(frame));
         return response;

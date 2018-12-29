@@ -9,6 +9,7 @@ public:
       TEST(test_r_db_r_sqlite_pager::test_next);
       TEST(test_r_db_r_sqlite_pager::test_find);
       TEST(test_r_db_r_sqlite_pager::test_prev);
+      TEST(test_r_db_r_sqlite_pager::test_short);
     RTF_FIXTURE_END();
 
     virtual ~test_r_db_r_sqlite_pager() throw() {}
@@ -19,4 +20,5 @@ public:
     void test_next();
     void test_find();
     void test_prev();
+    void test_short();
 };

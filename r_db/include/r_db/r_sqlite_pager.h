@@ -27,6 +27,7 @@ public:
     void next(const r_sqlite_conn& conn);
     void prev(const r_sqlite_conn& conn);
     bool valid() const;
+    void end(const r_sqlite_conn& conn);
 
 private:
     std::string _columnsToInclude;

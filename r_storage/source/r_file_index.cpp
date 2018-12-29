@@ -45,44 +45,6 @@ void r_file_index::create_invalid_segment_file(r_sqlite_conn& conn, const std::s
                                                         r_string_utils::uint64_to_s(oldestStart - 1000).c_str(),
                                                         dataSourceID.c_str()));
 }
-#if 0
-segment_file r_file_index::recycle_append(uint64_t startTime, const string& dataSourceID, const string& type, const string& sdp)
-{
-    r_sqlite_conn conn(_indexPath, true);
-
-    segment_file sf;
-
-    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
-        auto results = conn.exec("SELECT * FROM segment_files ORDER BY start_time ASC LIMIT 1;");
-        if(results.empty())
-            R_STHROW(r_not_found_exception, ("Empty segment_files?"));
-
-        conn.exec(r_string_utils::format("UPDATE segment_files SET "
-                                   "valid=1, "
-                                   "start_time=%s, "
-                                   "end_time=0, "
-                                   "data_source_id='%s', "
-                                   "type='%s', "
-                                   "sdp='%s' "
-                                   "WHERE id='%s';",
-                                   r_string_utils::uint64_to_s(startTime).c_str(),
-                                   dataSourceID.c_str(),
-                                   type.c_str(),
-                                   sdp.c_str(),
-                                   results.front()["id"].c_str()));
-
-        sf.id = results.front()["id"];
-        sf.valid = true;
-        sf.path = results.front()["path"];
-        sf.start_time = startTime;
-        sf.end_time = 0;
-        sf.data_source_id = dataSourceID;
-        sf.type = type;
-    });
-
-    return sf;
-}
-#endif
 
 void r_file_index::update_end_time(segment_file& sf, uint64_t endTime)
 {

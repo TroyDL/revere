@@ -60,7 +60,8 @@ public:
 
         void end()
         {
-            R_STHROW(r_utils::r_not_implemented_exception, ("r_file_index::end() not yet implemented."));
+            _pager.end(_conn);
+            _move_to_ds_id(false);
         }
 
         void next()

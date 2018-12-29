@@ -231,3 +231,37 @@ void test_r_db_r_sqlite_pager::test_prev()
 
     RTF_ASSERT(!p.valid());
 }
+
+void test_r_db_r_sqlite_pager::test_short()
+{
+    r_sqlite_conn conn("test.db", true);
+
+    r_sqlite_transaction(conn, [](const r_sqlite_conn& conn){
+        conn.exec("CREATE TABLE worker_bees(sesa_id TEXT, name TEST, id INTEGER PRIMARY KEY AUTOINCREMENT);");
+        conn.exec("CREATE INDEX worker_bees_sesa_id_idx ON worker_bees(sesa_id);");
+        conn.exec("INSERT INTO worker_bees(sesa_id, name) VALUES('123474', 'Yann LeCun');");
+        conn.exec("INSERT INTO worker_bees(sesa_id, name) VALUES('123476', 'Yoshua Bengio');");
+        conn.exec("INSERT INTO worker_bees(sesa_id, name) VALUES('123478', 'Guido van Rossum');");
+        conn.exec("INSERT INTO worker_bees(sesa_id, name) VALUES('123480', 'Edsger W. Dijkstra');");
+        conn.exec("INSERT INTO worker_bees(sesa_id, name) VALUES('123482', 'Ken Thompson');");
+        conn.exec("INSERT INTO worker_bees(sesa_id, name) VALUES('123484', 'Grace Hopper');");
+        conn.exec("INSERT INTO worker_bees(sesa_id, name) VALUES('123486', 'Ada Lovelace');");
+    });
+
+    r_sqlite_pager p("*", "worker_bees", "sesa_id", 7);
+
+    p.find(conn, "123487");
+
+    RTF_ASSERT(!p.valid());
+
+    p.end(conn);
+
+    auto row = p.current();
+    RTF_ASSERT(row["name"] == "Ada Lovelace");
+    RTF_ASSERT(p.valid());
+ 
+    p.prev(conn);
+
+    row = p.current();
+    RTF_ASSERT(row["name"] == "Grace Hopper");
+}

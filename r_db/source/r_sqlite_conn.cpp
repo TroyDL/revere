@@ -26,6 +26,7 @@ r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
         if(sqlite3_open_v2(fileName.c_str(), &_db, flags, nullptr ) == SQLITE_OK)
         {
             sqlite3_busy_timeout(_db, BASE_SLEEP_MICROS / 1000);
+            exec("PRAGMA journal_mode=WAL;");
             return;
         }
 

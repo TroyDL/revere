@@ -143,6 +143,9 @@ vector<uint8_t> r_storage::query(const string& indexPath,
 
     fileIter.find(epochStart);
 
+    if(!fileIter.valid())
+        fileIter.end();
+
     auto sf = fileIter.current_data();
 
     // find uses lower_bound() which will find the first file start_time greater
@@ -170,6 +173,7 @@ vector<uint8_t> r_storage::query(const string& indexPath,
 
         if(fileNeedsFind)
         {
+            printf("%s first_key = %s, last_key = %s, epochStart = %s\n", (epochStart >= af.first_key() && epochStart < af.last_key())?"IN":"OUT", r_string_utils::uint64_to_s(af.first_key()).c_str(), r_string_utils::uint64_to_s(af.last_key()).c_str(), r_string_utils::uint64_to_s(epochStart).c_str());
             frameIter.find(epochStart);
             fileNeedsFind = false;
         }

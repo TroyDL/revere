@@ -17,8 +17,9 @@
       var steps = 0;
       var now = new Date();
       var streamStartTime = now.toISOString();
-      now.setTime(now.getTime() - 10000);
+      now.setTime(now.getTime() - 45000);
       var startTime = now.toISOString();
+      var numSegmentsBuffered = 0;
 
       if (!window.MediaSource) {
         console.error('No Media Source API available');
@@ -39,25 +40,30 @@
       }
 
       function nextSegment() {
-        GET();
+        numSegmentsBuffered--;
+
+        if(numSegmentsBuffered < 3)
+        {
+          GET();
+        }
       }
 
       function appendToBuffer(videoChunk) {
         if (videoChunk) {
           sourceBuffer.appendBuffer(new Uint8Array(videoChunk));
           steps++;
+          numSegmentsBuffered++;
         }
       }
 
       function GET() {
         var xhr = new XMLHttpRequest();
-        var url = "/stream_segment?data_source_id=ea1767e6-f7e9-0d1d-c548-1d21beb28964&start_time=" + startTime + "&steps=" + steps + "&stream_start_time=" + streamStartTime;
+        var url = "/stream_segment?data_source_id=ea1767e6-f7e9-0d1d-c548-1d21beb28900&start_time=" + startTime + "&steps=" + steps + "&stream_start_time=" + streamStartTime;
         xhr.open('GET', url);
         xhr.responseType = 'arraybuffer';
 
         xhr.onload = function(e) {
           if (xhr.status != 200) {
-            steps++;
             setTimeout(function(){GET()}, 11000);
           } else {
             appendToBuffer(xhr.response);

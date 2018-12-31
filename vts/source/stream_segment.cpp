@@ -34,6 +34,15 @@ r_server_response make_stream_segment(const r_web_server<r_socket>& ws,
     auto startTime = r_time_utils::iso_8601_to_tp(args["start_time"]);
     auto endTime = startTime + seconds(10);
 
+    auto now = std::chrono::system_clock::now();
+
+    if(endTime > (now - seconds(10)))
+    {
+        auto secs = duration_cast<seconds>(endTime - (now - seconds(10))).count();
+        printf("sleeping %lu seconds\n",secs);
+        sleep(secs);
+    }
+
     auto sdp = r_vss_client::fetch_sdp_before(args["data_source_id"],
                                               "video",
                                               startTime);
@@ -88,8 +97,8 @@ r_server_response make_stream_segment(const r_web_server<r_socket>& ws,
         ++numFrames;
     }
 
-    printf("indexOfLastKey = %d\n",indexOfLastKey);
-    printf("numFrames = %d\n",numFrames);
+    if(indexOfLastKey == -1)
+        R_THROW(("No Key Frame found!"));
 
     system_clock::time_point tp;
     size_t frameSize;
@@ -132,6 +141,7 @@ r_server_response make_stream_segment(const r_web_server<r_socket>& ws,
 
             muxer.set_extradata(ed, videoStreamIndex);
         }
+
         pkt.set_pts(ts);
         pkt.set_dts(ts);
         pkt.set_duration(increment);

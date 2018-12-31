@@ -19,6 +19,7 @@
       var streamStartTime = now.toISOString();
       now.setTime(now.getTime() - 45000);
       var startTime = now.toISOString();
+      var nextStartTime = "";
       var numSegmentsBuffered = 0;
 
       if (!window.MediaSource) {
@@ -58,7 +59,11 @@
 
       function GET() {
         var xhr = new XMLHttpRequest();
-        var url = "/stream_segment?data_source_id=ea1767e6-f7e9-0d1d-c548-1d21beb28900&start_time=" + startTime + "&steps=" + steps + "&stream_start_time=" + streamStartTime;
+        var time = nextStartTime;
+        if(nextStartTime === "") {
+          time = startTime;
+        }
+        var url = "/stream_segment?data_source_id=ea1767e6-f7e9-0d1d-c548-1d21beb28900&start_time=" + time;
         xhr.open('GET', url);
         xhr.responseType = 'arraybuffer';
 
@@ -66,6 +71,7 @@
           if (xhr.status != 200) {
             setTimeout(function(){GET()}, 11000);
           } else {
+            nextStartTime = xhr.getResponseHeader("next_start_time");
             appendToBuffer(xhr.response);
           }
         };

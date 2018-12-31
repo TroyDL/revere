@@ -57,3 +57,17 @@ r_nullable<string> r_query_generator::next(r_pp_mode m)
 
     return result;
 }
+
+string r_query_generator::gen(const string& dataSourceID,
+                              const string& type,
+                              const system_clock::time_point& start,
+                              const system_clock::time_point& end,
+                              bool previousPlayable)
+{
+    return r_string_utils::format("/query?data_source_id=%s&type=%s&start_time=%s&end_time=%s&previous_playable=%s",
+                                  dataSourceID.c_str(),
+                                  type.c_str(),
+                                  r_time_utils::tp_to_iso_8601(start, false).c_str(),
+                                  r_time_utils::tp_to_iso_8601(end, false).c_str(),
+                                  (previousPlayable)?"true":"false");
+}

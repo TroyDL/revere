@@ -34,6 +34,13 @@ public:
 
     r_utils::r_nullable<std::string> next(r_pp_mode m = r_pp_auto);
 
+    // low level generate a single URL.
+    static std::string gen(const std::string& dataSourceID,
+                           const std::string& type,
+                           const std::chrono::system_clock::time_point& start,
+                           const std::chrono::system_clock::time_point& end,
+                           bool previousPlayable);
+
 private:
     std::string _dataSourceID;
     std::chrono::system_clock::time_point _start;

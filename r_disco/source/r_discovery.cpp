@@ -8,6 +8,8 @@
 #include "r_http/r_server_request.h"
 #include "r_http/r_server_response.h"
 #include "r_disco/r_cirrus_device_info_agent.h"
+#include "r_disco/r_argus_device_info_agent.h"
+
 
 #include <algorithm>
 #include <functional>
@@ -229,6 +231,8 @@ r_discovery::r_discovery( const string& deviceID,
         R_THROW(("Unable to bind to interface."));
 
     _recognizer.register_device_info_agent(make_shared<r_cirrus_device_info_agent>());
+    _recognizer.register_device_info_agent(make_shared<r_argus_device_info_agent>());
+
 }
 
 r_discovery::~r_discovery() throw()

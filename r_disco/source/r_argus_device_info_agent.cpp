@@ -70,7 +70,7 @@ r_nullable<r_device_info> r_argus_device_info_agent::get_device_info(const strin
                 auto uuidStart = startUSN + 5; //+5 skip past "USN: "
 
                 r_device_info di;
-                di.unique_id = ssdpNotifyMessage.substr(uuidStart + 5, 36); //+5 start past "uuid:"
+                di.unique_id = ssdpNotifyMessage.substr(uuidStart, 36); //+5 start past "uuid:"
                 di.rtsp_url = rtsp;
                 di.type = "video";
                 di.transport_pref = "udp";

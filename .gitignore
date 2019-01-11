@@ -1,5 +1,6 @@
 .vscode/
 ffmpeg/
 x264/
+lame/
 build/
 

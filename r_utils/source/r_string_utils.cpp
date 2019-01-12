@@ -6,6 +6,7 @@
 #include <string.h>
 #include <array>
 #include <algorithm>
+#include <inttypes.h>
 
 using namespace r_utils;
 using namespace std;
@@ -544,14 +545,14 @@ int32_t r_utils::r_string_utils::s_to_int32(const string& s)
 uint64_t r_utils::r_string_utils::s_to_uint64(const string& s)
 {
     uint64_t val;
-    sscanf(s.c_str(), "%lu", &val);
+    sscanf(s.c_str(), "%llu", (long long unsigned*)&val);
     return val;
 }
 
 int64_t r_utils::r_string_utils::s_to_int64(const string& s)
 {
     int64_t val;
-    sscanf(s.c_str(), "%ld", &val);
+    sscanf(s.c_str(), "%lld", (long long int*)&val);
     return val;
 }
 
@@ -618,12 +619,12 @@ string r_utils::r_string_utils::uint32_to_s(uint32_t val)
 
 string r_utils::r_string_utils::int64_to_s(int64_t val)
 {
-    return r_string_utils::format("%ld", val);
+    return r_string_utils::format("%lld", (long long int)val);
 }
 
 string r_utils::r_string_utils::uint64_to_s(uint64_t val)
 {
-    return r_string_utils::format("%lu", val);
+    return r_string_utils::format("%llu", (long long unsigned)val);
 }
 
 string r_utils::r_string_utils::double_to_s(double val)

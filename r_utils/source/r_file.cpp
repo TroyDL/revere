@@ -170,7 +170,8 @@ int r_utils::r_fs::stat(const string& file_name, struct r_file_info* file_info)
 vector<uint8_t> r_utils::r_fs::read_file(const string& path)
 {
     struct r_file_info fi;
-    r_utils::r_fs::stat(path, &fi);
+    if(r_utils::r_fs::stat(path, &fi) < 0)
+        R_STHROW(r_not_found_exception, ("Unable to stat: %s", path.c_str()))
 
     uint32_t numBlocks = (fi.file_size > fi.optimal_block_size) ? fi.file_size / fi.optimal_block_size : 0;
     uint32_t remainder = (fi.file_size > fi.optimal_block_size) ? fi.file_size % fi.optimal_block_size : fi.file_size;

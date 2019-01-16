@@ -18,8 +18,8 @@ r_video_decoder::r_video_decoder(r_av_codec_id codec_id, r_pix_fmt format, const
     _codecID(codec_id),
     _options(options),
     _pf(make_shared<r_packet_factory_default>()),
-    _codec(avcodec_find_decoder(r_av_codec_id_to_ffmpeg_codec_id(_codecID))),
-    _context(avcodec_alloc_context3(_codec)),
+    _codec(nullptr),
+    _context(nullptr),
     _frame(av_frame_alloc()),
     _scaler(nullptr),
     _outputWidth(0),
@@ -28,14 +28,22 @@ r_video_decoder::r_video_decoder(r_av_codec_id codec_id, r_pix_fmt format, const
     _outputPkt(),
     _inputPkt()
 {
-    if( !r_locky::is_registered() )
-        R_STHROW(r_internal_exception, ( "Please call locky::register_ffmpeg() before using this class."));
+    if(codec_id == r_av_codec_id_h264)
+        _codec = avcodec_find_decoder_by_name("h264_mmal");
 
     if(!_codec)
-        R_STHROW(r_internal_exception, ("Unable to find codec."));
+        _codec = avcodec_find_decoder(r_av_codec_id_to_ffmpeg_codec_id(_codecID));
     
+    if(!_codec)
+        R_STHROW(r_internal_exception, ("Unable to find suitable codec."));
+    
+    _context = avcodec_alloc_context3(_codec);
+
     if(!_context)
         R_STHROW(r_internal_exception, ("Unable to allocate context."));
+
+    if( !r_locky::is_registered() )
+        R_STHROW(r_internal_exception, ( "Please call locky::register_ffmpeg() before using this class."));    
 
     if(!_frame)
         R_STHROW(r_internal_exception, ("Unable to allocate frame."));
@@ -55,8 +63,8 @@ r_video_decoder::r_video_decoder(AVCodecParameters* codecpar, r_av_codec_id code
     _codecID(codec_id),
     _options(options),
     _pf(make_shared<r_packet_factory_default>()),
-    _codec(avcodec_find_decoder(r_av_codec_id_to_ffmpeg_codec_id(_codecID))),
-    _context(avcodec_alloc_context3(_codec)),
+    _codec(nullptr),
+    _context(nullptr),
     _frame(av_frame_alloc()),
     _scaler(nullptr),
     _outputWidth(0),
@@ -65,14 +73,22 @@ r_video_decoder::r_video_decoder(AVCodecParameters* codecpar, r_av_codec_id code
     _outputPkt(),
     _inputPkt()
 {
-    if( !r_locky::is_registered() )
-        R_STHROW(r_internal_exception, ( "Please call locky::register_ffmpeg() before using this class."));
+    if(codec_id == r_av_codec_id_h264)
+        _codec = avcodec_find_decoder_by_name("h264_mmal");
 
     if(!_codec)
-        R_STHROW(r_internal_exception, ("Unable to find codec."));
+        _codec = avcodec_find_decoder(r_av_codec_id_to_ffmpeg_codec_id(_codecID));
     
+    if(!_codec)
+        R_STHROW(r_internal_exception, ("Unable to find suitable codec."));
+    
+    _context = avcodec_alloc_context3(_codec);
+
     if(!_context)
         R_STHROW(r_internal_exception, ("Unable to allocate context."));
+
+    if( !r_locky::is_registered() )
+        R_STHROW(r_internal_exception, ( "Please call locky::register_ffmpeg() before using this class."));
 
     if(!_frame)
         R_STHROW(r_internal_exception, ("Unable to allocate frame."));

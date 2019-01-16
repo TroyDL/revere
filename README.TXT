@@ -20,3 +20,20 @@ TODO
    - Raspberry Pi
       - Use hardware encoder
       - Use hardware decoder
+
+120+ decode fps (all keyframes)
+    LD_LIBRARY_PATH=~/code/dicroce/revere/lame/artifacts/lib time ./ffmpeg -c:v h264_mmal -i out2.mp4 -f null -
+
+58+ transcode fps (300% cpu! because decode is not being accelerated)
+    LD_LIBRARY_PATH=~/code/dicroce/revere/lame/artifacts/lib time ./ffmpeg -i out2.mp4 -c:v h264_omx out3.mp4
+
+10+ fps hw decode + sw encode
+   LD_LIBRARY_PATH=~/code/dicroce/revere/lame/artifacts/lib time ./ffmpeg -c:v h264_mmal -i the_white_wolf_1280x720.mp4 -an -c:v libx264 out3.mp4
+
+add "gpu_mem=256" to /boot/config
+then
+
+54 transcode fps + (50% cpu)
+   LD_LIBRARY_PATH=~/code/dicroce/revere/lame/artifacts/lib time ./ffmpeg -c:v h264_mmal -i the_white_wolf_1280x720.mp4 -an -c:v h264_omx out3.mp4 
+
+Big Unknown is motion detection performance. Need OpenCV build.

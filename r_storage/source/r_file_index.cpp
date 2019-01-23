@@ -145,6 +145,7 @@ void r_file_index::_upgrade_db(const std::string& indexPath)
         conn.exec("CREATE INDEX IF NOT EXISTS segment_files_start_time_idx ON segment_files(start_time);");
         conn.exec("CREATE INDEX IF NOT EXISTS segment_files_end_time_idx ON segment_files(end_time);");
         conn.exec("PRAGMA user_version=1;");
+        conn.exec("PRAGMA journal_mode=WAL;");
     }
 
     default:

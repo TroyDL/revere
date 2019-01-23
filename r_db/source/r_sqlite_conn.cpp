@@ -19,14 +19,13 @@ r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
 
     while(numRetries > 0)
     {
-        int flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX;
+        int flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX;
 
         flags |= (_rw)?SQLITE_OPEN_READWRITE:SQLITE_OPEN_READONLY;
 
         if(sqlite3_open_v2(fileName.c_str(), &_db, flags, nullptr ) == SQLITE_OK)
         {
             sqlite3_busy_timeout(_db, BASE_SLEEP_MICROS / 1000);
-            exec("PRAGMA journal_mode=WAL;");
             return;
         }
 
@@ -76,9 +75,11 @@ vector<map<string, string>> r_sqlite_conn::exec(const string& query) const
 
     sqlite3_stmt* stmt = nullptr;
 
-    int rc = sqlite3_prepare_v2(_db, query.c_str(), query.length(), &stmt, nullptr);
+    int rc = sqlite3_prepare_v3(_db, query.c_str(), query.length(), 0, &stmt, nullptr);
     if(rc != SQLITE_OK)
         R_STHROW(r_internal_exception, ("sqlite3_prepare_v2(%s) failed with: %s", query.c_str(), sqlite3_errmsg(_db)));
+    if(stmt == NULL)
+        R_STHROW(r_internal_exception, ("sqlite3_prepare_v2() succeeded but returned NULL statement."));
 
     try
     {
@@ -123,24 +124,11 @@ vector<map<string, string>> r_sqlite_conn::exec(const string& query) const
             else R_STHROW(r_internal_exception, ("Query (%s) to db failed. Cause:", query.c_str(), sqlite3_errmsg(_db)));
         }
 
-        if( stmt )
-        {
-            sqlite3_clear_bindings(stmt);
-            sqlite3_reset(stmt);
-            sqlite3_finalize(stmt);
-            stmt = nullptr;
-        }
+        sqlite3_finalize(stmt);
     }
     catch(...)
     {
-        if(stmt)
-        {
-            sqlite3_clear_bindings(stmt);
-            sqlite3_reset(stmt);
-            sqlite3_finalize(stmt);
-            stmt = nullptr;
-        }
-
+        sqlite3_finalize(stmt);
         throw;
     }
 

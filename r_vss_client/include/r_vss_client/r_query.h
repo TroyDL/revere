@@ -13,7 +13,8 @@ std::vector<uint8_t> query(const std::string& dataSourceID,
                            const std::string& type,
                            bool previousPlayable,
                            const std::chrono::system_clock::time_point& start,
-                           const std::chrono::system_clock::time_point& end);
+                           const std::chrono::system_clock::time_point& end,
+                           bool keyOnly = false);
 
 std::vector<uint8_t> query(const std::string& uri);
 

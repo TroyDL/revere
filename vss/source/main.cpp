@@ -13,6 +13,7 @@
 #include "r_pipe/plugins/storage_sink/r_storage_sink.h"
 
 #include <functional>
+#include <algorithm>
 #include <string>
 #include <signal.h>
 #include <unistd.h>
@@ -52,17 +53,11 @@ unique_ptr<r_control> _create_stream(const data_source& ds)
 
     return control;
 }
-
-void _remove_unhealthy(vector<data_source>& current, const std::string& id, const std::string& type)
+void printv(const string& pfx, const vector<data_source>& v)
 {
-    for(auto i = current.begin(), e = current.end(); i != e; )
-    {
-        if(i->id == id && i->type == type)
-            i = current.erase(i);
-        else ++i;
-    }
+    for(auto s : v)
+        printf("%s %s\n",pfx.c_str(),s.id.c_str());
 }
-
 int main(int argc, char* argv[])
 {
     // XXX TODO
@@ -142,12 +137,16 @@ int main(int argc, char* argv[])
         bool previousPlayable = true;
         if(args.find("previous_playable") != args.end())
             previousPlayable = (args["previous_playable"] == "false")?false:true;
+        bool keyOnly = false;
+        if(args.find("key_only") != args.end())
+            keyOnly = (args["key_only"] == "true")?true:false;
         auto result = r_storage::query(cfg["storage_config"]["index_path"].get<string>(),
                                        args["data_source_id"],
                                        args["type"],
                                        previousPlayable,
                                        r_time_utils::iso_8601_to_tp(args["start_time"]),
-                                       r_time_utils::iso_8601_to_tp(args["end_time"]));
+                                       r_time_utils::iso_8601_to_tp(args["end_time"]),
+                                       keyOnly);
         response.set_content_type("application/octet-stream");
         response.set_body(std::move(result));
         return response;
@@ -172,11 +171,16 @@ int main(int argc, char* argv[])
 
     while(running)
     {
+        printv("current", current);
+
         auto recordingInDB = ds.recording_data_sources();
+        printv("recordingInDB", recordingInDB);
         // returns records in recordingInDB but not in current
         auto starting = r_funky::set_diff(recordingInDB, current);
+        printv("starting", starting);
         // returns records in current but not in recordingInDB
         auto stopping = r_funky::set_diff(current, recordingInDB);
+        printv("stopping", stopping);
 
         // XXX If camera goes UNHEALTHY its never restarted.
 
@@ -188,21 +192,21 @@ int main(int argc, char* argv[])
         
         for(auto s : current)
         {
-            if(streams[s.id].controls[s.type] && !streams[s.id].controls[s.type]->healthy())
+            auto id = s.id;
+            auto type = s.type;
+            if(streams[id].controls[type] && !streams[id].controls[type]->healthy())
             {
                 printf("FOUND UNHEALTHY: %s\n", s.id.c_str());
-                _remove_unhealthy(current, s.id, s.type);
+                current.erase(remove_if(begin(current), end(current), [id, type](const data_source& ds){return ((ds.id == id) && (ds.type == type));}), current.end());
                 streams[s.id].controls.erase(s.type);
             }
         }
 
         for(auto s : starting)
         {
-            printf("starting %s\n",s.id.c_str());
+            current.push_back(s);
             streams[s.id].controls[s.type] = _create_stream(s);
         }
-
-        current = recordingInDB;
 
         usleep(5000000);
     }

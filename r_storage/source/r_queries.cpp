@@ -126,7 +126,8 @@ vector<uint8_t> r_storage::query(const string& indexPath,
                                  const string& type,
                                  bool previousPlayable,
                                  const system_clock::time_point& start,
-                                 const system_clock::time_point& end)
+                                 const system_clock::time_point& end,
+                                 bool keyOnly)
 {
     vector<uint8_t> frameBox;
     uint32_t frameBoxPos = 0;
@@ -173,7 +174,6 @@ vector<uint8_t> r_storage::query(const string& indexPath,
 
         if(fileNeedsFind)
         {
-            printf("%s first_key = %s, last_key = %s, epochStart = %s\n", (epochStart >= af.first_key() && epochStart < af.last_key())?"IN":"OUT", r_string_utils::uint64_to_s(af.first_key()).c_str(), r_string_utils::uint64_to_s(af.last_key()).c_str(), r_string_utils::uint64_to_s(epochStart).c_str());
             frameIter.find(epochStart);
             fileNeedsFind = false;
         }
@@ -194,31 +194,35 @@ vector<uint8_t> r_storage::query(const string& indexPath,
                 frameIter.prev();
                 frameIter.current_data(frameKey, flags, payloadLen, payload);
             }
-            previousPlayable = false;
         }
 
         do
         {
-            auto fbp = r_byte_ptr_rw::append(frameBox, payloadLen);
-            fbp.bulk_write(payload, payloadLen);
+            bool isKey = (flags & r_storage::FLAG_KEY);
 
-            // write index box entry
-            auto ibp = r_byte_ptr_rw::append(indexBox, 20);
-            // frame time
-            uint64_t doubleWord = r_networking::r_htonll(frameKey);
-            ibp.write<uint64_t>(doubleWord);
-            // offset of frame in framebox
-            uint32_t word = r_networking::r_htonl(frameBoxPos);
-            ibp.write<uint32_t>(word);
-            // frame size
-            word = r_networking::r_htonl(payloadLen);
-            ibp.write<uint32_t>(word);
-            // flags (keyness, etc...)
-            word = r_networking::r_htonl(flags);
-            ibp.write<uint32_t>(word);
+            if((keyOnly == false) || isKey)
+            {
+                auto fbp = r_byte_ptr_rw::append(frameBox, payloadLen);
+                fbp.bulk_write(payload, payloadLen);
 
-            frameBoxPos += payloadLen;
-            ++numFramesBoxed;
+                // write index box entry
+                auto ibp = r_byte_ptr_rw::append(indexBox, 20);
+                // frame time
+                uint64_t doubleWord = r_networking::r_htonll(frameKey);
+                ibp.write<uint64_t>(doubleWord);
+                // offset of frame in framebox
+                uint32_t word = r_networking::r_htonl(frameBoxPos);
+                ibp.write<uint32_t>(word);
+                // frame size
+                word = r_networking::r_htonl(payloadLen);
+                ibp.write<uint32_t>(word);
+                // flags (keyness, etc...)
+                word = r_networking::r_htonl(flags);
+                ibp.write<uint32_t>(word);
+
+                frameBoxPos += payloadLen;
+                ++numFramesBoxed;
+            }
 
             frameIter.next();
             if(frameIter.valid())

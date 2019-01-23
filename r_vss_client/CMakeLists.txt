@@ -5,11 +5,13 @@ add_library (r_vss_client include/r_vss_client/r_frame.h
                           include/r_vss_client/r_query.h
                           include/r_vss_client/r_query_generator.h
                           include/r_vss_client/r_sdp.h
+                          include/r_vss_client/r_ds.h
                           source/r_frame.cpp
                           source/r_media_parser.cpp
                           source/r_query.cpp
                           source/r_query_generator.cpp
-                          source/r_sdp.cpp)
+                          source/r_sdp.cpp
+                          source/r_ds.cpp)
 
 target_include_directories (r_vss_client PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include) 
 

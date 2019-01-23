@@ -25,7 +25,8 @@ std::vector<uint8_t> query(const std::string& indexPath,
                            const std::string& type,
                            bool previousPlayable,
                            const std::chrono::system_clock::time_point& start,
-                           const std::chrono::system_clock::time_point& end);
+                           const std::chrono::system_clock::time_point& end,
+                           bool keyOnly = false);
 
 std::string sdp_before(const std::string& indexPath,
                        const std::string& dataSourceID,

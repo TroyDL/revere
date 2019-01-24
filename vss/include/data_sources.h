@@ -35,8 +35,10 @@ public:
                                          r_utils::r_buffered_socket<r_utils::r_socket>& conn,
                                          const r_http::r_server_request& request);
     std::vector<data_source> recording_data_sources();
+
+    static void upgrade_db(const std::string& dataSourcesPath);
+
 private:
-    static void _upgrade_db(const std::string& dataSourcesPath);
     std::string _dataSourcesPath;
 };
 

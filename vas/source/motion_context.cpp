@@ -11,12 +11,16 @@ using namespace std::chrono;
 
 void motion_context::process(r_video_decoder& dec)
 {
-    auto now = system_clock::now();
-    auto qs = (_lastValid)?_lastFrameTS:now - seconds(120);
-    auto qe = qs + seconds(10);
+    // Query in the past...
+    // So, all queries should be from between 90 and 60 seconds ago.
 
-    if(qs < qe)
+    auto now = system_clock::now();
+
+    if(_lastValid)
     {
+        auto delta = now - _lastProcessTS;
+        auto qs = (now - seconds(90));
+        auto qe = qs + delta;
 
         try
         {
@@ -41,9 +45,6 @@ void motion_context::process(r_video_decoder& dec)
                 uint32_t flags;
                 parser.current_data(tp, frameSize, p, flags);
 
-                lastTP = tp;
-                lastTPValid = true;
-
                 try
                 {
                     r_packet pkt(const_cast<uint8_t*>(p), frameSize, false);
@@ -55,33 +56,23 @@ void motion_context::process(r_video_decoder& dec)
                         dec.set_output_height(dec.get_input_height());
 
                         auto decoded = dec.get();
+                        printf(".");
                     }
                 }
                 catch(exception& ex)
                 {
+                    printf("DECODE EXCEPTION!\n");
                     R_LOG_NOTICE("%s", ex.what());
                 }
-                numFrames++;
-
-                parser.next();
             }
-
-
-            printf("[%s   ->   %s nframes=%u]\n", r_time_utils::tp_to_iso_8601(qs, false).c_str(), r_time_utils::tp_to_iso_8601(qe, false).c_str(), numFrames);
-            fflush(stdout);
-
-            if(lastTPValid)
-            {
-                _lastFrameTS = lastTP + milliseconds(1);
-                _lastValid = true;
-            }
-            else _lastFrameTS = qe;
         }
         catch(exception& ex)
         {
-            _lastFrameTS = qe;
             printf("EXCEPTION\n");
             R_LOG_NOTICE("Unable to process analytics: %s", ex.what());
         }
     }
+
+    _lastProcessTS = now;
+    _lastValid = true;
 }

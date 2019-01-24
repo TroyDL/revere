@@ -13,7 +13,8 @@ public:
     motion_context(const std::string& dataSourceID) :
         _dataSourceID(dataSourceID),
         _lastValid(false),
-        _lastFrameTS()
+        _lastFrameTS(),
+        _lastProcessTS()
     {
     }
 
@@ -33,6 +34,7 @@ private:
     std::string _dataSourceID;
     bool _lastValid;
     std::chrono::system_clock::time_point _lastFrameTS;
+    std::chrono::system_clock::time_point _lastProcessTS;
 };
 
 #endif

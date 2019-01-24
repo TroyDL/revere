@@ -90,6 +90,8 @@ int main(int argc, char* argv[])
 
     r_web_server<r_socket> ws(SERVER_PORT);
 
+    data_sources::upgrade_db(cfg["data_sources_path"].get<string>());
+
     data_sources ds(cfg["data_sources_path"].get<string>());
     ws.add_route(METHOD_GET, "/data_sources", std::bind(&data_sources::handle_get, &ds, _1, _2, _3));
     ws.add_route(METHOD_PUT, "/data_sources", std::bind(&data_sources::handle_put, &ds, _1, _2, _3));

@@ -10,6 +10,7 @@ using namespace std;
 
 static const int DEFAULT_NUM_OPEN_RETRIES = 5;
 static const int BASE_SLEEP_MICROS = 500000;
+static const int BUSY_TIMEOUT = 2000000;
 
 r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
     _db(nullptr),
@@ -25,7 +26,7 @@ r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
 
         if(sqlite3_open_v2(fileName.c_str(), &_db, flags, nullptr ) == SQLITE_OK)
         {
-            sqlite3_busy_timeout(_db, BASE_SLEEP_MICROS / 1000);
+            sqlite3_busy_timeout(_db, BUSY_TIMEOUT);
             return;
         }
 

@@ -19,25 +19,14 @@ vector<uint8_t> r_vss_client::query(const std::string& dataSourceID,
                                     bool keyOnly)
 {
     r_client_request request("127.0.0.1", 11002);
-#if 0
+
     request.set_uri(r_string_utils::format("/query?data_source_id=%s&type=%s&previous_playable=%s&start_time=%s&end_time=%s&key_only=%s",
-                                     dataSourceID.c_str(),
-                                     type.c_str(),
-                                     (previousPlayable)?"true":"false",
-                                     r_time_utils::tp_to_iso_8601(start, false).c_str(),
-                                     r_time_utils::tp_to_iso_8601(end, false).c_str(),
-                                     (keyOnly)?"true":"false"));
-#else
-    auto uri = r_string_utils::format("/query?data_source_id=%s&type=%s&previous_playable=%s&start_time=%s&end_time=%s&key_only=%s",
-                                     dataSourceID.c_str(),
-                                     type.c_str(),
-                                     (previousPlayable)?"true":"false",
-                                     r_time_utils::tp_to_iso_8601(start, false).c_str(),
-                                     r_time_utils::tp_to_iso_8601(end, false).c_str(),
-                                     (keyOnly)?"true":"false");
-printf("%s\n",uri.c_str());
-    request.set_uri(uri);
-#endif
+                                           dataSourceID.c_str(),
+                                           type.c_str(),
+                                           (previousPlayable)?"true":"false",
+                                           r_time_utils::tp_to_iso_8601(start, false).c_str(),
+                                           r_time_utils::tp_to_iso_8601(end, false).c_str(),
+                                           (keyOnly)?"true":"false"));
 
     r_buffered_socket<r_socket> sok;
     sok.inner().set_io_timeout(30000);

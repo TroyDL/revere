@@ -22,6 +22,8 @@ void motion_context::process(r_video_decoder& dec)
         auto qs = (now - seconds(90));
         auto qe = qs + delta;
 
+        printf("[%s -> %s]\n",r_time_utils::tp_to_iso_8601(qs, false).c_str(), r_time_utils::tp_to_iso_8601(qe, false).c_str());
+        fflush(stdout);
         try
         {
             auto buffer = r_vss_client::query(_dataSourceID,
@@ -56,7 +58,6 @@ void motion_context::process(r_video_decoder& dec)
                         dec.set_output_height(dec.get_input_height());
 
                         auto decoded = dec.get();
-                        printf(".");
                     }
                 }
                 catch(exception& ex)
@@ -64,6 +65,8 @@ void motion_context::process(r_video_decoder& dec)
                     printf("DECODE EXCEPTION!\n");
                     R_LOG_NOTICE("%s", ex.what());
                 }
+
+                parser.next();
             }
         }
         catch(exception& ex)

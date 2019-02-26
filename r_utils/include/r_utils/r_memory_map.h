@@ -4,6 +4,7 @@
 
 #include "r_utils/r_string_utils.h"
 #include "r_utils/r_byte_ptr.h"
+#include "r_utils/r_macro.h"
 
 namespace r_utils
 {

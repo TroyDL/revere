@@ -252,6 +252,9 @@ void r_append_file::append(uint64_t key, uint32_t flags, const uint8_t* pkt, uin
 
     _write_index(numIndexes, timeOfs, newFramePos);
 
+    FULL_MEM_BARRIER();
+
+    // publish our frame...
     _write_num_indexes(numIndexes + 1);
 }
 

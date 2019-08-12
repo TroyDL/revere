@@ -1,6 +1,9 @@
 
 Building
-   First build x264 and ffmpeg in the usual cmake way, then do a top level cmake build.
+   First build x264 and ffmpeg in the usual cmake way.
+
+   Set LD_LIBRARY_PATH to point to ffmpeg/artifacts/lib and x264/artifacts/lib while cmake building the top level (this
+   will allow this project to use the locally built ffmpeg and x264 as opposed to your system packages).
 
 TODO
    - We need analytics

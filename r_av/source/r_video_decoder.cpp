@@ -29,7 +29,7 @@ r_video_decoder::r_video_decoder(r_av_codec_id codec_id, r_pix_fmt format, const
     _inputPkt()
 {
     if(codec_id == r_av_codec_id_h264)
-        _codec = avcodec_find_decoder_by_name("h264_mmal");
+        _codec = avcodec_find_decoder_by_name("h264");
 
     if(!_codec)
         _codec = avcodec_find_decoder(r_av_codec_id_to_ffmpeg_codec_id(_codecID));
@@ -74,7 +74,7 @@ r_video_decoder::r_video_decoder(AVCodecParameters* codecpar, r_av_codec_id code
     _inputPkt()
 {
     if(codec_id == r_av_codec_id_h264)
-        _codec = avcodec_find_decoder_by_name("h264_mmal");
+        _codec = avcodec_find_decoder_by_name("h264");
 
     if(!_codec)
         _codec = avcodec_find_decoder(r_av_codec_id_to_ffmpeg_codec_id(_codecID));

@@ -173,10 +173,7 @@ int main(int argc, char* argv[])
 
     while(running)
     {
-        printv("current", current);
-
         auto recordingInDB = ds.recording_data_sources();
-        printv("recordingInDB", recordingInDB);
         // returns records in recordingInDB but not in current
         auto starting = r_funky::set_diff(recordingInDB, current);
         printv("starting", starting);

@@ -185,6 +185,8 @@ void r_append_file::reset(const string& filePath, const string& dsid)
 
     doubleWord = 0;
     p.write<uint64_t>(doubleWord);
+
+    FULL_MEM_BARRIER();
 }
 
 void r_append_file::append(uint64_t key, uint32_t flags, const uint8_t* pkt, uint32_t size)

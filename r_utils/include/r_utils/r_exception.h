@@ -86,9 +86,15 @@ public:
 
 }
 
-#define R_THROW(ARGS) throw r_utils::r_exception ARGS ;
+#define R_THROW(ARGS) \
+R_MACRO_BEGIN \
+    throw r_utils::r_exception ARGS ; \
+R_MACRO_END
 
-#define R_STHROW(EXTYPE, ARGS) throw EXTYPE ARGS ;
+#define R_STHROW(EXTYPE, ARGS) \
+R_MACRO_BEGIN \
+    throw EXTYPE ARGS ; \
+R_MACRO_END
 
 #define R_LOG_EXCEPTION(E) \
 R_MACRO_BEGIN \

@@ -6,6 +6,13 @@ Building
    will allow this project to use the locally built ffmpeg and x264 as opposed to your system packages).
 
 TODO
+   BUGS
+      r_file_index::_fix_end_times() sets the end_time to the last_key() time! Not the last frame time!
+         - refresh memory on r_storage (we're not only storing chunks starting with keys are we?)
+         - looking at last_key() it looks like its returning the last thing in the index!
+
+
+
    - We need analytics
       - Get h.264 keyframes from vss
          - Decode

@@ -199,7 +199,7 @@ r_video_decoder::r_decoder_state r_video_decoder::decode(const r_packet& pkt)
         auto receiveResult = avcodec_receive_frame(_context, _frame);
 
         if(receiveResult < 0)
-            R_STHROW(r_internal_exception, ("Decoder is full, but no frames available?"))
+            R_STHROW(r_internal_exception, ("Decoder is full, but no frames available?"));
 
         sendResult = avcodec_send_packet(_context, &inputPacket);
         if(sendResult != 0)
@@ -213,7 +213,7 @@ r_video_decoder::r_decoder_state r_video_decoder::decode(const r_packet& pkt)
             return r_decoder_state_eof;
 
         if(receiveResult < 0)
-            R_STHROW(r_internal_exception, ("Unable to receive frame."))
+            R_STHROW(r_internal_exception, ("Unable to receive frame."));
     }
     else if(sendResult == 0)
     {

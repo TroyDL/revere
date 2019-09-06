@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     auto cfgBuffer = r_fs::read_file("/data/vss/config.json");
     auto config = string((char*)&cfgBuffer[0], cfgBuffer.size());
 
-    auto cfg = json::parse(config);
+    auto cfg = json::parse(config)["storage_config"];
 
     r_storage::r_storage_engine::configure_storage(config);
 

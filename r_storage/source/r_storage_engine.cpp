@@ -29,7 +29,7 @@ static r_file_system _parse_file_system(const string& fs)
     r_fs::get_fs_usage(rfs.path, rfs.size_bytes, rfs.free_bytes);
 
     if(rfs.reserve_bytes > rfs.size_bytes)
-        R_STHROW(r_invalid_argument_exception, ("reserve_bytes must be smaller than the file system size!"))
+        R_STHROW(r_invalid_argument_exception, ("reserve_bytes must be smaller than the file system size!"));
 
     return rfs;
 }

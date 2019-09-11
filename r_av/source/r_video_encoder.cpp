@@ -68,7 +68,13 @@ r_video_encoder::r_video_encoder(r_av_codec_id codec_id, r_pix_fmt format, uint1
         _context->thread_count = _options.thread_count.value();
     }
 
-    _context->thread_type = FF_THREAD_FRAME;
+    _context->thread_type = FF_THREAD_SLICE;
+
+//    if( !_options.thread_type.is_null() )
+//    {
+//        if(_options.thread_type.value() == "FF_THREAD_FRAME")
+//            _context->thread_type = FF_THREAD_FRAME;
+//    }
 
     // We set this here to force FFMPEG to populate the extradata field (necessary if the output stream
     // is going to be muxed into a format with a global header (for example, mp4)).

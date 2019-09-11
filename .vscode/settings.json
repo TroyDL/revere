@@ -52,5 +52,6 @@
         "utility": "cpp",
         "valarray": "cpp",
         "algorithm": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

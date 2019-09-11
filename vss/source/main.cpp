@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
     ws.add_route(METHOD_GET, "/contents", [&](const r_web_server<r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_server_request& request)->r_server_response {
         r_server_response response;
         auto args = request.get_uri().get_get_args();
-        response.set_body(r_storage::contents(cfg["storage_config"]["index_path"].get<string>(),
+        response.set_body(r_storage::contents(cfg["index_path"].get<string>(),
                                               args["data_source_id"],
                                               r_time_utils::iso_8601_to_tp(args["start_time"]),
                                               r_time_utils::iso_8601_to_tp(args["end_time"]),
@@ -123,7 +123,8 @@ int main(int argc, char* argv[])
 
         printf("before key_before()\n");
         fflush(stdout);
-        auto frame = r_storage::key_before(cfg["storage_config"]["index_path"].get<string>(),
+
+        auto frame = r_storage::key_before(cfg["index_path"].get<string>(),
                                            args["data_source_id"],
                                            r_time_utils::iso_8601_to_tp(args["time"]));
         printf("after key_before()\n");
@@ -142,7 +143,7 @@ int main(int argc, char* argv[])
         bool keyOnly = false;
         if(args.find("key_only") != args.end())
             keyOnly = (args["key_only"] == "true")?true:false;
-        auto result = r_storage::query(cfg["storage_config"]["index_path"].get<string>(),
+        auto result = r_storage::query(cfg["index_path"].get<string>(),
                                        args["data_source_id"],
                                        args["type"],
                                        previousPlayable,
@@ -157,7 +158,7 @@ int main(int argc, char* argv[])
     ws.add_route(METHOD_GET, "/sdp_before", [&](const r_web_server<r_socket>& ws, r_utils::r_buffered_socket<r_utils::r_socket>& conn, const r_server_request& request)->r_server_response {
         r_server_response response;
         auto args = request.get_uri().get_get_args();
-        auto sdp = r_storage::sdp_before(cfg["storage_config"]["index_path"].get<string>(),
+        auto sdp = r_storage::sdp_before(cfg["index_path"].get<string>(),
                                          args["data_source_id"],
                                          args["type"],
                                          r_time_utils::iso_8601_to_tp(args["time"]));

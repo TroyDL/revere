@@ -110,16 +110,15 @@ void test_r_av_r_video_encoder::test_encode_gop()
             }
             printf("\n");
 
-            //auto buf = m.finalize_buffer();
             m.finalize_file();
-            //r_fs::write_file(&buf[0], buf.size(), r_string_utils::format("%d.mp4",i));
         }
     }
+}
 
-//    {
-//        r_demuxer deMuxer("trans.mp4");
-//        auto ed = deMuxer.get_extradata(deMuxer.get_video_stream_index());
-//        r_fs::write_file(&ed[0],ed.size(),"ed");
-//    }
-
+void test_r_av_r_video_encoder::test_encode_jpeg()
+{   
+    r_video_encoder e(r_av_codec_id_mjpeg, r_av_pix_fmt_yuv420p, 1280, 720, 15, 500000, 1, 15, get_encoder_options("baseline", "fast", "", 2));
+    auto es = e.encode_image(_pic);
+    auto pkt = e.get();
+    RTF_ASSERT(pkt.get_data_size() > 5000);
 }

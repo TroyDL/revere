@@ -59,6 +59,7 @@ struct r_codec_options
     r_utils::r_nullable<std::string> preset;
     r_utils::r_nullable<std::string> tune;
     r_utils::r_nullable<int> thread_count;
+    r_utils::r_nullable<std::string> thread_type;
 };
 
 struct r_codec_options get_decoder_options(int thread_count = 1);

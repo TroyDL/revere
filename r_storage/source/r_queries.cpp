@@ -96,6 +96,8 @@ vector<uint8_t> r_storage::key_before(const string& indexPath,
 
     if(!iter.valid()) // if find() failed, just go to the end of the file.
     {
+        printf("find() failed, going to end.");
+        fflush(stdout);
         iter.end(); // end is invalid(), so backup
         iter.prev();
     }
@@ -115,6 +117,9 @@ vector<uint8_t> r_storage::key_before(const string& indexPath,
         }
         else iter.prev();
     }
+
+    if(!iter.valid())
+        R_STHROW(r_not_found_exception, ("Invalid iterator for dataSourceID %s", dataSourceID.c_str()));
 
     vector<uint8_t> result(payloadLen);
     memcpy(&result[0], payload, payloadLen);

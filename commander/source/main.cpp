@@ -77,6 +77,27 @@ void start_vss_recording(const string& uniqueID, const string& rtspURL, const st
 
 int main(int argc, char* argv[])
 {
+    // Maybe Commander should do everything?
+    //
+    // Commander has 2 main modes:
+    //     --configure
+    //        an interactive mode where you answer a series of questions and Commander configures your system. Any and all existing
+    //        configurations and data (including video) will be lost during this process.
+    //     --check
+    //        an analysys mode that determined whether you need to --configure
+    //     --command
+    //        A service mode that controls and directs your surveillance system.
+    //
+    // If no /data
+    //     create /data
+    //
+    // If no /data/commander
+    //     create /data/commander
+    //
+    // If no /data/vss
+    //     create /data/vss
+    //     create 
+
     r_logger::install_terminate();
 
     signal(SIGTERM, handle_sigterm);

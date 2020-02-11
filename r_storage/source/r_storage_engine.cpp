@@ -40,15 +40,18 @@ void _fill_file_systems(const r_engine_config& cfg)
 
     for(auto fs : cfg.file_systems)
     {
-        uint64_t size_bytes, free_bytes;
-        r_fs::get_fs_usage(fs.path, size_bytes, free_bytes);
+        //uint64_t size_bytes, free_bytes;
+        //r_fs::get_fs_usage(fs.path, size_bytes, free_bytes);
 
-        uint64_t bytesToFill = (free_bytes > fs.reserve_bytes)?free_bytes - fs.reserve_bytes:0;
+        uint64_t bytesToFill = (fs.free_bytes > fs.reserve_bytes)?fs.free_bytes - fs.reserve_bytes:0;
 
         if(bytesToFill < cfg.file_allocation_bytes)
-	    continue;
+	        continue;
 
         auto numFiles = (uint32_t)(bytesToFill / cfg.file_allocation_bytes);
+
+        printf("numFiles = %d\n",numFiles);
+        fflush(stdout);
 
         auto remainderFiles = numFiles % cfg.max_files_in_dir;
 
@@ -57,7 +60,7 @@ void _fill_file_systems(const r_engine_config& cfg)
         {
             numDirs = numFiles / cfg.max_files_in_dir;
             if(remainderFiles > 0)
-	        ++numDirs;
+	            ++numDirs;
         }
 
         if(numFiles > 0)
@@ -92,6 +95,13 @@ void _fill_file_systems(const r_engine_config& cfg)
     random_shuffle(begin(paths), end(paths));
 
     r_sqlite_conn conn(cfg.index_path, true);
+
+    if(!paths.empty())
+    {
+        conn.exec("DELETE FROM segment_files;");
+        conn.exec("DELETE FROM sqlite_sequence;");
+    }
+
     conn.exec("BEGIN");
     size_t flushCounter = 0;
     for(auto path : paths)

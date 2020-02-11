@@ -3,6 +3,7 @@
 #define _r_db_r_sqlite_conn_h
 
 #include "sqlite3/sqlite3.h"
+#include "r_utils/r_exception.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -42,8 +43,16 @@ void r_sqlite_transaction(const r_sqlite_conn& db, T t)
         t(db);
         db.exec("COMMIT");
     }
+    catch(const r_utils::r_exception& ex)
+    {
+        printf("TRANS ROLLBACK\n");
+        printf("EX: %s\n", ex.what());
+        R_LOG_NOTICE("EX: %s", ex.what());
+    }
     catch(...)
     {
+        printf("TRANS ROLLBACK\n");
+        fflush(stdout);
         db.exec("ROLLBACK");
     }
 }

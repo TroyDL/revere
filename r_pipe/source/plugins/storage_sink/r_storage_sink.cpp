@@ -22,6 +22,15 @@ r_storage_sink::r_storage_sink(const string& indexPath, const string& dataSource
 
 r_av::r_packet r_storage_sink::process(r_av::r_packet& pkt)
 {
+#if 0
+    static int counter = 0;
+    ++counter;
+    if((counter % 30) == 0)
+    {
+        printf("r_storage_sink::process(this=%p, counter=%d);\n", this, counter);
+        fflush(stdout);
+    }
+#else
     if(!_st)
         _st = make_shared<r_stream_time>(pkt.get_time_base().second);
 
@@ -37,7 +46,7 @@ r_av::r_packet r_storage_sink::process(r_av::r_packet& pkt)
             if(!_file)
             {
                 _sf = _index.recycle_append(ts, _dataSourceID, _type, f.get_sdp(), [this, &ts, &f](const segment_file& sf){
-                    printf("RECORDING TO FILE A: %s\n", sf.path.c_str());
+                    printf("Starting Recording: %s\n", sf.path.c_str());
                     fflush(stdout);
                     r_append_file::reset(sf.path, this->_dataSourceID);
                     this->_file = make_shared<r_append_file>(sf.path);
@@ -50,7 +59,7 @@ r_av::r_packet r_storage_sink::process(r_av::r_packet& pkt)
                 {
                     _index.update_end_time(_sf, _file->last_key());
                     _sf = _index.recycle_append(ts, _dataSourceID, _type, f.get_sdp(), [this, &ts, &f](const segment_file& sf){
-                        printf("RECORDING TO FILE B: %s\n", sf.path.c_str());
+                        printf("Continue Recording: %s\n", sf.path.c_str());
                         fflush(stdout);
                         r_append_file::reset(sf.path, this->_dataSourceID);        
                         this->_file = make_shared<r_append_file>(sf.path);
@@ -73,6 +82,7 @@ r_av::r_packet r_storage_sink::process(r_av::r_packet& pkt)
         _gopSize += pkt.get_data_size();
         _frames.push_back(pkt);
     }
+#endif
 
     return pkt;
 }

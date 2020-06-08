@@ -24,7 +24,7 @@ static r_file_system _parse_file_system(const string& fs)
     r_file_system rfs;
     rfs.name = fsj["name"].get<string>();
     rfs.path = fsj["path"].get<string>();
-    rfs.reserve_bytes = r_string_utils::s_to_uint64(fsj["reserve_bytes"].get<string>());
+    rfs.reserve_bytes = fsj["reserve_bytes"].get<uint64_t>();
 
     r_fs::get_fs_usage(rfs.path, rfs.size_bytes, rfs.free_bytes);
 
@@ -49,9 +49,6 @@ void _fill_file_systems(const r_engine_config& cfg)
 	        continue;
 
         auto numFiles = (uint32_t)(bytesToFill / cfg.file_allocation_bytes);
-
-        printf("numFiles = %d\n",numFiles);
-        fflush(stdout);
 
         auto remainderFiles = numFiles % cfg.max_files_in_dir;
 
@@ -118,29 +115,6 @@ void _fill_file_systems(const r_engine_config& cfg)
     conn.exec("COMMIT");
 }
 
-
-// {
-//     "storage_config": {
-//         "file_allocation_bytes": "10485760",           #optional
-//         "max_files_in_dir": "10000",                   #optional
-//         "max_indexes_per_file": "3200",                #optional
-//         "index_path": "/data/vss/index",
-//         "data_sources_path": "/data/vss/data_sources",
-//         "file_systems": [
-//             {
-//                 "name": "fs1",
-//                 "path": "/mnt/fs1",
-//                 "reserve_bytes": "10485760"
-//             },
-//             {
-//                 "name": "fs2",
-//                 "path": "/mnt/fs2",
-//                 "reserve_bytes": "10485760"
-//             }
-//         ]
-//     }
-// }
-
 void r_storage_engine::configure_storage(const string& config)
 {
     auto docj = json::parse(config);
@@ -154,15 +128,15 @@ void r_storage_engine::configure_storage(const string& config)
 
     cfg.file_allocation_bytes = (1024*1024*10);
     if(cfgj.find("file_allocation_bytes") != cfgj.end())
-        cfg.file_allocation_bytes = r_string_utils::s_to_uint64(cfgj["file_allocation_bytes"].get<string>());
+        cfg.file_allocation_bytes = cfgj["file_allocation_bytes"].get<uint64_t>();
 
     cfg.max_files_in_dir = 10000;
     if(cfgj.find("max_files_in_dir") != cfgj.end())
-        cfg.max_files_in_dir = r_string_utils::s_to_uint32(cfgj["max_files_in_dir"].get<string>());
+        cfg.max_files_in_dir = cfgj["max_files_in_dir"].get<uint32_t>();
 
     cfg.max_indexes_per_file = 3200;
     if(cfgj.find("max_indexes_per_file") != cfgj.end())
-        cfg.max_indexes_per_file = r_string_utils::s_to_uint32(cfgj["max_indexes_per_file"].get<string>());
+        cfg.max_indexes_per_file = cfgj["max_indexes_per_file"].get<uint32_t>();
 
     cfg.index_path = cfgj["index_path"].get<string>();
 
@@ -176,4 +150,122 @@ void r_storage_engine::configure_storage(const string& config)
         cfg.file_systems.emplace_back(_parse_file_system(fs.dump()));
 
     _fill_file_systems(cfg);   
+}
+
+string _read_line()
+{
+    char lineBuffer[1024];
+    memset(&lineBuffer[0], 0, 1024);
+    fgets(&lineBuffer[0], 1024, stdin);
+    return r_string_utils::strip_eol(string(lineBuffer));
+}
+
+int _to_int_or_default(const string& line, int def)
+{
+    if(line.length() > 0)
+        return r_string_utils::s_to_int(line);
+    return def;
+}
+
+string _to_string_or_default(const string& line, const string& def)
+{
+    if(line.length() > 0)
+        return line;
+    return def;
+}
+
+void r_storage_engine::create_config(const std::string& configPath)
+{
+    printf("Revere Interactive Storage Configuration\n\n");
+
+    printf("You will be asked a series of questions and from this we will create a configuration for your video storage.\n");
+    printf("In most cases, the defaults will probably work.\n\n");
+
+    printf("Configuring directory: %s\n",configPath.c_str());
+    if(!r_fs::file_exists(configPath))
+        r_fs::mkdir(configPath);
+
+    printf("How big should each video file be in megabytes? (Default 10mb): ");
+    int fileSizeInMB = _to_int_or_default(_read_line(), 10);
+
+    printf("What is the most number of files that should be put in one directory? (Default 10000): ");
+    int maxFilesInDir = _to_int_or_default(_read_line(), 10000);
+
+    printf("How many indexes per file do you need? (Default 3200): ");
+    int indexesPerFile = _to_int_or_default(_read_line(), 3200);
+    
+    printf("Where should the master index be located? (Default /data/vss/index): ");
+    string indexPath = _to_string_or_default(_read_line(), "/data/vss/index");
+
+    printf("Where should we put the camera storage database? (Default /data/vss/data_sources): ");
+    string dataSourcesPath = _to_string_or_default(_read_line(), "/data/vss/data_sources");
+
+    printf("How many file systems would you like to configure? (Default 1): ");
+    int numFileSystems = _to_int_or_default(_read_line(), 1);
+
+    vector<r_file_system> fileSystems;    
+    
+    for(int i = 0; i < numFileSystems; ++i)
+    {
+        string defaultFileSystemName = r_string_utils::format("fs%d",i);
+
+        printf("Please enter a name for this filesystem (Default \"%s\"): ", defaultFileSystemName.c_str());
+        string fileSystemName = _to_string_or_default(_read_line(), defaultFileSystemName);
+
+        if(!r_fs::file_exists(configPath + r_fs::PATH_SLASH + "video"))
+            r_fs::mkdir(configPath + r_fs::PATH_SLASH + "video");
+
+        string defaultFileSystemPath = configPath + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + fileSystemName;
+        printf("Please enter the path to this filesystem (%s) (Default \"%s\"): ", fileSystemName.c_str(), defaultFileSystemPath.c_str());
+        string fileSystemPath = _to_string_or_default(_read_line(), defaultFileSystemPath);
+
+        if(!r_fs::file_exists(fileSystemPath))
+            r_fs::mkdir(fileSystemPath);
+
+        printf("Please enter the free space reserve for this filesystem (%s) in megabytes (Default 10mb): ", fileSystemName.c_str());
+        int freeSpaceReserveMB = _to_int_or_default(_read_line(), 10);
+
+        r_file_system fs;
+        fs.name = fileSystemName;
+        fs.path = fileSystemPath;
+        fs.reserve_bytes = (1024*1024) * freeSpaceReserveMB;
+        fileSystems.push_back(fs);
+    }
+
+    string fs;
+    for(auto i = fileSystems.begin(), e = fileSystems.end(); i != e; ++i)
+    {
+        fs += r_string_utils::format("             {\n"
+                                     "                 \"name\": \"%s\",\n"
+                                     "                 \"path\": \"%s\",\n"
+                                     "                 \"reserve_bytes\": %llu\n"
+                                     "             }%s\n",
+                                     i->name.c_str(),
+                                     i->path.c_str(),
+                                     i->reserve_bytes,
+                                     (next(i) != e)?",":"");
+    }
+
+    string cfg = r_string_utils::format("{\n"
+                                        "    \"storage_config\": {\n"
+                                        "         \"file_allocation_bytes\": %d,\n"
+                                        "         \"max_files_in_dir\": %d,\n"
+                                        "         \"max_indexes_per_file\": %d,\n"
+                                        "         \"index_path\": \"%s\",\n"
+                                        "         \"data_sources_path\": \"%s\",\n"
+                                        "         \"file_systems\": [\n"
+                                        "%s"
+                                        "         ]\n"
+                                        "      }\n"
+                                        "}\n\n",
+                                        (1024*1024) * fileSizeInMB,
+                                        maxFilesInDir,
+                                        indexesPerFile,
+                                        indexPath.c_str(),
+                                        dataSourcesPath.c_str(),
+                                        fs.c_str());
+
+    r_fs::write_file((uint8_t*)cfg.c_str(), cfg.length(), configPath + r_fs::PATH_SLASH + "config.json");
+
+    printf("Done.\nNow re-run vss like this: vss OR vss %s\n", configPath.c_str());
 }

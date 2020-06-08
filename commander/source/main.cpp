@@ -26,6 +26,7 @@ using namespace r_disco;
 using json = nlohmann::json;
 using namespace std;
 using namespace std::placeholders;
+using namespace ranges;
 
 static const int SERVER_PORT = 11006;
 
@@ -155,7 +156,7 @@ int main(int argc, char* argv[])
         {
             lock_guard<mutex> g(devicesLock);
             auto assignedDevices = ad.get();
-            vector<string> assignedIDs = assignedDevices | ranges::view::transform([](const pair<string, assigned_device>& p){return p.second.id;});
+            vector<string> assignedIDs = assignedDevices | views::transform([](const pair<string, assigned_device>& p){return p.second.id;});
 
             auto recordingCameraIDs = get_recording_camera_ids();
 

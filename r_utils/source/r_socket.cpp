@@ -119,7 +119,7 @@ r_raw_socket r_raw_socket::accept()
 
     clientSocket._sok = clientSok;
 
-    return std::move(clientSocket);
+    return clientSocket;
 }
 
 int r_raw_socket::raw_send( const void* buf, size_t len )

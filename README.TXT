@@ -28,6 +28,16 @@ Current Progress
    - We have skeleton implementations of vas and commander.
    - So, we have a long way to go....
 
+TODO
+   - vss needs an installer
+   - we need a top level build script
+
+Build Setup
+   Install yasm
+      sudo apt install yasm
+   Install lame
+      sudo apt install libmp3lame-dev
+
 Building
    First build x264 and ffmpeg in the usual cmake way.
 
@@ -48,6 +58,11 @@ Building
       pushd build
       cmake .. && make
       popd
+
+Configuring
+   Configure vss
+      build/vss/vss --configure
+      build/vss/vss
 
 TODO
    BUGS

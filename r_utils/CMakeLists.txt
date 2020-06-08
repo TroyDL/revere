@@ -24,6 +24,10 @@ add_library (r_utils include/r_utils/r_string_utils.h
                      include/r_utils/r_process.h
                      include/r_utils/r_args.h
                      include/r_utils/r_server_threaded.h # header only
+                     include/r_utils/3rdparty/json/json.h
+                     include/r_utils/interfaces/r_pollable.h
+                     include/r_utils/interfaces/r_socket_io.h
+                     include/r_utils/interfaces/r_stream_io.h
                      source/r_string_utils.cpp
                      source/r_logger.cpp
                      source/r_stack_trace.cpp

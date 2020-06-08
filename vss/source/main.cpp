@@ -5,6 +5,7 @@
 #include "r_utils/r_time_utils.h"
 #include "r_utils/r_file.h"
 #include "r_utils/3rdparty/json/json.h"
+#include "r_utils/r_args.h"
 #include "r_http/r_web_server.h"
 #include "r_http/r_http_exception.h"
 #include "r_storage/r_storage_engine.h"
@@ -76,15 +77,23 @@ int main(int argc, char* argv[])
 
     signal(SIGTERM, handle_sigterm);
 
-    string firstArgument = (argc > 1) ? argv[1] : string();
-
-    if( firstArgument != "--interactive" )
+    auto arguments = r_args::parse_arguments(argc, argv);
+    
+    if(r_args::check_argument(arguments, "--interactive"))
         daemon( 1, 0 );
 
-    auto cfgBuffer = r_fs::read_file("/data/vss/config.json");
-    auto config = string((char*)&cfgBuffer[0], cfgBuffer.size());
+    string vssTopDir;
+    if(r_args::check_argument(arguments, "--configure", vssTopDir))
+    {
+        r_storage::r_storage_engine::create_config((vssTopDir.length() == 0)?"/data/vss":vssTopDir);
+        exit(0);
+    }
 
-    auto cfg = json::parse(config);
+    auto configPath = r_args::get_optional_argument(arguments, "--config", "/data/vss");
+
+    auto cfgBuffer = r_fs::read_file(configPath.value() + r_fs::PATH_SLASH + "config.json");
+    auto config = string((char*)&cfgBuffer[0], cfgBuffer.size());
+    auto cfg = json::parse(config)["storage_config"];
 
     r_storage::r_storage_engine::configure_storage(config);
 

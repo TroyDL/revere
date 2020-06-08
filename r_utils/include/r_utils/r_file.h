@@ -42,7 +42,7 @@ public:
         obj._f = fopen(path.c_str(), mode.c_str());
         if(!obj._f)
             R_STHROW(r_not_found_exception, ("Unable to open: %s",path.c_str()));
-        return std::move(obj);
+        return obj;
     }
 
 	void close() { fclose(_f); _f = nullptr; }

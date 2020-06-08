@@ -36,6 +36,7 @@ class r_storage_engine
 {
 public:
     static void configure_storage(const std::string& config);
+    static void create_config(const std::string& configPath);
 };
 
 }

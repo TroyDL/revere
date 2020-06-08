@@ -121,7 +121,7 @@ public:
     inline void connect( const std::string& host, int port ) { _sok.connect(host, port); }
     inline void listen( int backlog = MAX_BACKLOG ) { _sok.listen(backlog); }
     inline void bind( int port, const std::string& ip = "" ) { _sok.bind(port, ip ); }
-    inline r_socket accept() { auto r = _sok.accept(); r_socket s; s._sok = std::move(r); return std::move(s); }
+    inline r_socket accept() { auto r = _sok.accept(); r_socket s; s._sok = std::move(r); return s; }
 
     inline SOCKET get_sok_id() const { return _sok.get_sok_id(); }
 
@@ -203,7 +203,7 @@ public:
     inline void connect( const std::string& host, int port ) { _sok.connect(host, port); }
     inline void listen( int backlog = MAX_BACKLOG ) { _sok.listen(backlog); }
     inline void bind( int port, const std::string& ip = "" ) { _sok.bind(port, ip ); }
-    inline r_buffered_socket accept() { r_buffered_socket bs(_buffer.capacity()); auto s = _sok.accept(); bs._sok = std::move(s); return std::move(bs); }
+    inline r_buffered_socket accept() { r_buffered_socket bs(_buffer.capacity()); auto s = _sok.accept(); bs._sok = std::move(s); return bs; }
 
     inline SOCKET get_sok_id() const { return _sok.get_sok_id(); }
 

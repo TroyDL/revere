@@ -79,14 +79,14 @@ int main(int argc, char* argv[])
 
     auto arguments = r_args::parse_arguments(argc, argv);
     
-    if(r_args::check_argument(arguments, "--interactive"))
-        daemon( 1, 0 );
-
     string vssTopDir;
     if(r_args::check_argument(arguments, "--configure", vssTopDir))
     {
         r_storage::r_storage_engine::create_config((vssTopDir.length() == 0)?"/data/vss":vssTopDir);
         exit(0);
+    } else {
+        if(!r_args::check_argument(arguments, "--interactive"))
+            daemon( 1, 0 );
     }
 
     auto configPath = r_args::get_optional_argument(arguments, "--config", "/data/vss");

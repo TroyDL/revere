@@ -2,7 +2,7 @@
 #include "r_db/r_sqlite_conn.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_string_utils.h"
-#include <unistd.h>
+#include <thread>
 
 using namespace r_db;
 using namespace r_utils;
@@ -11,6 +11,11 @@ using namespace std;
 static const int DEFAULT_NUM_OPEN_RETRIES = 5;
 static const int BASE_SLEEP_MICROS = 500000;
 static const int BUSY_TIMEOUT = 2000000;
+
+r_nullable<string> r_db::to_scalar(const vector<map<string, r_utils::r_nullable<string>>>& row)
+{
+    return row.front().begin()->second;
+}
 
 r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
     _db(nullptr),
@@ -33,7 +38,7 @@ r_sqlite_conn::r_sqlite_conn(const string& fileName, bool rw) :
         if(_db != nullptr)
             _clear();
 
-        usleep(((DEFAULT_NUM_OPEN_RETRIES-numRetries)+1) * BASE_SLEEP_MICROS);
+        std::this_thread::sleep_for(std::chrono::microseconds(((DEFAULT_NUM_OPEN_RETRIES-numRetries)+1) * BASE_SLEEP_MICROS));
 
         --numRetries;
     }
@@ -67,16 +72,16 @@ r_sqlite_conn& r_sqlite_conn::operator=(r_sqlite_conn&& obj) noexcept
     return *this;
 }
 
-vector<map<string, string>> r_sqlite_conn::exec(const string& query) const
+vector<map<string, r_nullable<string>>> r_sqlite_conn::exec(const string& query) const
 {
     if(!_db)
         R_STHROW(r_internal_exception, ("Cannot exec() on moved out instance of r_sqlite_conn."));
 
-    vector<map<string, string>> results;
+    vector<map<string, r_nullable<string>>> results;
 
     sqlite3_stmt* stmt = nullptr;
 
-    int rc = sqlite3_prepare_v3(_db, query.c_str(), query.length(), 0, &stmt, nullptr);
+    int rc = sqlite3_prepare_v3(_db, query.c_str(), (int)query.length(), 0, &stmt, nullptr);
     if(rc != SQLITE_OK)
         R_STHROW(r_internal_exception, ("sqlite3_prepare_v2(%s) failed with: %s", query.c_str(), sqlite3_errmsg(_db)));
     if(stmt == NULL)
@@ -95,11 +100,11 @@ vector<map<string, string>> r_sqlite_conn::exec(const string& query) const
             {
                 int columnCount = sqlite3_column_count(stmt);
 
-                map<string, string> row;
+                map<string, r_nullable<string>> row;
 
                 for(int i = 0; i < columnCount; ++i)
                 {
-                    string val;
+                    r_nullable<string> val;
 
                     switch(sqlite3_column_type(stmt, i))
                     {
@@ -108,6 +113,8 @@ vector<map<string, string>> r_sqlite_conn::exec(const string& query) const
                         break;
                         case SQLITE_FLOAT:
                             val = r_string_utils::double_to_s(sqlite3_column_double(stmt, i));
+                        break;
+                        case SQLITE_NULL:
                         break;
                         case SQLITE_TEXT:
                         default:

@@ -4,6 +4,13 @@
 
 #include <string>
 
+#ifdef IS_WINDOWS
+#include <WinSock2.h>
+#include <ws2tcpip.h>
+#include <BaseTsd.h>
+#endif
+
+#ifdef IS_LINUX
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -11,6 +18,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#endif
 
 namespace r_utils
 {

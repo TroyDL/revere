@@ -3,7 +3,10 @@
 #define r_utils_r_logger_h
 
 #include <cstdarg>
+#ifdef IS_WINDOWS
+#else
 #include <syslog.h>
+#endif
 
 namespace r_utils
 {
@@ -33,6 +36,8 @@ enum LOG_LEVEL
 void write(LOG_LEVEL level, int line, const char* file, const char* format, ...);
 void write(LOG_LEVEL level, int line, const char* file, const char* format, va_list& args);
 
+void install_logger();
+void uninstall_logger();
 void install_terminate();
 
 }

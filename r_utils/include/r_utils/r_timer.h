@@ -6,6 +6,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <functional>
+#include <chrono>
+#include <vector>
 
 namespace r_utils
 {
@@ -15,26 +17,29 @@ typedef std::function<void()> r_timer_cb;
 class r_timer final
 {
 public:
-    r_timer( size_t intervalMillis, r_timer_cb cb );
-    r_timer(const r_timer&) = delete;
-    r_timer(r_timer&&) = delete;
-    ~r_timer() noexcept;
+    void add_timed_event(
+        const std::chrono::steady_clock::time_point& now,
+        const std::chrono::milliseconds& interval,
+        r_timer_cb cb,
+        bool initial_fire,
+        bool one_shot = false
+    );
 
-    r_timer& operator=(const r_timer&) = delete;
-    r_timer& operator=(r_timer&&) = delete;
-
-    void start();
-    void stop();
+    // takes the current time and returns the number of milliseconds until the next event.
+    std::chrono::milliseconds update(const std::chrono::milliseconds& max_sleep, const std::chrono::steady_clock::time_point& now);
 
 private:
-    void _timer_loop();
+    struct r_timed_event
+    {
+        std::chrono::steady_clock::time_point next_fire_time;
+        bool one_shot;
+        std::chrono::milliseconds interval;
+        r_timer_cb cb;
 
-    std::thread _thread;
-    size_t _intervalMillis;
-    r_timer_cb _cb;
-    std::recursive_mutex _lok;
-    std::condition_variable_any _cond;
-    bool _started;
+        bool update(const std::chrono::steady_clock::time_point& now);
+    };
+
+    std::vector<r_timed_event> _timed_events {};
 };
 
 }

@@ -4,17 +4,10 @@
 
 #include "r_utils/r_string_utils.h"
 #include "r_utils/r_socket_address.h"
+#include "r_utils/r_socket.h"
 #include <vector>
 
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-
-typedef int SOCKET;
 
 namespace r_utils
 {
@@ -43,13 +36,13 @@ public:
 
     virtual void set_send_buffer_size(size_t size);
 
-    SOCKET get_socket_fd() { return _sok; }
+    SOK get_socket_fd() { return _sok; }
 
 private:
     void _configure();
     void _close() throw();
 
-    SOCKET _sok;
+    SOK _sok;
     r_socket_address _addr;
     std::string _localInterfaceIP;
     int _localPort;

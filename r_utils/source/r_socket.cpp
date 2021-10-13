@@ -1,12 +1,14 @@
 
 #include "r_utils/r_socket.h"
-#include "r_utils/r_sha_256.h"
+#include "r_utils/r_string_utils.h"
+#include "r_utils/r_md5.h"
 
-#include <poll.h>
+#ifdef IS_LINUX
 #include <ifaddrs.h>
 #include <linux/if.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#endif
 
 using namespace r_utils;
 using namespace std;
@@ -15,6 +17,34 @@ static const int POLL_NFDS = 1;
 
 bool r_raw_socket::_sokSysStarted = false;
 recursive_mutex r_raw_socket::_sokLock;
+
+void r_raw_socket::socket_startup()
+{
+#ifdef IS_WINDOWS
+    WORD wVersionRequested;
+    WSADATA wsaData;
+    int err;
+
+    wVersionRequested = MAKEWORD( 2, 2 );
+
+    err = WSAStartup( wVersionRequested, &wsaData );
+    if ( err != 0 )
+        R_STHROW( r_socket_exception, ( "Unable to load WinSock DLL"));
+
+    if ( LOBYTE( wsaData.wVersion ) != 2 ||
+         HIBYTE( wsaData.wVersion ) != 2 )
+    {
+        R_STHROW( r_socket_exception, ( "Unable to load WinSock DLL"));
+    }
+#endif
+}
+
+void r_raw_socket::socket_cleanup()
+{
+#ifdef WIN32
+    WSACleanup();
+#endif
+}
 
 r_raw_socket::r_raw_socket() :
     _sok( -1 ),
@@ -53,13 +83,13 @@ r_raw_socket& r_raw_socket::operator = ( r_raw_socket&& obj ) noexcept
 
 void r_raw_socket::create( int af )
 {
-    _sok = (SOCKET) ::socket( af, SOCK_STREAM, 0 );
+    _sok = (SOK) ::socket( af, SOCK_STREAM, 0 );
 
     if( _sok <= 0 )
         R_STHROW( r_socket_exception, ("Unable to create socket.") );
 
     int on = 1;
-    if( ::setsockopt( (SOCKET)_sok, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(int) ) < 0 )
+    if( ::setsockopt( (SOK)_sok, SOL_SOCKET, SO_REUSEADDR, (const char*)&on, sizeof(int) ) < 0 )
         R_STHROW( r_socket_exception, ("Unable to configure socket.") );
 }
 
@@ -105,12 +135,12 @@ r_raw_socket r_raw_socket::accept()
 
     r_raw_socket clientSocket;
 
-    int clientSok = 0;
+    SOK clientSok = 0;
     socklen_t addrLength = _addr.sock_addr_size();
 
-    clientSok = ::accept( _sok,
-                          _addr.get_sock_addr(),
-                          &addrLength );
+    clientSok = (SOK)::accept(_sok,
+                              _addr.get_sock_addr(),
+                              &addrLength );
 
     // Since the socket can be closed by another thread while we were waiting in accept(),
     // we only throw here if _sok is still a valid fd.
@@ -122,108 +152,91 @@ r_raw_socket r_raw_socket::accept()
     return clientSocket;
 }
 
+#if !defined MSG_NOSIGNAL
+# define MSG_NOSIGNAL 0
+#endif
+
 int r_raw_socket::raw_send( const void* buf, size_t len )
 {
-    return (int)::send(_sok, buf, len, MSG_NOSIGNAL);
+    return (int)::send(_sok, (char*)buf, (int)len, MSG_NOSIGNAL);
 }
 
 int r_raw_socket::raw_recv( void* buf, size_t len )
 {
-    return (int)::recv(_sok, buf, len, 0);
+    return (int)::recv(_sok, (char*)buf, (int)len, 0);
 }
 
-void r_raw_socket::close()
+void r_raw_socket::close() const
 {
     if( _sok < 0 )
         return;
 
-    SOCKET sokTemp = _sok;
+    SOK sokTemp = _sok;
     int err;
 
     _sok = -1;
 
     FULL_MEM_BARRIER();
 
-    err = ::close( sokTemp );
-
+#ifdef IS_WINDOWS
+    err = ::closesocket(sokTemp);
+#else
+    err = ::close(sokTemp);
+#endif
     if( err < 0 )
         R_LOG_WARNING( "Failed to close socket." );
 }
 
 bool r_raw_socket::wait_till_recv_wont_block( uint64_t& millis ) const
 {
-    struct timeval beforePoll = { 0, 0 };
-    gettimeofday(&beforePoll, nullptr);
+    struct timeval recv_timeout;
+    recv_timeout.tv_sec = (uint32_t)(millis / 1000);
+    recv_timeout.tv_usec = (uint32_t)((millis % 1000) * 1000);
 
-    int retVal = 0;
+    fd_set recv_fds;
+    FD_ZERO(&recv_fds);
+    FD_SET((int)_sok, &recv_fds);
 
-    struct pollfd fds[POLL_NFDS];
-    int nfds = POLL_NFDS;
+    auto before = std::chrono::steady_clock::now();
 
-    fds[0].fd = _sok;
-    fds[0].events = POLLIN | POLLHUP | POLLERR | POLLNVAL | POLLRDHUP;
-    fds[0].revents = 0;
+    auto fds_with_data = select((int)(_sok + 1), &recv_fds, NULL, NULL, &recv_timeout);
 
-    retVal = poll(fds, nfds, (int)millis );
+    auto after = std::chrono::steady_clock::now();
 
-    if( retVal == 0 )
-    {
-        millis = 0;
+    if(_sok < 0)
         return false;
-    }
 
-    struct timeval afterPoll = { 0, 0 };
-    gettimeofday(&afterPoll, nullptr);
+    uint64_t elapsed_millis = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
 
-    struct timeval delta = { 0, 0 };
-    timersub( &afterPoll, &beforePoll, &delta );
+    millis -= (elapsed_millis >= millis) ? millis : elapsed_millis;
 
-    uint64_t deltaMillis = (delta.tv_sec * 1000) + (delta.tv_usec / 1000);
-
-    millis = (deltaMillis >= millis) ? 0 : (millis - deltaMillis);
-
-    if( retVal < 0 )
-        R_STHROW( r_socket_exception, ("poll() error.") );
-
-    return true;
+    return (fds_with_data > 0) ? true : false;
 }
 
 bool r_raw_socket::wait_till_send_wont_block( uint64_t& millis ) const
 {
-    struct timeval beforePoll = { 0, 0 };
-    gettimeofday(&beforePoll, nullptr);
+    struct timeval send_timeout;
+    send_timeout.tv_sec = (uint32_t)(millis / 1000);
+    send_timeout.tv_usec = (uint32_t)((millis % 1000) * 1000);
 
-    int retVal = 0;
+    fd_set send_fds;
+    FD_ZERO(&send_fds);
+    FD_SET((int)_sok, &send_fds);
 
-    struct pollfd fds[POLL_NFDS];
-    int nfds = POLL_NFDS;
+    auto before = std::chrono::steady_clock::now();
 
-    fds[0].fd = _sok;
-    fds[0].events = POLLOUT | POLLHUP;
-    fds[0].revents = 0;
+    auto fds_with_data = select((int)(_sok + 1), NULL, &send_fds, NULL, &send_timeout);
 
-    retVal = poll(fds, nfds, millis );
+    auto after = std::chrono::steady_clock::now();
 
-    if( retVal == 0 )
-    {
-        millis = 0;
+    if(_sok < 0)
         return false;
-    }
 
-    struct timeval afterPoll = { 0, 0 };
-    gettimeofday(&afterPoll, nullptr);
+    uint64_t elapsed_millis = std::chrono::duration_cast<std::chrono::milliseconds>(after - before).count();
 
-    struct timeval delta = { 0, 0 };
-    timersub( &afterPoll, &beforePoll, &delta );
+    millis -= (elapsed_millis >= millis) ? millis : elapsed_millis;
 
-    uint64_t deltaMillis = (delta.tv_sec * 1000) + (delta.tv_usec / 1000);
-
-    millis = (deltaMillis >= millis) ? 0 : (millis - deltaMillis);
-
-    if( retVal < 0 )
-        R_STHROW( r_socket_exception, ("poll() error.") );
-
-    return true;
+    return (fds_with_data > 0) ? true : false;
 }
 
 string r_raw_socket::get_peer_ip() const
@@ -279,7 +292,13 @@ void r_socket::send( const void* buf, size_t len )
             if(bytesJustSent <= 0)
             {
                 close();
+#ifdef IS_WINDOWS
+                char err_msg[1024];
+                strerror_s(err_msg, 1024, errno);
+                R_STHROW(r_socket_exception, ("io error in send(%s)", err_msg));
+#else
                 R_STHROW(r_socket_exception, ("io error in send(%s)",strerror(errno)));
+#endif
             }
             else
             {
@@ -371,63 +390,12 @@ vector<string> r_utils::r_networking::r_resolve( int type, const string& name )
     return addresses;
 }
 
-map<string,vector<string>> r_utils::r_networking::r_get_interface_addresses( int af )
-{
-    map<string,vector<string> > interfaceAddresses;
-
-    struct ifaddrs* ifaddrs = nullptr, *ifa = nullptr;
-    int family = 0, s = 0;
-    char host[NI_MAXHOST];
-
-    if( getifaddrs( &ifaddrs ) == -1 )
-        R_STHROW( r_socket_exception, ( "Unable to query network interfaces."));
-
-    for( ifa = ifaddrs; ifa != nullptr; ifa = ifa->ifa_next )
-    {
-        if( ifa->ifa_addr == nullptr )
-        continue;
-
-        family = ifa->ifa_addr->sa_family;
-
-        if( family != af )
-            continue;
-
-        string key = ifa->ifa_name;
-        s = getnameinfo( ifa->ifa_addr,
-                         (family==AF_INET) ?
-                             sizeof( struct sockaddr_in ) :
-                             sizeof( struct sockaddr_in6 ),
-                         host,
-                         NI_MAXHOST,
-                         nullptr,
-                         0,
-                         NI_NUMERICHOST );
-
-        // s will be 0 if getnameinfo was successful
-        if( !s )
-        {
-
-            if( interfaceAddresses.find(key) == interfaceAddresses.end() )
-            {
-                std::vector<string> addresses;
-                interfaceAddresses.insert( make_pair(key, addresses) );
-            }
-            string val = host;
-            interfaceAddresses.find(key)->second.push_back( val );
-        }
-        else
-            R_LOG_WARNING("Failed on call to getnameinfo().");
-    }
-
-    freeifaddrs( ifaddrs );
-
-    return interfaceAddresses;
-}
-
 vector<uint8_t> r_utils::r_networking::r_get_hardware_address(const string& ifname)
 {
     vector<uint8_t> buffer(6);
 
+#ifdef IS_WINDOWS
+#else
     int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if(fd < 0)
         R_THROW(("Unable to create datagram socket."));
@@ -445,6 +413,7 @@ vector<uint8_t> r_utils::r_networking::r_get_hardware_address(const string& ifna
     close(fd);
 
     memcpy(&buffer[0], &s.ifr_addr.sa_data[0], 6);
+#endif
     return buffer;
 }
 
@@ -452,7 +421,7 @@ string r_utils::r_networking::r_get_device_uuid(const std::string& ifname)
 {
     auto hwaddr = r_get_hardware_address(ifname);
 
-    r_sha_256 h;
+    r_md5 h;
     h.update(&hwaddr[0], 6);
     h.finalize();
 

@@ -12,7 +12,6 @@ namespace r_stack_trace
 {
 
 std::string get_stack(char sep = '\n');
-std::vector<std::string> get_stack_frame_names();
 
 }
 

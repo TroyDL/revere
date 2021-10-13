@@ -11,6 +11,12 @@
 using namespace r_utils;
 using namespace std;
 
+#ifdef IS_WINDOWS
+const static size_t WIDE_CHAR_SIZE = 2;
+#else
+const static size_t WIDE_CHAR_SIZE = 4;
+#endif
+
 vector<string> r_utils::r_string_utils::split(const string& str, char delim)
 {
     return split(str, string(&delim, 1));
@@ -43,6 +49,22 @@ vector<string> r_utils::r_string_utils::split(const string& str, const string& d
     }
 
     return parts;
+}
+
+string r_utils::r_string_utils::join(const vector<string>& parts, char delim)
+{
+    string result;
+    for(auto b = begin(parts), e = end(parts); b != e; ++b)
+        result += *b + ((next(b)!=e)?string(1,delim):"");
+    return result;
+}
+
+string r_utils::r_string_utils::join(const vector<string>& parts, const string& delim)
+{
+    string result;
+    for(auto b = begin(parts), e = end(parts); b != e; ++b)
+        result += *b + ((next(b)!=e)?delim:"");
+    return result;
 }
 
 string r_utils::r_string_utils::format(const char* fmt, ...)
@@ -218,7 +240,12 @@ string r_utils::r_string_utils::uri_decode(const string& str)
                     }
 
                     unsigned int val;
+#ifdef IS_WINDOWS
+                    sscanf_s(hexStr.c_str(), "%x", &val);
+#endif
+#ifdef IS_LINUX
                     sscanf(hexStr.c_str(), "%x", &val);
+#endif
                     retval += r_string_utils::format("%c", (char)val);
                     i += 2;
                 }
@@ -494,87 +521,62 @@ int r_utils::r_string_utils::s_to_int(const string& s)
 
 unsigned int r_utils::r_string_utils::s_to_uint(const std::string& s)
 {
-    // int's are 32 bit on linux... so...
-    uint32_t val;
-    sscanf(s.c_str(), "%u", &val);
-    return val;
+    return stoul(s);
 }
 
 uint8_t r_utils::r_string_utils::s_to_uint8(const string& s)
 {
-    uint8_t val;
-    sscanf(s.c_str(), "%hhu", &val);
-    return val;
+    return (uint8_t)stoul(s);
 }
 
 int8_t r_utils::r_string_utils::s_to_int8(const string& s)
 {
-    int8_t val;
-    sscanf(s.c_str(), "%hhd", &val);
-    return val;
+    return stoi(s);
 }
 
 uint16_t r_utils::r_string_utils::s_to_uint16(const string& s)
 {
-    uint16_t val;
-    sscanf(s.c_str(), "%hu", &val);
-    return val;
+    return (uint16_t)stoul(s);
 }
 
 int16_t r_utils::r_string_utils::s_to_int16(const string& s)
 {
-    int16_t val;
-    sscanf(s.c_str(), "%hd", &val);
-    return val;
+    return stoi(s);
 }
 
 uint32_t r_utils::r_string_utils::s_to_uint32(const string& s)
 {
-    uint32_t val;
-    sscanf(s.c_str(), "%u", &val);
-    return val;
+    return stoul(s);
 }
 
 int32_t r_utils::r_string_utils::s_to_int32(const string& s)
 {
-    int32_t val;
-    sscanf(s.c_str(), "%d", &val);
-    return val;
+    return stol(s);
 }
 
 uint64_t r_utils::r_string_utils::s_to_uint64(const string& s)
 {
-    uint64_t val;
-    sscanf(s.c_str(), "%llu", (long long unsigned*)&val);
-    return val;
+    return stoull(s);
 }
 
 int64_t r_utils::r_string_utils::s_to_int64(const string& s)
 {
-    int64_t val;
-    sscanf(s.c_str(), "%lld", (long long int*)&val);
-    return val;
+    return stoll(s);
 }
 
 double r_utils::r_string_utils::s_to_double(const string& s)
 {
-    double val;
-    sscanf(s.c_str(), "%lf", &val);
-    return val;
+    return stod(s);
 }
 
 float r_utils::r_string_utils::s_to_float(const string& s)
 {
-    float val;
-    sscanf(s.c_str(), "%f", &val);
-    return val;
+    return stof(s);
 }
 
 size_t r_utils::r_string_utils::s_to_size_t(const string& s)
 {
-    size_t val;
-    sscanf(s.c_str(), "%zu", &val);
-    return val;
+    return stoul(s);
 }
 
 string r_utils::r_string_utils::int_to_s(int val)
@@ -584,60 +586,285 @@ string r_utils::r_string_utils::int_to_s(int val)
 
 std::string r_utils::r_string_utils::uint_to_s(unsigned int val)
 {
-    return r_string_utils::format("%u", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::int8_to_s(int8_t val)
 {
-    return r_string_utils::format("%d", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::uint8_to_s(uint8_t val)
 {
-    return r_string_utils::format("%u", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::int16_to_s(int16_t val)
 {
-    return r_string_utils::format("%d", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::uint16_to_s(uint16_t val)
 {
-    return r_string_utils::format("%u", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::int32_to_s(int32_t val)
 {
-    return r_string_utils::format("%d", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::uint32_to_s(uint32_t val)
 {
-    return r_string_utils::format("%u", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::int64_to_s(int64_t val)
 {
-    return r_string_utils::format("%lld", (long long int)val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::uint64_to_s(uint64_t val)
 {
-    return r_string_utils::format("%llu", (long long unsigned)val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::double_to_s(double val)
 {
-    return r_string_utils::format("%lf", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::float_to_s(float val)
 {
-    return r_string_utils::format("%f", val);
+    return to_string(val);
 }
 
 string r_utils::r_string_utils::size_t_to_s(size_t val)
 {
-    return r_string_utils::format("%zu", val);
+    return to_string((uint32_t)val);
+}
+
+std::string r_utils::r_string_utils::convert_utf16_string_to_multi_byte_string(const uint16_t* str)
+{
+    return convert_utf16_string_to_multi_byte_string(str, (size_t)-1);
+}
+
+std::string r_utils::r_string_utils::convert_utf16_string_to_multi_byte_string(const uint16_t* str, size_t length)
+{
+    std::string out;
+    if(str == NULL)
+        return out;
+    unsigned int codepoint = 0;
+    for (size_t i = 0; i < length && *str != 0; ++i, ++str)
+    {
+        if(*str >= 0xd800 && *str <= 0xdbff)
+            codepoint = ((*str - 0xd800) << 10) + 0x10000;
+        else
+        {
+            if(*str >= 0xdc00 && *str <= 0xdfff)
+                codepoint |= *str - 0xdc00;
+            else
+                codepoint = *str;
+
+            if(codepoint <= 0x7f)
+                out.append(1, static_cast<char>(codepoint));
+            else if(codepoint <= 0x7ff)
+            {
+                out.append(1, static_cast<char>(0xc0 | ((codepoint >> 6) & 0x1f)));
+                out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+            }
+            else if(codepoint <= 0xffff)
+            {
+                out.append(1, static_cast<char>(0xe0 | ((codepoint >> 12) & 0x0f)));
+                out.append(1, static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
+                out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+            }
+            else
+            {
+                out.append(1, static_cast<char>(0xf0 | ((codepoint >> 18) & 0x07)));
+                out.append(1, static_cast<char>(0x80 | ((codepoint >> 12) & 0x3f)));
+                out.append(1, static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
+                out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+            }
+            codepoint = 0;
+        }
+    }
+    return out;
+}
+std::vector<uint16_t> r_utils::r_string_utils::convert_multi_byte_string_to_utf16_string(const std::string& str)
+{
+    std::vector<uint16_t> out;
+    if(str.empty())
+        return out;
+    char* place = const_cast<char*>(str.c_str());
+    unsigned int codepoint = 0;
+    int following = 0;
+    for (;  *place != 0;  ++place)
+    {
+        unsigned char ch = *place;
+        if(ch <= 0x7f)
+        {
+            codepoint = ch;
+            following = 0;
+        }
+        else if(ch <= 0xbf)
+        {
+            if(following > 0)
+            {
+                codepoint = (codepoint << 6) | (ch & 0x3f);
+                --following;
+            }
+        }
+        else if(ch <= 0xdf)
+        {
+            codepoint = ch & 0x1f;
+            following = 1;
+        }
+        else if(ch <= 0xef)
+        {
+            codepoint = ch & 0x0f;
+            following = 2;
+        }
+        else
+        {
+            codepoint = ch & 0x07;
+            following = 3;
+        }
+        if(following == 0)
+        {
+            if(codepoint > 0xffff)
+            {
+                out.push_back(static_cast<wchar_t>(0xd800 + (codepoint >> 10)));
+                out.push_back(static_cast<wchar_t>(0xdc00 + (codepoint & 0x03ff)));
+            }
+            else
+                out.push_back(static_cast<wchar_t>(codepoint));
+            codepoint = 0;
+        }
+    }
+    return out;
+}
+
+std::string r_utils::r_string_utils::convert_utf32_string_to_multi_byte_string(const uint32_t* str)
+{
+    return convert_utf32_string_to_multi_byte_string(str, (size_t)-1);
+}
+
+std::string r_utils::r_string_utils::convert_utf32_string_to_multi_byte_string(const uint32_t* str, size_t length)
+{
+    std::string out;
+    if(str == NULL)
+        return out;
+
+    size_t i = 0;
+    for (wchar_t* temp = (wchar_t*)str; i < length && *temp != 0; ++temp, ++i)
+    {
+        unsigned int codepoint = *temp;
+
+        if(codepoint <= 0x7f)
+            out.append(1, static_cast<char>(codepoint));
+        else if(codepoint <= 0x7ff)
+        {
+            out.append(1, static_cast<char>(0xc0 | ((codepoint >> 6) & 0x1f)));
+            out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+        }
+        else if(codepoint <= 0xffff)
+        {
+            out.append(1, static_cast<char>(0xe0 | ((codepoint >> 12) & 0x0f)));
+            out.append(1, static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
+            out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+        }
+      else
+        {
+            out.append(1, static_cast<char>(0xf0 | ((codepoint >> 18) & 0x07)));
+            out.append(1, static_cast<char>(0x80 | ((codepoint >> 12) & 0x3f)));
+            out.append(1, static_cast<char>(0x80 | ((codepoint >> 6) & 0x3f)));
+            out.append(1, static_cast<char>(0x80 | (codepoint & 0x3f)));
+        }
+    }
+    return out;
+}
+
+std::vector<uint32_t> r_utils::r_string_utils::convert_multi_byte_string_to_utf32_string(const std::string& str)
+{
+    std::vector<uint32_t> out;
+
+    wchar_t codepoint = 0;
+    int following = 0;
+    for (char* temp = const_cast<char*>(str.c_str());  *temp != 0;  ++temp)
+    {
+        unsigned char ch = *temp;
+        if(ch <= 0x7f)
+        {
+            codepoint = ch;
+            following = 0;
+        }
+        else if(ch <= 0xbf)
+        {
+            if(following > 0)
+            {
+                codepoint = (codepoint << 6) | (ch & 0x3f);
+                --following;
+            }
+        }
+        else if(ch <= 0xdf)
+        {
+            codepoint = ch & 0x1f;
+            following = 1;
+        }
+        else if(ch <= 0xef)
+        {
+            codepoint = ch & 0x0f;
+            following = 2;
+        }
+        else
+        {
+            codepoint = ch & 0x07;
+            following = 3;
+        }
+        if(following == 0)
+        {
+            out.push_back(codepoint);
+            codepoint = 0;
+        }
+    }
+    return out;
+}
+
+std::string r_utils::r_string_utils::convert_wide_string_to_multi_byte_string(const wchar_t* str)
+{
+    if(sizeof(wchar_t) != WIDE_CHAR_SIZE)
+        R_THROW(("wchar_t size is [%d], and should be [%d]"));
+#ifdef IS_WINDOWS
+    std::string result(convert_utf16_string_to_multi_byte_string((uint16_t*)str));
+#else
+    std::string result(convert_utf32_string_to_multi_byte_string((uint32_t*)str));
+#endif
+    return result;
+}
+
+std::string r_utils::r_string_utils::convert_wide_string_to_multi_byte_string(const wchar_t* str, size_t length)
+{
+    if(sizeof(wchar_t) != WIDE_CHAR_SIZE)
+        R_THROW(("wchar_t size is [%d], and should be [%d]"));
+#ifdef IS_WINDOWS
+    std::string result(convert_utf16_string_to_multi_byte_string((uint16_t*)str, length));
+#else
+    std::string result(convert_utf32_string_to_multi_byte_string((uint32_t*)str, length));
+#endif
+    return result;
+}
+
+std::wstring r_utils::r_string_utils::convert_multi_byte_string_to_wide_string(const std::string& str)
+{
+    if(sizeof(wchar_t) != WIDE_CHAR_SIZE)
+        R_THROW(("wchar_t size is [%d], and should be [%d]"));
+#ifdef IS_WINDOWS
+    std::vector<uint16_t> converted = convert_multi_byte_string_to_utf16_string(str);
+    std::wstring result(converted.begin(),converted.end());
+#else
+    std::vector<uint32_t> converted = convert_multi_byte_string_to_utf32_string(str);
+    std::wstring result(converted.begin(),converted.end());
+#endif
+    return result;
 }

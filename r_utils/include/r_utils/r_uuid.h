@@ -4,8 +4,12 @@
 
 #include <string>
 #include <vector>
+#ifdef IS_LINUX
 #include <uuid/uuid.h>
-
+#endif
+#ifdef IS_WINDOWS
+#include <Rpc.h>
+#endif
 namespace r_utils
 {
 

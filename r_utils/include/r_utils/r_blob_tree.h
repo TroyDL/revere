@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <cstring>
 
 class test_r_utils_r_blob_tree;
 
@@ -25,7 +26,15 @@ public:
         NT_ARRAY,
         NT_LEAF
     };
+#if 0
+    r_blob_tree() {}
 
+    r_blob_tree(const r_blob_tree&) = delete;
+    r_blob_tree(r_blob_tree&&) noexcept = delete;
+
+    r_blob_tree& operator=(const r_blob_tree&) = delete;
+    r_blob_tree& operator=(r_blob_tree&&) noexcept = delete;
+#endif
     static std::vector<uint8_t> serialize(const r_blob_tree& rt, uint32_t version);
 
     static r_blob_tree deserialize(const uint8_t* p, size_t size, uint32_t& version);
@@ -53,15 +62,29 @@ public:
         return _childrenByIndex.size();
     }
 
-    r_blob_tree& operator=(const std::pair<size_t, const uint8_t*>& payload)
+    r_blob_tree& operator=(const std::string& value)
     {
-        _payload = payload;
+        _payload_storage.resize(value.length());
+        memcpy(&_payload_storage[0], value.c_str(), value.length());
+
         return *this;
     }
 
-    inline std::pair<size_t, const uint8_t*> get() const
+    r_blob_tree& operator=(const std::vector<uint8_t>& payload_storage)
     {
-        return _payload;
+        _payload_storage = payload_storage;
+
+        return *this;
+    }
+
+    inline std::vector<uint8_t> get() const
+    {
+        return _payload_storage;
+    }
+
+    inline std::string get_string() const
+    {
+        return std::string((char*)&_payload_storage[0], _payload_storage.size());
     }
 
 private:
@@ -72,7 +95,7 @@ private:
 
     std::map<std::string, r_blob_tree> _children;
     std::vector<r_blob_tree> _childrenByIndex;
-    std::pair<size_t, const uint8_t*> _payload;
+    std::vector<uint8_t> _payload_storage;
 };
 
 }

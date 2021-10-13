@@ -2,11 +2,13 @@
 #include "r_utils/r_socket_address.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_string_utils.h"
+#include "r_utils/r_std_utils.h"
 #include <cctype>
 #include <string.h>
 
 using namespace std;
 using namespace r_utils;
+using namespace r_utils::r_std_utils;
 
 r_socket_address::r_socket_address(int port, const string& address) :
     _port(port),
@@ -120,20 +122,26 @@ void r_socket_address::set_address(const string& addr, int port)
 
 unsigned int r_socket_address::get_address_family(const string& address, struct sockaddr* saddr)
 {
-    struct addrinfo hint, *info = 0;
+    raii_ptr<struct addrinfo> info(
+        [](struct addrinfo* p){freeaddrinfo(p);}
+    );
+
+    struct addrinfo hint;//, *info = 0;
     memset(&hint, 0, sizeof(hint));
     hint.ai_family = AF_UNSPEC;
     hint.ai_flags = AI_CANONNAME;
     //hint.ai_flags = AI_NUMERICHOST;  // Uncomment this to disable DNS lookup
-    int ret = getaddrinfo(isolate_address(address).c_str(), 0, &hint, &info);
-    if (ret) {
-      R_STHROW(r_internal_exception, ("r_socket_address::get_address_family: Failed to determine address info for \'%s\'. %s", address.c_str(), gai_strerror(ret)));
-    }
 
-    unsigned int family = info->ai_family;
+    auto ret = getaddrinfo(isolate_address(address).c_str(), 0, &hint, &info.raw());
+
+    if(ret != 0)
+        R_STHROW(r_internal_exception, ("r_socket_address::get_address_family: Failed to determine address info for \'%s\'. %s", address.c_str(), gai_strerror(ret)));
+
+    auto family = info.get()->ai_family;
+
     if (saddr)
-        memcpy(saddr, info->ai_addr, sock_addr_size(family));
-    freeaddrinfo(info);
+        memcpy(saddr, info.get()->ai_addr, sock_addr_size(family));
+
     return family;
 }
 

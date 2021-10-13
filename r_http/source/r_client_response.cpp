@@ -348,8 +348,12 @@ void r_client_response::_read_chunked_body(r_stream_io& socket)
             const string chunkLenS = lineBuf;
 
             uint32_t chunkLen;
+#ifdef IS_WINDOWS
+            sscanf_s(chunkLenS.c_str(), "%x", &chunkLen);
+#endif
+#ifdef IS_LINUX
             sscanf(chunkLenS.c_str(), "%x", &chunkLen);
-
+#endif
             // We read our chunk into a temporary "chunk" ck_memory object, we then optionally
             // call our "chunk callback" function... Finally, we copy the new chunk into the
             // main body contents object.

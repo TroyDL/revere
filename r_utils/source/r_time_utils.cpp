@@ -1,51 +1,16 @@
-
+#define _CRT_SECURE_NO_WARNINGS
 #include "r_utils/r_time_utils.h"
 #include "r_utils/r_string_utils.h"
 #include "r_utils/r_exception.h"
 #include <string.h>
+#include <chrono>
+#include <sstream>
+#include <ctime>
+#include <iomanip>
 
 using namespace r_utils;
 using namespace std;
 using namespace std::chrono;
-
-static bool _dst_in_effect(time_t t)
-{
-	tm* timeInfo = localtime(&t);
-	return (bool)timeInfo->tm_isdst;
-}
-
-static time_t _utc_to_tz(time_t t)
-{
-    tm* timeInfo = localtime(&t);
-	return t + timeInfo->tm_gmtoff;
-}
-
-static time_t _dst_offset()
-{
-    time_t currTimeT = time(0);
-
-    tm janTM = *gmtime(&currTimeT);
-    janTM.tm_mon = 1;
-    janTM.tm_mday = 4;
-    time_t janTimeT = mktime(&janTM);
-	time_t adjJanTimeT = _utc_to_tz(janTimeT);
-	time_t janDiff = adjJanTimeT - janTimeT;
-
-    tm julTM = janTM;
-    julTM.tm_mon = 7;
-    time_t julTimeT = mktime(&julTM);
-	time_t adjJulTimeT = _utc_to_tz(julTimeT);
-	time_t julDiff = adjJulTimeT - julTimeT;
-
-    return abs(julDiff - janDiff);
-}
-
-static time_t _parse_offset(const string& offset)
-{
-	auto colindex = offset.find(':');
-	int hour = stoi(offset.substr(1, colindex)), minute = stoi(offset.substr(colindex+1));
-	return (hour * 3600) + (minute * 60);
-}
 
 system_clock::time_point r_utils::r_time_utils::iso_8601_to_tp(const string& str)
 {
@@ -58,115 +23,61 @@ system_clock::time_point r_utils::r_time_utils::iso_8601_to_tp(const string& str
 	// 1976-10-01T12:00:00.000+3:00   Moscow
 	//    local time is 12pm and that is ahead of utc by 3 hours
 
-	auto tdex = str.find('T');
+    auto zpos = str.find('Z');
+    auto without_z = (zpos == std::string::npos) ? str : str.substr(0, zpos);
 
-	if(tdex == string::npos)
-		R_THROW(("Invalid iso 8601 string"));
+    auto ppos = without_z.find(".");
+    double frac = (ppos != std::string::npos) ? stod(without_z.substr(ppos)) : 0.0;
 
-	auto dateStr = str.substr(0, tdex);
-
-	int year, month, day;
-	auto err = sscanf(dateStr.c_str(), "%4d-%2d-%2d", &year, &month, &day);
-	if(err == EOF)
-		R_THROW(("iso 8601 parse error."));
-
-	auto offsetdex = str.substr(tdex+1).rfind('+');
-
-	if(offsetdex == string::npos)
-		offsetdex = str.substr(tdex+1).rfind('-');
+    std::istringstream ss(without_z);
+    std::tm bdt;
+    memset(&bdt, 0, sizeof(bdt));
+    ss >> std::get_time(&bdt, "%Y-%m-%dT%H:%M:%S");
 	
-	bool hasOffset = (offsetdex != string::npos);
+	bdt.tm_isdst = -1;
 
-	auto timeStr = str.substr(tdex+1, offsetdex);
+    time_t theTime;
+    if (zpos != std::string::npos)
+    {
+#ifdef IS_LINUX
+        theTime = mktime(&bdt);
+#endif
+#ifdef IS_WINDOWS
+        theTime = _mkgmtime(&bdt);
+#endif
+    }
+    else
+    {
+        theTime = mktime(&bdt);
+    }
 
-	int hour, minute, second;
-	err = sscanf(timeStr.c_str(), "%2d:%2d:%2d", &hour, &minute, &second);
-
-	auto pdex = timeStr.find(".");
-	string frac = (pdex == string::npos)?"0":timeStr.substr(pdex);
-
-	auto offsetStr = (offsetdex!=string::npos)?str.substr(offsetdex + tdex + 1):"+00:00";
-	auto offset = _parse_offset(offsetStr);
-	bool plus = (offsetStr[0] == '+');
-
-	bool hasZ = (str.find('Z') != string::npos);
-
-	auto ttm = tm();
-	ttm.tm_year = year - 1900;
-	ttm.tm_mon = month - 1;
-	ttm.tm_mday = day;
-	ttm.tm_hour = hour;
-	ttm.tm_min = minute;
-	ttm.tm_sec = second;
-
-	time_t theTime;
-
-	if(hasOffset)
-	{
-		theTime = timegm(&ttm);
-		if(plus)
-			theTime -= offset;
-		else theTime += offset;
-	}
-	else
-	{
-		if(hasZ)
-			theTime = timegm(&ttm);
-		else
-		{
-			theTime = mktime(&ttm);
-			if(_dst_in_effect(theTime))
-				theTime -= _dst_offset();
-		}
-	}
-
-	auto time_point_result = chrono::system_clock::from_time_t(theTime);
-
-	auto fracSec = stod(frac);
-
-	auto numMillis = (uint32_t)(fracSec * 1000);
-
-	time_point_result += chrono::milliseconds(numMillis);
-
-	return time_point_result;
+    return std::chrono::system_clock::from_time_t(theTime) + std::chrono::milliseconds((int)(frac * 1000));
 }
 
 string r_utils::r_time_utils::tp_to_iso_8601(const system_clock::time_point& tp, bool UTC)
 {
-	auto utcTime = system_clock::to_time_t(tp);
-	auto tpFromUTC = system_clock::from_time_t(utcTime);
-	auto ms = duration_cast<milliseconds>(tp - tpFromUTC);
+    // convert to time_t while preserving fractional part.
+    auto tp_seconds = std::chrono::system_clock::to_time_t(tp);
+    auto frac_millis = std::chrono::duration_cast<std::chrono::milliseconds>(tp - std::chrono::system_clock::from_time_t(tp_seconds)).count();
 
-	struct tm bdtStorage;
-	struct tm* bdt = &bdtStorage;
+    // Use std::localtime() or std::gmtime() to convert to std:tm (bdt)
+    std::tm bdt = (UTC) ? *std::gmtime(&tp_seconds) : *std::localtime(&tp_seconds);
 
-	if (UTC)
-		bdt = gmtime(&utcTime);
-	else bdt = localtime(&utcTime);
+    std::string output;
+    std::stringstream output_stream(output);
 
-	if(!bdt)
-		R_STHROW(r_internal_exception, ("failed to convert time point to broken down representation."));
+    // Use std::put_time to convert broken down time to a string.
+    output_stream << std::put_time(&bdt, "%FT%T");
 
-	char date_time_format[] = "%Y-%m-%dT%H:%M:%S";
+    // Append fractional part to string.
+    double fracV = ((double)frac_millis) / 1000.0;
+    auto frac = r_string_utils::format("%0.3f", fracV);
+    output_stream << frac.substr(frac.find("."));
 
-	char time_str[] = "yyyy-mm-ddTHH:MM:SS "; // XXX - dont delete trailing space!
+    if (UTC)
+        output_stream << "Z";
 
-	if( strftime(time_str, strlen(time_str), date_time_format, bdt) == 0 )
-        R_STHROW(r_internal_exception, ("Failed to write formatted iso 8601 time string!"));
-
-	char frac[6] = { 0, 0, 0, 0, 0, 0 };
-	auto numMillis = ms.count();
-	double fracV = ((double)numMillis) / 1000.0;
-    r_string_utils::format_buffer(frac, 6, "%3f", fracV);
-
-	string result(time_str);
-	result.append(".");
-	result.append(frac+2);
-
-	if (UTC)
-		result.append("Z");
-
-	return result;
+    return output_stream.str();
 }
 
 milliseconds r_utils::r_time_utils::iso_8601_period_to_duration(const string& str)
@@ -332,8 +243,14 @@ chrono::system_clock::time_point r_utils::r_time_utils::epoch_millis_to_tp(uint6
 
 bool r_utils::r_time_utils::is_tz_utc()
 {
-	auto t = time(0);
-	struct tm lt;
-	localtime_r(&t, &lt);
-	return (r_string_utils::to_lower(string(lt.tm_zone)) == "utc") ? true : false;
+    time_t ofs = 0;
+    struct tm timeInfo;
+#ifdef IS_WINDOWS
+    if(localtime_s(&timeInfo, &ofs) != 0)
+        R_THROW(("Unable to query local time."));
+#endif
+#ifdef IS_LINUX
+	timeInfo = *localtime(&ofs);
+#endif
+    return (timeInfo.tm_hour == 0);
 }

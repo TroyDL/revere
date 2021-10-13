@@ -6,74 +6,127 @@
 #include "r_utils/r_byte_ptr.h"
 #include "r_utils/r_macro.h"
 
+#ifdef IS_WINDOWS
+#include <Windows.h>
+#endif
+
 namespace r_utils
 {
 
-class r_memory_map final
+class r_memory_map
 {
 public:
-    enum flags
+    enum Flags
     {
-        mm_type_file = 0x01,
-        mm_type_anon = 0x02,
-        mm_shared = 0x04,
-        mm_private = 0x08,
-        mm_fixed = 0x10
+        RMM_TYPE_FILE = 0x01,
+        RMM_TYPE_ANON = 0x02,
+        RMM_SHARED = 0x04,
+        RMM_PRIVATE = 0x08,
+        RMM_FIXED = 0x10
     };
 
-    enum protection
+    enum Protection
     {
-        mm_prot_name = 0x00,
-        mm_prot_read = 0x01,
-        mm_prot_write = 0x02,
-        mm_prot_exec = 0x04
+        RMM_PROT_NONE = 0x00,
+        RMM_PROT_READ = 0x01,
+        RMM_PROT_WRITE = 0x02,
+        RMM_PROT_EXEC = 0x04
     };
 
-    enum advice
+    enum Advice
     {
-        mm_advice_normal = 0x00,
-        mm_advice_random = 0x01,
-        mm_advice_sequential = 0x02,
-        mm_advice_willneed = 0x04,
-        mm_advice_dontneed = 0x08
+        RMM_ADVICE_NORMAL = 0x00,
+        RMM_ADVICE_RANDOM = 0x01,
+        RMM_ADVICE_SEQUENTIAL = 0x02,
+        RMM_ADVICE_WILLNEED = 0x04,
+        RMM_ADVICE_DONTNEED = 0x08
     };
 
-    enum synchronous
-    {
-        mm_sync_async = 0x00,
-        mm_sync_sync = 0x01,
-        mm_sync_invalidate = 0x02
-    };
+    r_memory_map();
 
-    r_memory_map() : _mem(nullptr), _length(0) {}
+    r_memory_map(
+        int fd,
+        uint32_t offset,
+        uint32_t len,
+        uint32_t prot,
+        uint32_t flags
+    );
+    
     r_memory_map(const r_memory_map&) = delete;
-    r_memory_map(r_memory_map&& obj) noexcept;
-    r_memory_map(int fd, uint64_t offset, uint64_t len, uint32_t prot, uint32_t flags);
 
-    ~r_memory_map() noexcept;
+    r_memory_map(r_memory_map&& other) :
+#ifdef IS_WINDOWS
+        _fileHandle(std::move(other._fileHandle)),
+        _mapHandle(std::move(other._mapHandle)),
+#endif
+        _mem(std::move(other._mem)),
+        _length(std::move(other._length))
+    {
+#ifdef IS_WINDOWS
+        other._fileHandle = INVALID_HANDLE_VALUE;
+        other._mapHandle = INVALID_HANDLE_VALUE;
+#endif
+        other._mem = nullptr;
+        other._length = 0;
+    }
 
-    r_memory_map& operator=(const r_memory_map&) = delete;
-    r_memory_map& operator=(r_memory_map&&) noexcept;
+    virtual ~r_memory_map() noexcept;
 
-    r_byte_ptr_rw map() const { return r_byte_ptr_rw((uint8_t*)_mem, _length); }
-    uint64_t size() const { return _length; }
+    r_memory_map& operator=(const r_memory_map& other) = delete;
 
-    void advise(void* addr, size_t length, int advice) const;
+    r_memory_map& operator=(r_memory_map&& other) noexcept
+    {
+        if (this != &other)
+        {
+            _clear();
 
-    void sync(const r_byte_ptr_rw& p, int flags) const;
+#ifdef IS_WINDOWS
+            _fileHandle = std::move(other._fileHandle);
+            other._fileHandle = INVALID_HANDLE_VALUE;
+            _mapHandle = std::move(other._mapHandle);
+            other._mapHandle = INVALID_HANDLE_VALUE;
+#endif
+            _mem = std::move(other._mem);
+            other._mem = nullptr;
+            _length = std::move(other._length);
+            other._length = 0;
+        }
+
+        return *this;
+    }
+
+    inline void* map() const
+    {
+        return _mem;
+    }
+
+    inline uint32_t mength() const
+    {
+        return _length;
+    }
+
+    void advise( void* addr, size_t length, int advice ) const;
+
+    void flush( void* addr, size_t length, bool now );
 
 private:
-    void _close() noexcept;
+    void _clear() noexcept;
+#ifdef IS_WINDOWS
+    int _GetWinProtFlags( int flags ) const;
+    int _GetWinAccessFlags( int flags ) const;
+#else
+    int _GetPosixProtFlags( int prot ) const;
+    int _GetPosixAccessFlags( int flags ) const;
+    int _GetPosixAdvice( int advice ) const;
+#endif
 
-    int _get_posix_prot_flags(int prot) const;
-    int _get_posix_access_flags(int flags) const;
-    int _get_posix_advice(int advice) const;
-    int _get_posix_sync_flags(int flags) const;
-
+#ifdef IS_WINDOWS
+    HANDLE _fileHandle;
+    HANDLE _mapHandle;
+#endif
     void* _mem;
-    uint64_t _length;
+    uint32_t _length;
 };
-
 }
 
 #endif

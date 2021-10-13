@@ -129,7 +129,16 @@ void r_server_response::write_response(r_stream_io& socket)
     _responseWritten = true;
 
     time_t now = time(0);
+
+#ifdef IS_LINUX
     char* cstr = ctime(&now);
+#endif
+#ifdef IS_WINDOWS
+    char cstr[1024];
+    memset(cstr, 0, 1024);
+    if(ctime_s(cstr, 1024, &now) != 0)
+        R_STHROW(r_http_exception_generic, ("Unable to get time string with ctime_s()."));
+#endif
 
     if( cstr == nullptr )
         R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling write_response()."));
@@ -309,8 +318,15 @@ string r_server_response::_get_status_message(status_code sc) const
 bool r_server_response::_write_header(r_stream_io& socket)
 {
     time_t now = time(0);
+#ifdef IS_LINUX
     char* cstr = ctime(&now);
-
+#endif
+#ifdef IS_WINDOWS
+    char cstr[1024];
+    memset(cstr, 0, 1024);
+    if(ctime_s(cstr, 1024, &now) != 0)
+        R_STHROW(r_http_exception_generic, ("Unable to get time string with ctime_s()."));
+#endif
     if( cstr == nullptr )
         R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling WriteResponse()."));
 

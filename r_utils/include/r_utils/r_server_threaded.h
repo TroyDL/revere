@@ -5,6 +5,7 @@
 #include "r_utils/r_socket.h"
 #include "r_utils/r_socket_address.h"
 #include "r_utils/r_string_utils.h"
+#include "r_utils/r_logger.h"
 
 #include <mutex>
 #include <thread>
@@ -151,11 +152,11 @@ private:
         }
         catch(std::exception& ex)
         {
-            printf("%s\n",ex.what());
+            R_LOG_ERROR("%s",ex.what());
         }
         catch(...)
         {
-            printf("Unknown exception while responding to request.");
+            R_LOG_ERROR("Unknown exception while responding to request.");
         }
 
         cc->doneTP = std::chrono::steady_clock::now();

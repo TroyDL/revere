@@ -1,4 +1,3 @@
-
 #ifndef _r_utils_r_functional_h
 #define _r_utils_r_functional_h
 

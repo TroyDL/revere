@@ -1,125 +1,234 @@
-
+#include "r_utils/r_file.h"
 #include "r_utils/r_memory_map.h"
 #include "r_utils/r_exception.h"
+
+#ifdef IS_WINDOWS
+#include <io.h>
+#else
 #include <sys/mman.h>
+#endif
 
 using namespace r_utils;
 
-r_memory_map::r_memory_map(r_memory_map&& obj) noexcept :
-    _mem(std::move(obj._mem)),
-    _length(std::move(obj._length))
+static const uint32_t MAX_MAPPING_LEN = 1048576000;
+
+r_memory_map::r_memory_map() :
+#ifdef IS_WINDOWS
+    _fileHandle(INVALID_HANDLE_VALUE),
+    _mapHandle(INVALID_HANDLE_VALUE),
+#endif
+    _mem(nullptr),
+    _length(0)
 {
-    obj._mem = nullptr;
-    obj._length = 0;
 }
 
-r_memory_map::r_memory_map(int fd, uint64_t offset, uint64_t len, uint32_t prot, uint32_t flags) :
-    _mem(nullptr),
-    _length(len)
+r_memory_map::r_memory_map(
+    int fd,
+    uint32_t offset,
+    uint32_t len,
+    uint32_t prot,
+    uint32_t flags
+) :
+#ifdef IS_WINDOWS
+    _fileHandle( INVALID_HANDLE_VALUE ),
+    _mapHandle( INVALID_HANDLE_VALUE ),
+#endif
+    _mem( NULL ),
+    _length( len )
 {
-    if(fd <= 0)
-        R_STHROW(r_invalid_argument_exception, ("Attempting to memory map a bad file descriptor."));
-    if(len == 0)
-        R_STHROW(r_invalid_argument_exception, ("Unable to memory map 0 length."));
-    if(!(flags & mm_type_file) && !(flags & mm_type_anon))
-        R_STHROW(r_invalid_argument_exception, ("A mapping must be either a file mapping, or an anonymous mapping (neither was specified)."));
-    if(flags & mm_fixed)
-        R_STHROW(r_invalid_argument_exception, ("r_memory_map does not support fixed mappings."));
+    if( fd <= 0 )
+        R_THROW(( "Attempting to memory map a bad file descriptor." ));
 
-    _mem = mmap64(nullptr, _length, _get_posix_prot_flags(prot), _get_posix_access_flags(flags), fd, offset);
+    if( (len == 0) || (len > MAX_MAPPING_LEN) )
+        R_THROW(( "Attempting to memory map more than 1gb is invalid." ));
+
+    if( !(flags & RMM_TYPE_FILE) && !(flags & RMM_TYPE_ANON) )
+        R_THROW(( "A mapping must be either a file mapping, or an anonymous mapping (neither was specified)." ));
+
+    if( flags & RMM_FIXED )
+        R_THROW(( "r_memory_map does not support fixed mappings." ));
+
+#ifdef IS_WINDOWS
+    int protFlags = _GetWinProtFlags( prot );
+    int accessFlags = _GetWinAccessFlags( prot );
+
+    if( fd != -1 )
+        _fileHandle = (HANDLE)_get_osfhandle( fd );
+
+    if( _fileHandle == INVALID_HANDLE_VALUE )
+    {
+        if( !(flags & RMM_TYPE_ANON) )
+            R_THROW(( "An invalid fd was passed and this is not an anonymous mapping." ));
+    }
+    else
+    {
+        if( !DuplicateHandle( GetCurrentProcess(),
+                              _fileHandle,
+                              GetCurrentProcess(),
+                              &_fileHandle,
+                              0,
+                              FALSE,
+                              DUPLICATE_SAME_ACCESS ) )
+            R_THROW(( "Unable to duplicate the provided fd file handle." ));
+
+        _mapHandle = CreateFileMapping( _fileHandle, NULL, protFlags, 0, 0, NULL );
+        if( _mapHandle == 0 )
+            R_THROW(( "Unable to create file mapping"));
+
+        _mem = MapViewOfFile( _mapHandle, accessFlags, 0, offset, len );
+        if( _mem == NULL )
+        {
+            DWORD lastError = GetLastError();
+            R_THROW(( "Unable to complete file mapping"));
+        }
+    }
+#else
+    _mem = mmap( NULL,
+                 _length,
+                 _GetPosixProtFlags( prot ),
+                 _GetPosixAccessFlags( flags ),
+                 fd,
+                 offset );
+#endif
 }
 
 r_memory_map::~r_memory_map() noexcept
 {
-    _close();
+    _clear();
 }
 
-r_memory_map& r_memory_map::operator=(r_memory_map&& obj) noexcept
+void r_memory_map::advise( void* addr, size_t length, int advice ) const
 {
-    _close();
-    _mem = std::move(obj._mem);
-    obj._mem = nullptr;
-    _length = std::move(obj._length);
-    obj._length = 0;
-    return *this;
+#ifndef IS_WINDOWS
+    int posixAdvice = _GetPosixAdvice( advice );
+
+    int err = madvise( addr, length, posixAdvice );
+
+    if( err != 0 )
+        R_THROW(( "Unable to apply memory mapping advice." ));
+#endif
 }
 
-void r_memory_map::advise(void* addr, size_t length, int advice) const
+void r_memory_map::flush( void* addr, size_t length, bool now )
 {
-    if(madvise(addr, length, _get_posix_advice(advice)) != 0)
-        R_STHROW(r_internal_exception, ("Unable to apply memory mapping advice."));
+#ifndef IS_WINDOWS
+    int err = msync( addr, length, (now) ? MS_SYNC : MS_ASYNC );
+
+    if( err != 0 )
+        R_THROW(("Unable to sync memory mapped file."));
+#else
+    if( !FlushViewOfFile( addr, length ) )
+        R_THROW(("Unable to sync memory mapped file."));
+
+    if( now )
+    {
+        if( !FlushFileBuffers( _fileHandle ) )
+            R_THROW(("Unable to flush file handle."));
+    }
+#endif
 }
 
-void r_memory_map::sync(const r_byte_ptr_rw& p, int flags) const
+void r_memory_map::_clear() noexcept
 {
-    if(msync(p.get_ptr(), p.length(), _get_posix_sync_flags(flags)) < 0)
-        R_STHROW(r_internal_exception, ("Unable to msync()!"));
+#ifdef IS_WINDOWS
+    if(_mem != nullptr)
+        UnmapViewOfFile( _mem );
+    if(_mapHandle != INVALID_HANDLE_VALUE)
+        CloseHandle( _mapHandle );
+    if(_fileHandle != INVALID_HANDLE_VALUE)
+        CloseHandle( _fileHandle );
+#else
+    if(_mem != nullptr)
+        munmap( _mem, _length );
+#endif
 }
 
-void r_memory_map::_close() noexcept
+#ifdef IS_WINDOWS
+
+int r_memory_map::_GetWinProtFlags( int flags ) const
 {
-    if(_mem)
-        munmap(_mem, _length);
+    int prot = 0;
+
+    if( flags & RMM_PROT_READ )
+    {
+        if( flags & RMM_PROT_WRITE )
+            prot = (flags & RMM_PROT_EXEC) ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE;
+        else prot = (flags & RMM_PROT_EXEC) ? PAGE_EXECUTE_READ : PAGE_READONLY;
+    }
+    else if( flags & RMM_PROT_WRITE )
+        prot = (flags & RMM_PROT_EXEC) ? PAGE_EXECUTE_READ : PAGE_WRITECOPY;
+    else if( flags & RMM_PROT_EXEC )
+        prot = PAGE_EXECUTE_READ;
+
+    return prot;
 }
 
-int r_memory_map::_get_posix_prot_flags(int prot) const
+int r_memory_map::_GetWinAccessFlags( int flags ) const
+{
+    int access = 0;
+
+    if( flags & RMM_PROT_READ )
+    {
+        if( flags & RMM_PROT_WRITE )
+            access = FILE_MAP_WRITE;
+        else access = (flags & RMM_PROT_EXEC) ? FILE_MAP_EXECUTE : FILE_MAP_READ;
+    }
+    else if( flags & RMM_PROT_WRITE )
+        access = FILE_MAP_COPY;
+    else if( flags & RMM_PROT_EXEC )
+        access = FILE_MAP_EXECUTE;
+
+    return access;
+}
+
+#else
+
+int r_memory_map::_GetPosixProtFlags( int prot ) const
 {
     int osProtFlags = 0;
 
-    if(prot & mm_prot_read)
+    if( prot & RMM_PROT_READ )
         osProtFlags |= PROT_READ;
-    if(prot & mm_prot_write)
+    if( prot & RMM_PROT_WRITE )
         osProtFlags |= PROT_WRITE;
-    if(prot & mm_prot_exec)
+    if( prot & RMM_PROT_EXEC )
         osProtFlags |= PROT_EXEC;
 
     return osProtFlags;
 }
 
-int r_memory_map::_get_posix_access_flags(int flags) const
+int r_memory_map::_GetPosixAccessFlags( int flags ) const
 {
     int osFlags = 0;
 
-    if(flags & mm_type_file)
+    if( flags & RMM_TYPE_FILE )
         osFlags |= MAP_FILE;
-    if(flags & mm_type_anon)
+    if( flags & RMM_TYPE_ANON )
         osFlags |= MAP_ANONYMOUS;
-    if(flags & mm_shared)
+    if( flags & RMM_SHARED )
         osFlags |= MAP_SHARED;
-    if(flags & mm_private)
+    if( flags & RMM_PRIVATE )
         osFlags |= MAP_PRIVATE;
-    if(flags & mm_fixed)
+    if( flags & RMM_FIXED )
         osFlags |= MAP_FIXED;
 
     return osFlags;
 }
 
-int r_memory_map::_get_posix_advice(int advice) const
+int r_memory_map::_GetPosixAdvice( int advice ) const
 {
     int posixAdvice = 0;
 
-    if(advice & mm_advice_random)
+    if( advice & RMM_ADVICE_RANDOM )
         posixAdvice |= MADV_RANDOM;
-    if(advice & mm_advice_sequential)
+    if( advice & RMM_ADVICE_SEQUENTIAL )
         posixAdvice |= MADV_SEQUENTIAL;
-    if(advice & mm_advice_willneed)
+    if( advice & RMM_ADVICE_WILLNEED )
         posixAdvice |= MADV_WILLNEED;
-    if(advice & mm_advice_dontneed)
+    if( advice & RMM_ADVICE_DONTNEED )
         posixAdvice |= MADV_DONTNEED;
 
     return posixAdvice;
 }
 
-int r_memory_map::_get_posix_sync_flags(int flags) const
-{
-    int posixSync = 0;
-
-    if(flags & mm_sync_async)
-        posixSync |= MS_ASYNC;
-    if(flags & mm_sync_sync)
-        posixSync |= MS_SYNC;
-    if(flags & mm_sync_invalidate)
-        posixSync |= MS_INVALIDATE;
-
-    return posixSync;
-}
+#endif

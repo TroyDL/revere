@@ -15,6 +15,9 @@ namespace r_string_utils
 std::vector<std::string> split(const std::string& str, char delim);
 std::vector<std::string> split(const std::string& str, const std::string& delim);
 
+std::string join(const std::vector<std::string>& parts, char delim);
+std::string join(const std::vector<std::string>& parts, const std::string& delim);
+
 std::string format(const char* fmt, ...);
 std::string format(const char* fmt, va_list& args);
 
@@ -79,6 +82,16 @@ std::string int64_to_s(int64_t val);
 std::string double_to_s(double val);
 std::string float_to_s(float val);
 std::string size_t_to_s(size_t val);
+
+std::string convert_utf16_string_to_multi_byte_string(const uint16_t* str);
+std::string convert_utf16_string_to_multi_byte_string(const uint16_t* str, size_t length);
+std::vector<uint16_t> convert_multi_byte_string_to_utf16_string(const std::string& str);
+std::string convert_utf32_string_to_multi_byte_string(const uint32_t* str);
+std::string convert_utf32_string_to_multi_byte_string(const uint32_t* str, size_t length);
+std::vector<uint32_t> convert_multi_byte_string_to_utf32_string(const std::string& str);
+std::string convert_wide_string_to_multi_byte_string(const wchar_t* str);
+std::string convert_wide_string_to_multi_byte_string(const wchar_t* str, size_t length);
+std::wstring convert_multi_byte_string_to_wide_string(const std::string& str);
 
 }
 

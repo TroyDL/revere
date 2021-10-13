@@ -1,7 +1,14 @@
 
 #include "r_utils/r_udp_receiver.h"
+#ifdef IS_LINUX
 #include <unistd.h>
-
+#endif
+#ifdef IS_WINDOWS
+    #include <WinSock2.h>
+    #include <ws2tcpip.h>
+    #include <Iphlpapi.h>
+#endif
+#include <chrono>
 using namespace r_utils;
 using namespace std;
 
@@ -17,13 +24,13 @@ r_udp_receiver::r_udp_receiver( int destinationPort,
         _addr.set_address( _addr.is_ipv4() ? ip4_addr_any : ip6_addr_any );
 
     // First, create our datagram socket...
-    _sok = socket( _addr.address_family(), SOCK_DGRAM, IPPROTO_UDP );
+    _sok = (SOK)socket( _addr.address_family(), SOCK_DGRAM, IPPROTO_UDP );
     if( _sok <= 0 )
         R_STHROW(r_internal_exception, ( "r_udp_receiver: Unable to create a datagram socket." ));
 
     int on = 1;
 
-    int err = (int)::setsockopt( (SOCKET)_sok, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(int) );
+    int err = (int)::setsockopt( (SOK)_sok, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(int) );
 
     if( err < 0 )
         R_STHROW(r_internal_exception, ( "r_udp_receiver: Unable to configure socket." ));
@@ -150,8 +157,8 @@ bool r_udp_receiver::_receive( int& port, vector<uint8_t>& buffer, bool block, i
 {
     fd_set readFileDescriptors;
     int selectRet = 0;
-    struct timeval beforeSelect = { 0, 0 };
-    gettimeofday( &beforeSelect, nullptr );
+
+    auto beforeSelect = std::chrono::steady_clock::now();
 
     while( (_sok > 0) && (selectRet == 0) )
     {
@@ -159,7 +166,7 @@ bool r_udp_receiver::_receive( int& port, vector<uint8_t>& buffer, bool block, i
 
         FD_ZERO( &readFileDescriptors );
 
-        SOCKET currentLargestSOK = _sok;
+        SOK currentLargestSOK = _sok;
 
         // First, add ourseleves...
         FD_SET( _sok, &readFileDescriptors );
@@ -183,13 +190,9 @@ bool r_udp_receiver::_receive( int& port, vector<uint8_t>& buffer, bool block, i
         // Check for timeout (if one is provided)
         if( (waitMillis > 0) && (selectRet == 0) )
         {
-            struct timeval afterSelect = { 0, 0 };
-            gettimeofday( &afterSelect, nullptr );
+            auto afterSelect = std::chrono::steady_clock::now();
 
-            struct timeval delta = { 0, 0 };
-            timersub( &afterSelect, &beforeSelect, &delta );
-
-            int deltaMillis = (delta.tv_sec * 1000) + (delta.tv_usec / 1000);
+            auto deltaMillis = std::chrono::duration_cast<std::chrono::milliseconds>(afterSelect - beforeSelect).count();
 
             if( ((waitMillis - deltaMillis) <= 0) )
                 return false;
@@ -243,7 +246,7 @@ bool r_udp_receiver::raw_receive(int& port, vector<uint8_t>& buffer)
 
     socklen_t sockLen = _addr.sock_addr_size();
     int bytesReceived = recvfrom( _sok,
-                                  &buffer[0],
+                                  (char*)&buffer[0],
                                   2048,
                                   0,
                                   _addr.get_sock_addr(),
@@ -273,14 +276,20 @@ void r_udp_receiver::close()
     // the trick. on linux!
     shutdown();
 
-    SOCKET tmpSok = _sok;
+    SOK tmpSok = _sok;
 
     _sok = 0;
 
     FULL_MEM_BARRIER();
 
+#ifdef IS_LINUX
     if( tmpSok != 0 )
         ::close( tmpSok );
+#endif
+#ifdef IS_WINDOWS
+    if(tmpSok != 0)
+        ::closesocket(tmpSok);
+#endif
 }
 
 void r_udp_receiver::associate( shared_ptr<r_udp_receiver> receiver )

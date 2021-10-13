@@ -7,38 +7,61 @@
 #include "r_utils/interfaces/r_pollable.h"
 #include "r_utils/r_socket_address.h"
 #include "r_utils/r_exception.h"
+
+#ifdef IS_WINDOWS
+
+    #include <WinSock2.h>
+    #include <ws2tcpip.h>
+    #include <Iphlpapi.h>
+
+    typedef int SOK;
+
+    #define SOCKET_SHUT_FLAGS SD_BOTH
+    #define SOCKET_SHUT_SEND_FLAGS SD_SEND
+    #define SOCKET_SHUT_RECV_FLAGS SD_RECEIVE
+
+#else
+
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <sys/time.h>
+    #include <netinet/in.h>
+    #include <netdb.h>
+    #include <unistd.h>
+    #include <arpa/inet.h>
+
+    typedef int SOK;
+
+    #define SOCKET_SHUT_FLAGS SHUT_RDWR
+    #define SOCKET_SHUT_SEND_FLAGS SHUT_WR
+    #define SOCKET_SHUT_RECV_FLAGS SHUT_RD
+
+#endif
+
 #include <memory>
 #include <map>
 #include <mutex>
 #include <vector>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <arpa/inet.h>
 
-typedef int SOCKET;
-#define SOCKET_SHUT_FLAGS SHUT_RDWR
-#define SOCKET_SHUT_SEND_FLAGS SHUT_WR
-#define SOCKET_SHUT_RECV_FLAGS SHUT_RD
-
-class test_r_utils_r_socket;
+class test_r_utils;
 
 namespace r_utils
 {
 
 class r_raw_socket : public r_socket_io, public r_pollable
 {
-    friend class ::test_r_utils_r_socket;
+    friend class ::test_r_utils;
 
 public:
     enum r_raw_socket_defaults
     {
         MAX_BACKLOG = 5
     };
+
+    static void socket_startup();
+    static void socket_cleanup();
 
     r_raw_socket();
     r_raw_socket( r_raw_socket&& obj ) noexcept;
@@ -55,7 +78,7 @@ public:
     void bind( int port, const std::string& ip = "" );
     r_raw_socket accept();
 
-    inline SOCKET get_sok_id() const { return _sok; }
+    inline SOK get_sok_id() const { return _sok; }
 
     inline bool valid() const
 	{
@@ -65,7 +88,7 @@ public:
     virtual int raw_send( const void* buf, size_t len );
     virtual int raw_recv( void* buf, size_t len );
 
-    void close();
+    void close() const;
 
     virtual bool wait_till_recv_wont_block( uint64_t& millis ) const;
     virtual bool wait_till_send_wont_block( uint64_t& millis ) const;
@@ -74,7 +97,7 @@ public:
     std::string get_local_ip() const;
 
 protected:
-    SOCKET _sok;
+    mutable SOK _sok;
     r_socket_address _addr;
     std::string _host;
 
@@ -84,7 +107,7 @@ protected:
 
 class r_socket : public r_stream_io, public r_pollable
 {
-    friend class ::test_r_utils_r_socket;
+    friend class ::test_r_utils;
 
 public:
     enum r_socket_defaults
@@ -120,10 +143,12 @@ public:
 
     inline void connect( const std::string& host, int port ) { _sok.connect(host, port); }
     inline void listen( int backlog = MAX_BACKLOG ) { _sok.listen(backlog); }
-    inline void bind( int port, const std::string& ip = "" ) { _sok.bind(port, ip ); }
+    inline void bind( int port, const std::string& ip = "" ) { 
+        _sok.bind(port, ip ); 
+    }
     inline r_socket accept() { auto r = _sok.accept(); r_socket s; s._sok = std::move(r); return s; }
 
-    inline SOCKET get_sok_id() const { return _sok.get_sok_id(); }
+    inline SOK get_sok_id() const { return _sok.get_sok_id(); }
 
     virtual int raw_send( const void* buf, size_t len );
 
@@ -135,7 +160,7 @@ public:
 
     virtual void recv( void* buf, size_t len );
 
-    inline void close() { _sok.close(); }
+    inline void close() const { _sok.close(); }
 
     inline virtual bool wait_till_recv_wont_block( uint64_t& millis ) const { return _sok.wait_till_recv_wont_block(millis); }
     inline virtual bool wait_till_send_wont_block( uint64_t& millis ) const { return _sok.wait_till_send_wont_block(millis); }
@@ -144,7 +169,7 @@ public:
     inline std::string get_local_ip() const { return _sok.get_local_ip(); }
 
 private:
-    r_raw_socket _sok;
+    mutable r_raw_socket _sok;
     uint64_t _ioTimeOut;
 };
 
@@ -152,7 +177,7 @@ template<class SOK>
 class r_buffered_socket : public r_stream_io, public r_pollable
 {
 public:
-    friend class ::test_r_utils_r_socket;
+    friend class ::test_r_utils;
 
 public:
     enum r_buffered_socket_defaults
@@ -205,7 +230,7 @@ public:
     inline void bind( int port, const std::string& ip = "" ) { _sok.bind(port, ip ); }
     inline r_buffered_socket accept() { r_buffered_socket bs(_buffer.capacity()); auto s = _sok.accept(); bs._sok = std::move(s); return bs; }
 
-    inline SOCKET get_sok_id() const { return _sok.get_sok_id(); }
+    inline SOK get_sok_id() const { return _sok.get_sok_id(); }
 
     bool buffer_recv()
     {
@@ -258,7 +283,7 @@ public:
         }
     }
 
-    inline void close() { _sok.close(); }
+    inline void close() const { _sok.close(); }
 
     inline virtual bool wait_till_recv_wont_block( uint64_t& millis ) const { return _sok.wait_till_recv_wont_block(millis); }
     inline virtual bool wait_till_send_wont_block( uint64_t& millis ) const { return _sok.wait_till_send_wont_block(millis); }
@@ -271,7 +296,7 @@ public:
 private:
     inline size_t _avail_in_buffer() { return _buffer.size() - _bufferOff; }
 
-    SOK _sok;
+    mutable SOK _sok;
     std::vector<uint8_t> _buffer;
     size_t _bufferOff;
 };
@@ -294,8 +319,6 @@ namespace r_networking
 {
 
 std::vector<std::string> r_resolve( int type, const std::string& name );
-
-std::map<std::string,std::vector<std::string>> r_get_interface_addresses( int af );
 
 std::vector<uint8_t> r_get_hardware_address(const std::string& ifname);
 

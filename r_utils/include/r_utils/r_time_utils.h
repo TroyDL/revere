@@ -1,9 +1,9 @@
-
-#ifndef _r_utils_r_time_utils_h
-#define _r_utils_r_time_utils_h
+#ifndef r_utils__r_time_utils_h
+#define r_utils__r_time_utils_h
 
 #include <chrono>
 #include <string>
+#include <cstdint>
 
 namespace r_utils
 {

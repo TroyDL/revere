@@ -12,8 +12,7 @@
 #include "r_http/r_uri.h"
 #include "r_http/r_methods.h"
 
-class test_r_http_r_client_request;
-class test_r_http_r_range_request_generator;
+class test_r_http;
 
 namespace r_http
 {
@@ -26,8 +25,7 @@ const std::string patch_request = "PATCH";
 
 class r_client_request
 {
-    friend class ::test_r_http_r_client_request;
-    friend class ::test_r_http_r_range_request_generator;
+    friend class ::test_r_http;
 
 public:
     r_client_request( const std::string& host, int hostPort );

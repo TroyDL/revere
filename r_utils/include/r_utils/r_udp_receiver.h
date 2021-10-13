@@ -52,13 +52,13 @@ public:
 
     virtual void set_recv_buffer_size( size_t size );
 
-    SOCKET get_socket_fd() { return _sok; }
+    SOK get_socket_fd() { return _sok; }
 
 private:
 
     bool _receive( int& port, std::vector<uint8_t>& buffer, bool block, int waitMillis );
 
-    SOCKET _sok;
+    SOK _sok;
     r_socket_address _addr;
     std::list<std::shared_ptr<r_udp_receiver> > _associatedReceivers;
 };

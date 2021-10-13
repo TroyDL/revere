@@ -56,7 +56,7 @@ public:
         return *this;
     }
 
-    r_nullable& operator = ( const T& rhs )
+    r_nullable& operator = ( T rhs )
     {
         this->_value = rhs;
         this->_is_null = false;
@@ -68,7 +68,12 @@ public:
         return !_is_null;
     }
 
-    T value() const
+    T& raw()
+    {
+        return _value;
+    }
+
+    const T& value() const
     {
         return _value;
     }
@@ -76,6 +81,18 @@ public:
     void set_value( T value )
     {
         _value = value;
+        _is_null = false;
+    }
+
+    T take()
+    {
+        _is_null = true;
+        return std::move(_value);
+    }
+
+    void assign( T&& value )
+    {
+        _value = std::move(value);
         _is_null = false;
     }
 

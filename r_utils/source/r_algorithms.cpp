@@ -9,26 +9,23 @@ uint8_t* r_utils::lower_bound_bytes( uint8_t* start,
                                      size_t elementSize,
                                      std::function<int(const uint8_t* p1, const uint8_t* target)> cmp )
 {
-    if( (start >= end) || (((size_t)(end-start)) < elementSize) )
-        R_STHROW(r_invalid_argument_exception, ("Empty array!"));
+    const size_t N = (end - start) / elementSize;
+    size_t mid;
+    size_t low = 0;
+    size_t high = N;
 
-    uint64_t len = (end-start)/elementSize;
-    uint64_t half;
-    uint8_t* middle;
-
-    while( len > 0 )
-    {
-        half = len >> 1;
-        middle = start;
-        middle += half * elementSize;
-        if( cmp( middle, target ) == -1 )
-        {
-            start = middle;
-            start += elementSize;
-            len = len - half - 1;
-        }
-        else len = half;
+    while(low < high) {
+        mid = low + (high - low) / 2;
+        auto res = cmp(target, start + (mid * elementSize));
+        if(res <= 0)
+            high = mid;
+        else
+            low = mid + 1;
     }
 
-    return start;
+    auto res = cmp(start + (low * elementSize), target);
+    if(low < N && res < 0)
+        low++;
+
+    return start + (low * elementSize);
 }

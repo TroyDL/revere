@@ -1,6 +1,12 @@
 #include "r_utils/r_udp_sender.h"
 #include "r_utils/r_exception.h"
 
+#ifdef IS_WINDOWS
+    #include <WinSock2.h>
+    #include <ws2tcpip.h>
+    #include <Iphlpapi.h>
+#endif
+
 using namespace r_utils;
 using namespace std;
 
@@ -49,7 +55,7 @@ void r_udp_sender::_configure()
     _close();
 
     // First, create our datagram socket...
-    _sok = socket( _addr.address_family(), SOCK_DGRAM, IPPROTO_UDP );
+    _sok = (SOK)socket( _addr.address_family(), SOCK_DGRAM, IPPROTO_UDP );
     if( _sok < 0 )
         R_STHROW(r_internal_exception, ( "r_udp_sender: Unable to create a datagram socket." ));
 
@@ -71,9 +77,14 @@ void r_udp_sender::_configure()
 
 void r_udp_sender::_close() throw()
 {
+#ifdef IS_LINUX
     if( _sok != 0 )
         ::close( _sok );
-
+#endif
+#ifdef IS_WINDOWS
+    if( _sok != 0 )
+        ::closesocket( _sok );
+#endif
     _sok = 0;
 }
 

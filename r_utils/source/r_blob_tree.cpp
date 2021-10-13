@@ -13,8 +13,8 @@ vector<uint8_t> r_blob_tree::serialize(const r_blob_tree& rt, uint32_t version)
     uint32_t word = r_networking::r_htonl(version);
     *(uint32_t*)p = word;
     p+=sizeof(uint32_t);
-    // &buffer[size] is our sentinel (1 past the end)
-    _write_treeb(rt, p, &buffer[size]);
+    // &buffer[0] + size is our sentinel (1 past the end)
+    _write_treeb(rt, p, &buffer[0] + size);
     return buffer;
 }
 
@@ -43,7 +43,7 @@ size_t r_blob_tree::_sizeof_treeb(const r_blob_tree& rt)
         for(auto& c : rt._childrenByIndex)
             sum += _sizeof_treeb(c);
     }
-    else sum += sizeof(uint32_t) + rt._payload.first;
+    else sum += sizeof(uint32_t) + rt._payload_storage.size();
 
     return sum;
 }
@@ -62,7 +62,7 @@ size_t r_blob_tree::_write_treeb(const r_blob_tree& rt, uint8_t* p, uint8_t* end
 
     if(type == NT_OBJECT || type == NT_ARRAY)
     {
-        uint32_t numChildren = (type==NT_OBJECT)?rt._children.size():rt._childrenByIndex.size();
+        uint32_t numChildren = (type==NT_OBJECT)?(uint32_t)rt._children.size():(uint32_t)rt._childrenByIndex.size();
         uint32_t word = r_networking::r_htonl(numChildren);
         *(uint32_t*)p = word;
         p+=sizeof(uint32_t);
@@ -74,7 +74,7 @@ size_t r_blob_tree::_write_treeb(const r_blob_tree& rt, uint8_t* p, uint8_t* end
                 if(_bytes_left(p, end) < sizeof(uint16_t))
                     R_STHROW(r_invalid_argument_exception, ("Buffer too small to serialize r_blob_tree."));
                 
-                uint16_t nameSize = cp.first.length();
+                uint16_t nameSize = (uint16_t)cp.first.length();
                 uint16_t shortVal = r_networking::r_htons(nameSize);
                 *(uint16_t*)p = shortVal;
                 p+=sizeof(uint16_t);
@@ -99,7 +99,7 @@ size_t r_blob_tree::_write_treeb(const r_blob_tree& rt, uint8_t* p, uint8_t* end
         if(_bytes_left(p, end) < sizeof(uint32_t))
             R_STHROW(r_invalid_argument_exception, ("Buffer too small to serialize r_blob_tree."));            
 
-        uint32_t payloadSize = rt._payload.first;
+        uint32_t payloadSize = (uint32_t)rt._payload_storage.size();
         uint32_t word = r_networking::r_htonl(payloadSize);
         *(uint32_t*)p = word;
         p+=sizeof(uint32_t);
@@ -107,7 +107,7 @@ size_t r_blob_tree::_write_treeb(const r_blob_tree& rt, uint8_t* p, uint8_t* end
         if(_bytes_left(p, end) < payloadSize)
             R_STHROW(r_invalid_argument_exception, ("Buffer too small to serialize r_blob_tree."));            
 
-        memcpy(p, rt._payload.second, payloadSize);
+        memcpy(p, rt._payload_storage.data(), payloadSize);
         p+=payloadSize;
     }
 
@@ -169,7 +169,8 @@ size_t r_blob_tree::_read_treeb(const uint8_t* p, const uint8_t* end, r_blob_tre
         if(_bytes_left(p, end) < payloadSize)
             R_STHROW(r_invalid_argument_exception, ("Buffer too small to deserialize r_blob_tree."));
 
-        rt._payload = make_pair((size_t)payloadSize, p);
+        rt._payload_storage.resize(payloadSize);
+        memcpy(rt._payload_storage.data(), p, payloadSize);
         p+=payloadSize;
     }
 

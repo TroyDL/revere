@@ -22,50 +22,37 @@ Project Goals
    - Commercial Grade
       - Nest Cam - Ring - Etc...
 
-Current Progress
-   - We have recording working pretty well.
-   - We have thumbnail transcoding and mp4 creating from vts.
-   - We have skeleton implementations of vas and commander.
-   - So, we have a long way to go....
+Dependencies
 
-TODO
-   - vss needs an installer
-   - we need a top level build script
+    The build script expects the following directories exist and are populated:
 
-Build Setup
-   Install yasm
-      sudo apt install yasm
-   Install lame
-      sudo apt install libmp3lame-dev
+    Linux
+        deps/
+            linux/
+                ffmpeg/
+                gstreamer/
+    Windows
+        deps/
+            windows/
+                ffmpeg/
+                gstreamer/
+    
+    Yes, this is a pain in the ass... but we're not really ready for others to be building us quite yet!
 
-Building
-   First build x264 and ffmpeg in the usual cmake way.
+    gstreamer
+        On Linux, gstreamer was built via the https://github.com/GStreamer/gst-build project with the following commands:
 
-      mkdir x264/build
-      pushd x264/build
-      cmake .. && make
-      popd
-   
-      mkdir ffmpeg/build
-      pushd ffmpeg/build
-      cmake .. && make
-      popd
+            meson --prefix=/path/to/install/prefix builddir
+            ninja -C builddir
+            meson install -C builddir
 
-   Set LD_LIBRARY_PATH to point to ffmpeg/artifacts/lib and x264/artifacts/lib while cmake building the top level (this
-   will allow this project to use the locally built ffmpeg and x264 as opposed to your system packages). Then build the top level:
+        builddir then becomes the above gstreamer deps folder.
+        
+        On Windows, download the official gstreamer binaries from
 
-      mkdir build
-      pushd build
-      cmake .. && make
-      popd
+            https://gstreamer.freedesktop.org/download/#windows
 
-Configuring
-   Configure vss
-      build/vss/vss --configure
-      build/vss/vss
+        install them and then hand assemble the above directory layout with the installed files.
 
-TODO
-   BUGS
-      r_file_index::_fix_end_times() sets the end_time to the last_key() time! Not the last frame time!
-         - refresh memory on r_storage (we're not only storing chunks starting with keys are we?)
-         - looking at last_key() it looks like its returning the last thing in the index!
+    ffmpeg
+        Windows https://gstreamer.freedesktop.org/download/#windows

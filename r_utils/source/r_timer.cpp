@@ -1,79 +1,64 @@
 
 #include "r_utils/r_timer.h"
+#include <algorithm>
 #include <ctime>
 
 using namespace r_utils;
 using namespace std;
 using namespace std::chrono;
 
-r_timer::r_timer( size_t intervalMillis, r_timer_cb cb ) :
-    _thread(),
-    _intervalMillis( intervalMillis ),
-    _cb( cb ),
-    _lok(),
-    _cond(),
-    _started( false )
+void r_timer::add_timed_event(const std::chrono::steady_clock::time_point& now, const std::chrono::milliseconds& interval, r_timer_cb cb, bool initial_fire, bool one_shot)
 {
+    r_timed_event te;
+    te.interval = interval;
+    te.cb = cb;
+    te.one_shot = one_shot;
+    te.next_fire_time = (initial_fire) ? now : now + interval;
+    _timed_events.insert(
+        upper_bound(begin(_timed_events),end(_timed_events),
+            te, [](const r_timed_event& a, const r_timed_event& b) {
+                return a.next_fire_time < b.next_fire_time;
+            }
+        ),
+        te
+    );
 }
 
-r_timer::~r_timer() throw()
+milliseconds r_timer::update(const std::chrono::milliseconds& max_sleep, const steady_clock::time_point& now)
 {
-    if( _started )
-        stop();
-}
-
-void r_timer::start()
-{
-    if( !_started )
+    vector<r_timed_event> timed_events;
+    for(auto te : _timed_events)
     {
-        _started = true;
-        _thread = std::thread( &r_timer::_timer_loop, this );
+        bool done = te.update(now);
+        if(!done)
+            timed_events.push_back(te);
     }
+    _timed_events = timed_events;
+
+    if(!_timed_events.empty())
+    {
+        auto next_event = _timed_events.front();
+
+        auto next_event_delta = duration_cast<milliseconds>(next_event.next_fire_time - now);
+
+        return (next_event_delta < max_sleep) ? next_event_delta : max_sleep;
+    }
+    else return max_sleep;
 }
 
-void r_timer::stop()
+bool r_timer::r_timed_event::update(const std::chrono::steady_clock::time_point& now)
 {
-    if( _started )
+    auto should_fire_at = next_fire_time;
+
+    while(should_fire_at <= now)
     {
-        {
-            unique_lock<recursive_mutex> g( _lok );
-            _started = false;
-            _cond.notify_one();
-        }
-
-        _thread.join();
+        should_fire_at += interval;
+        cb();
+        if(one_shot)
+            return true;
     }
-}
 
-void r_timer::_timer_loop()
-{
-    size_t millisToWait = _intervalMillis;
+    next_fire_time = should_fire_at;
 
-    while( _started )
-    {
-        unique_lock<recursive_mutex> g( _lok );
-
-        steady_clock::time_point before = steady_clock::now();
-
-        auto result = (millisToWait>0)?_cond.wait_for( g, chrono::milliseconds( millisToWait ) ) : cv_status::timeout;
-
-        steady_clock::time_point after = steady_clock::now();
-
-        if( !_started )
-            continue;
-
-        size_t waitedMillis = chrono::duration_cast<chrono::milliseconds>(after - before).count();
-
-        if( result == cv_status::timeout )
-        {
-            millisToWait = _intervalMillis;
-            _cb();
-        }
-        else
-        {
-            if( millisToWait > waitedMillis )
-                millisToWait -= waitedMillis;
-            else millisToWait = 0;
-        }
-    }
+    return false;
 }

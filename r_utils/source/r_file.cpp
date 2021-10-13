@@ -2,15 +2,29 @@
 #include "r_utils/r_file.h"
 #include "r_utils/r_string_utils.h"
 #include <random>
+#ifdef IS_WINDOWS
+#include <Windows.h>
+#include <Io.h>
+#include <direct.h>
+#else
+#ifdef IS_LINUX
 #include <fcntl.h>
 #include <sys/statvfs.h>
 #include <fnmatch.h>
 #include <sys/types.h>
+#include <unistd.h>
+#endif
+#endif
 
 using namespace r_utils;
 using namespace std;
 
+#ifdef IS_WINDOWS
+const string r_utils::r_fs::PATH_SLASH = "\\";
+#endif
+#ifdef IS_LINUX
 const string r_utils::r_fs::PATH_SLASH = "/";
+#endif
 
 r_file::r_file(r_file&& obj) noexcept :
     _f(std::move(obj._f))
@@ -34,137 +48,32 @@ r_file& r_file::operator = (r_file&& obj) noexcept
     return *this;
 }
 
-r_path::r_path(const string& glob) :
-    _pathParts(),
-    _done(false),
-    _d(nullptr)
-{
-    open_dir(glob);
-}
-
-r_path::r_path(r_path&& obj) noexcept :
-    _pathParts(std::move(obj._pathParts)),
-    _done(std::move(obj._done)),
-    _d(std::move(obj._d))
-{
-    obj._d = nullptr;
-    obj._pathParts = path_parts();
-}
-
-r_path::~r_path() noexcept
-{
-    _clear();
-}
-
-r_path& r_path::operator=(r_path&& obj) noexcept
-{
-    _clear();
-
-    _pathParts = std::move(obj._pathParts);
-    obj._pathParts = path_parts();
-    _done = std::move(obj._done);
-    _d = std::move(obj._d);
-    obj._d = nullptr;
-
-    return *this;
-}
-
-void r_path::open_dir(const string& glob)
-{
-    _clear();
-
-    auto parts = _get_path_and_glob(glob);
-
-    _d = opendir(parts.path.c_str());
-    if(!_d)
-        R_STHROW(r_not_found_exception, ("Unable to open directory: %s",parts.path.c_str()));
-    _done = false;
-    _pathParts = parts;
-}
-
-bool r_path::read_dir(string& fileName)
-{
-    if(_done)
-        return false;
-
-    struct dirent* entry = nullptr;
-    while((entry = readdir(_d)))
-    {
-        string entryName = entry->d_name;
-        if((entryName != ".") && (entryName != ".."))
-        {
-            if(!_pathParts.glob.empty())
-            {
-                if(fnmatch(_pathParts.glob.c_str(), entryName.c_str(), 0) == 0)
-                {
-                    fileName = entryName;
-                    return true;
-                }
-            }
-            else
-            {
-                fileName = entryName;
-                return true;
-            }
-        }
-    }
-
-    if(entry == nullptr)
-        _done = true;
-
-    return false;
-}
-
-void r_path::_clear() noexcept
-{
-    if(_d)
-    {
-        closedir(_d);
-        _d = nullptr;
-    }
-}
-
-r_path::path_parts r_path::_get_path_and_glob(const string& glob) const
-{
-    if(r_fs::is_reg(glob))
-        R_STHROW(r_internal_exception, ("Glob passed to r_path specifies a regular file."));
-
-    path_parts parts;
-
-    if(r_fs::is_dir(glob))
-    {
-        parts.path = glob;
-        parts.glob = "";
-    }
-    else
-    {
-        const size_t lastSlash = glob.rfind(r_fs::PATH_SLASH);
-        parts.path = glob.substr( 0, lastSlash);
-        parts.glob = (glob.size() > (lastSlash + 1)) ? glob.substr(lastSlash + 1, glob.size() - (lastSlash + 1)) : "";
-    }
-
-    return parts;
-
-}
-
 int r_utils::r_fs::stat(const string& file_name, struct r_file_info* file_info)
 {
-    struct stat sfi;
+#ifdef IS_WINDOWS
+    struct __stat64 sfi;
+    if( _wstat64( r_string_utils::convert_multi_byte_string_to_wide_string(file_name).data(), &sfi ) == 0 )
+    {
+        file_info->file_name = file_name;
+        file_info->file_size = sfi.st_size;
+        file_info->file_type = (sfi.st_mode & _S_IFDIR) ? R_DIRECTORY : R_REGULAR;
+        return 0;
+    }
+    return -1;
 
-    if(stat(file_name.c_str(), &sfi) == 0)
+#endif
+#ifdef IS_LINUX
+    struct stat sfi;
+    if(::stat(file_name.c_str(), &sfi) == 0)
     {
         file_info->file_name = file_name;
         file_info->file_size = sfi.st_size;
         file_info->file_type = (sfi.st_mode & S_IFDIR) ? R_DIRECTORY : R_REGULAR;
-        file_info->optimal_block_size = sfi.st_blksize;
-
-        file_info->access_time = std::chrono::system_clock::from_time_t(sfi.st_atime);
-        file_info->modification_time = std::chrono::system_clock::from_time_t(sfi.st_mtime);
-
         return 0;
     }
 
     return -1;
+#endif
 }
 
 vector<uint8_t> r_utils::r_fs::read_file(const string& path)
@@ -173,8 +82,8 @@ vector<uint8_t> r_utils::r_fs::read_file(const string& path)
     if(r_utils::r_fs::stat(path, &fi) < 0)
         R_STHROW(r_not_found_exception, ("Unable to stat: %s", path.c_str()));
 
-    uint32_t numBlocks = (fi.file_size > fi.optimal_block_size) ? fi.file_size / fi.optimal_block_size : 0;
-    uint32_t remainder = (fi.file_size > fi.optimal_block_size) ? fi.file_size % fi.optimal_block_size : fi.file_size;
+    uint32_t numBlocks = (fi.file_size > 4096) ? (uint32_t)(fi.file_size / 4096) : 0;
+    uint32_t remainder = (fi.file_size > 4096) ? (uint32_t)(fi.file_size % 4096) : (uint32_t)fi.file_size;
 
     vector<uint8_t> out(fi.file_size);
     uint8_t* writer = &out[0];
@@ -183,9 +92,9 @@ vector<uint8_t> r_utils::r_fs::read_file(const string& path)
 
     while(numBlocks > 0)
     {
-        auto blocksRead = fread(writer, fi.optimal_block_size, numBlocks, f);
-        writer += blocksRead * fi.optimal_block_size;
-        numBlocks -= blocksRead;
+        auto blocksRead = fread(writer, 4096, numBlocks, f);
+        writer += blocksRead * 4096;
+        numBlocks -= (uint32_t)blocksRead;
     }
 
     if(remainder > 0)
@@ -200,14 +109,14 @@ void r_utils::r_fs::write_file(const uint8_t* bytes, size_t len, const string& p
     struct r_file_info fi;
     r_utils::r_fs::stat(path, &fi);
 
-    uint32_t numBlocks = (len > fi.optimal_block_size) ? len / fi.optimal_block_size : 0;
-    uint32_t remainder = (len > fi.optimal_block_size) ? len % fi.optimal_block_size : len;
+    uint32_t numBlocks = (len > 4096) ? (uint32_t)(len / 4096) : (uint32_t)0;
+    uint32_t remainder = (len > 4096) ? (uint32_t)(len % 4096) : (uint32_t)len;
 
     while(numBlocks > 0)
     {
-        auto blocksWritten = fwrite(bytes, fi.optimal_block_size, numBlocks, f);
-        bytes += blocksWritten * fi.optimal_block_size;
-        numBlocks -= blocksWritten;
+        auto blocksWritten = fwrite(bytes, 4096, numBlocks, f);
+        bytes += blocksWritten * 4096;
+        numBlocks -= (uint32_t)blocksWritten;
     }
 
     if(remainder > 0)
@@ -252,7 +161,12 @@ bool r_utils::r_fs::is_dir(const string& path)
 
 int r_utils::r_fs::fallocate(FILE* file, uint64_t size)
 {
+#ifdef IS_WINDOWS
+    return ( _chsize_s( _fileno( file ), size ) == 0) ? 0 : -1;
+#endif
+#ifdef IS_LINUX
     return posix_fallocate64(fileno(file), 0, size);
+#endif
 }
 
 void r_utils::r_fs::break_path(const string& path, string& dir, string& fileName)
@@ -299,39 +213,51 @@ string r_utils::r_fs::temp_file_name(const string& dir, const string& baseName)
 
 void r_utils::r_fs::get_fs_usage(const string& path, uint64_t& size, uint64_t& free)
 {
+#ifdef IS_WINDOWS
+    ULARGE_INTEGER winFree, winTotal;
+    if (!GetDiskFreeSpaceExW(r_string_utils::convert_multi_byte_string_to_wide_string(path).data(), &winFree, &winTotal, 0))
+        R_THROW(("Unable to get disk usage info."));
+    size = winTotal.QuadPart;
+    free = winFree.QuadPart;
+#else
     struct statvfs stat;
     if (statvfs(path.c_str(), &stat) < 0)
         R_STHROW(r_not_found_exception, ("Unable to statvfs() path."));
 
     size = (uint64_t)stat.f_blocks * (uint64_t)stat.f_frsize;
     free = (uint64_t)stat.f_bavail * (uint64_t)stat.f_bsize;
-}
-
-uint64_t r_utils::r_fs::file_size(const std::string& path)
-{
-    uint64_t fileSize = 0;
-
-    if(r_fs::is_dir(path))
-    {
-        r_path files(path);
-
-        string fileName;
-        while(files.read_dir(fileName))
-            fileSize += file_size(path + r_fs::PATH_SLASH + fileName );
-    }
-    else
-    {
-        r_file_info fileInfo;
-        stat(path, &fileInfo);
-
-        fileSize += fileInfo.file_size;
-    }
-
-    return fileSize;
+#endif
 }
 
 void r_utils::r_fs::mkdir(const std::string& path)
 {
+#ifdef IS_WINDOWS
+    if(_mkdir(path.c_str()) < 0)
+        R_STHROW(r_internal_exception, ("Unable to make directory: %s",path.c_str()));
+#else
     if(::mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0)
         R_STHROW(r_internal_exception, ("Unable to make directory: %s",path.c_str()));
+#endif
+}
+
+void r_utils::r_fs::rmdir(const std::string& path)
+{
+#ifdef IS_WINDOWS
+    if(RemoveDirectoryA(path.c_str()) == 0)
+        R_STHROW(r_internal_exception, ("Unable to remove directory: %s",path.c_str()));
+#else
+    if(::rmdir(path.c_str()) < 0)
+        R_STHROW(r_internal_exception, ("Unable to remove directory: %s",path.c_str()));
+#endif
+}
+
+void r_utils::r_fs::remove_file(const std::string& path)
+{
+#ifdef IS_WINDOWS
+    if(DeleteFileA(path.c_str()) == 0)
+        R_STHROW(r_internal_exception, ("Unable to remove file: %s",path.c_str()));
+#else
+    if(unlink(path.c_str()) != 0)
+        R_STHROW(r_internal_exception, ("Unable to remove file: %s",path.c_str()));
+#endif
 }

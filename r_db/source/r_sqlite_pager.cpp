@@ -2,6 +2,7 @@
 #include "r_db/r_sqlite_pager.h"
 #include "r_utils/r_string_utils.h"
 #include "r_utils/r_exception.h"
+#include "r_utils/r_std_utils.h"
 #include <algorithm>
 
 using namespace r_db;
@@ -34,7 +35,7 @@ void r_sqlite_pager::find(const r_sqlite_conn& conn, const std::string& val)
     _index = 0;
 }
 
-map<string, string> r_sqlite_pager::current() const
+map<string, r_nullable<string>> r_sqlite_pager::current() const
 {
     if(_index >= _results.size())
         R_STHROW(r_not_found_exception, ("Invalid current position in r_sqlite_pager!"));
@@ -53,7 +54,7 @@ void r_sqlite_pager::next(const r_sqlite_conn& conn)
                                         _indexColumn.c_str(),
                                         _tableName.c_str(),
                                         _indexColumn.c_str(),
-                                        _results.back()[_indexColumn].c_str(),
+                                        _results.back()[_indexColumn].value().c_str(),
                                         _indexColumn.c_str(),
                                         _indexColumn.c_str(),
                                         r_string_utils::uint32_to_s(_requestedPageSize).c_str());
@@ -75,13 +76,13 @@ void r_sqlite_pager::prev(const r_sqlite_conn& conn)
                                                     _columnsToInclude.c_str(),
                                                     _tableName.c_str(),
                                                     _indexColumn.c_str(),
-                                                    _results.front()[_indexColumn].c_str(),
+                                                    _results.front()[_indexColumn].value().c_str(),
                                                     _indexColumn.c_str(),
                                                     r_string_utils::uint32_to_s(_requestedPageSize).c_str()));
 
         reverse(_results.begin(), _results.end());
 
-        _index = (_results.size() - 1);
+        _index = _results.size() - 1;
     }
     else --_index;
 }
@@ -100,5 +101,5 @@ void r_sqlite_pager::end(const r_sqlite_conn& conn)
                                                 r_string_utils::uint32_to_s(_requestedPageSize).c_str()));
     reverse(_results.begin(), _results.end());
 
-    _index = (_results.size() - 1);
+    _index = _results.size() - 1;
 }

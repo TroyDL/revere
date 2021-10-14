@@ -2,57 +2,60 @@
 Project Goals
    - The "Apache" of open source video surveillance software: e.g. the default.
       - Software should run on almost anything and scale its capabilities automatically.
-   - Total Solution
-      - Recording
-         - From professional grade cameras and protocols.
-         - From consumer grade cameras and protocols.
-      - Transcoding
-         - Support automaticlally quality scaled transcoding for viewing.
-      - Analytics
-         - Configure particular cameras for anlytic analysys:
-            -> Motion detection
-               -> Blob Tracking
-                  -> Person detection
-      - Viewing
-         - Browser based full motion viewing application
-         - Thumbnail scrubbing
-         - Motion/Event Timelines
-   - Professional ONVIF camera discovery.
-      - Hikvision - Ubiquiti - Pelco - Axis - Etc...
-   - Commercial Grade
-      - Nest Cam - Ring - Etc...
+      - 4K, H.264, H.265, AAC (latm & generic), mulaw, b-frames
 
-Dependencies
+TODO
+   - Create r_vss library
+       - r_vss is the video recorder.
+       - Use r_disco to enumerate assigned cameras
+       - Every few seconds:
+           - Prune record contexts not receiving data or whose configuration has changed.
+           - Query our assigned cameras
+           - Enumerate already recording cameras
+           - Start and Stop record contexts as necessary
+       - "record context"
+           - r_pipeline::r_gst_source to pull stream
+           - r_storage::r_storage_file to record
+           - To what file?
+               - Camera database should also have recording configuration
+               - Recording configuration
+                   - What file to record to
+               - Canned recording configuration for now BUT the final app should have a wizard for 
+                 configuring a camera (stream briefly to estimate bitrate and a UI to configure recording retention / file size)
+   - Port libonvif
+       - Rewrite libonvif to be C++
+           - Use our exceptions
+           - Use RAII
+           - Add libxml2 to windows deps
+       - Use to implement r_disco provider
+   - Create QT Revere VMS application
+       - Cross platform QT tray service
+       - UI for discovering cameras
+           - Add camera wizard
+       - UI for monitoring
+           - Show camera status (discovered, assigned, current recording bitrate etc)
+   - Viewer
+       - Cross platform QT Viewer
+       - CRAZY fast + tons of keyboard shortcuts + super minimal UI
+       - Pop up analytic event notifications
+   - Analytics
+       - key frame motion detection
+       - Triggers blob Tracking
+       - Triggers object detection
+       - Schedule aware analytic triggers (txt messages, UI notifications, etc)
 
-    The build script expects the following directories exist and are populated:
+Compiling on Linux
 
-    Linux
-        deps/
-            linux/
-                ffmpeg/
-                gstreamer/
-    Windows
-        deps/
-            windows/
-                ffmpeg/
-                gstreamer/
-    
-    Yes, this is a pain in the ass... but we're not really ready for others to be building us quite yet!
+   To prepare a fresh Ubuntu 20.04 VM for compilation:
+      sudo apt update
+      sudo apt install -y build-essential linux-headers-$(uname -r)
+      <install virtualbox guest additions> Note: Configure your VM to have a decent amount of vram.
+      sudo apt install -y cmake git libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-doc gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstrtspserver-1.0-* libxml2-dev libav*-dev
 
-    gstreamer
-        On Linux, gstreamer was built via the https://github.com/GStreamer/gst-build project with the following commands:
+      git clone git@github.com:dicroce/revere.git
+      cd revere
+      mkdir build && cd build && cmake .. && make
 
-            meson --prefix=/path/to/install/prefix builddir
-            ninja -C builddir
-            meson install -C builddir
+Compiling on Windows
 
-        builddir then becomes the above gstreamer deps folder.
-        
-        On Windows, download the official gstreamer binaries from
-
-            https://gstreamer.freedesktop.org/download/#windows
-
-        install them and then hand assemble the above directory layout with the installed files.
-
-    ffmpeg
-        Windows https://gstreamer.freedesktop.org/download/#windows
+   <coming soon>

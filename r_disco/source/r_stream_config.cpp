@@ -23,6 +23,13 @@ string r_disco::hash_stream_config(const r_stream_config& sc)
     if(!sc.audio_parameters.is_null())
         h.update((uint8_t*)sc.audio_parameters.value().c_str(), sc.audio_parameters.value().length());
     h.update((uint8_t*)&sc.audio_timebase, sizeof(sc.audio_timebase));
+
+    if(!sc.record_file_path.is_null())
+        h.update((uint8_t*)sc.record_file_path.value().c_str(), sc.record_file_path.value().length());
+    if(!sc.n_record_file_blocks.is_null())
+        h.update((uint8_t*)&sc.n_record_file_blocks.value(), sizeof(sc.n_record_file_blocks.value()));
+    if(!sc.record_file_block_size.is_null())
+        h.update((uint8_t*)&sc.record_file_block_size.value(), sizeof(sc.record_file_block_size.value()));
     
     h.finalize();
 

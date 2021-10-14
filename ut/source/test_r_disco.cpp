@@ -46,17 +46,28 @@ REGISTER_TEST_FIXTURE(test_r_disco);
 
 using namespace r_disco;
 
-static string _create_mp_config(int port, const vector<tuple<string,string,string,string>>& file_names)
+static string _create_mp_config(int port, const vector<tuple<string,string,string,string,string,string,string>>& file_names)
 {
     string devices;
     for(auto i = begin(file_names), e = end(file_names); i != e; ++i)
     {
-        string id, filename, username, password;
-        std::tie(id,filename,username,password) = *i;
-        devices += r_string_utils::format("{\"id\": \"%s\", \"ipv4_address\": \"127.0.0.1\", \"rtsp_url\": \"rtsp://127.0.0.1:%d/%s\", \"username\": \"%s\", \"password\": \"%s\"}%s",
+        string id, filename, username, password, record_file_path, n_record_file_blocks, record_file_block_size;
+        std::tie(id,filename,username,password,record_file_path,n_record_file_blocks,record_file_block_size) = *i;
+        devices += r_string_utils::format(
+            "{\"id\": \"%s\", "
+            "\"ipv4_address\": \"127.0.0.1\", "
+            "\"rtsp_url\": \"rtsp://127.0.0.1:%d/%s\", "
+            "\"record_file_path\": \"%s\", "
+            "\"n_record_file_blocks\": %s, "
+            "\"record_file_block_size\": %s, "
+            "\"username\": \"%s\", "
+            "\"password\": \"%s\"}%s",
             id.c_str(),
             port,
             filename.c_str(),
+            record_file_path.c_str(),
+            n_record_file_blocks.c_str(),
+            record_file_block_size.c_str(),
             username.c_str(),
             password.c_str(),
             (next(i) != e)?",":""
@@ -181,10 +192,10 @@ void test_r_disco::test_r_disco_r_manual_provider()
     fct.detach();
 
     auto cfg = _create_mp_config(port,{
-        make_tuple("93950da6-fc12-493c-a051-c22a9fec3440","true_north_h264_aac.mkv","root","1234"),
-        make_tuple("93950da6-fc12-493c-a051-c22a9fec3440","true_north_h264_aac.mkv","root","1234"),
-        make_tuple("27d0f031-da8d-41a0-9687-5fd689a78bec","true_north_h265_mulaw.mkv","root","1234"),
-        make_tuple("13be8a39-7e92-4aa1-abbd-7b441856afde","true_north_h265_aac.mkv","root","1234")
+        make_tuple("93950da6-fc12-493c-a051-c22a9fec3440","true_north_h264_aac.mkv","root","1234","/recording/93950da6-fc12-493c-a051-c22a9fec3440","128","65536"),
+        make_tuple("93f03645-0cc3-4c7a-a9e5-f3456a986440","true_north_h264_aac.mkv","root","1234","/recording/93f03645-0cc3-4c7a-a9e5-f3456a986440","128","65536"),
+        make_tuple("27d0f031-da8d-41a0-9687-5fd689a78bec","true_north_h265_mulaw.mkv","root","1234","/recording/27d0f031-da8d-41a0-9687-5fd689a78bec","128","65536"),
+        make_tuple("13be8a39-7e92-4aa1-abbd-7b441856afde","true_north_h265_aac.mkv","root","1234","/recording/13be8a39-7e92-4aa1-abbd-7b441856afde","128","65536")
     });
 
     r_fs::write_file((uint8_t*)cfg.c_str(), cfg.size(), "top_dir" + r_fs::PATH_SLASH + "config" + r_fs::PATH_SLASH + "manual_config.json");
@@ -197,21 +208,33 @@ void test_r_disco::test_r_disco_r_manual_provider()
     RTF_ASSERT(configs[0].video_timebase == 90000);
     RTF_ASSERT(configs[0].audio_codec == "mp4a-latm");
     RTF_ASSERT(configs[0].audio_timebase == 48000);
+    RTF_ASSERT(configs[0].record_file_path.value() == "/recording/93950da6-fc12-493c-a051-c22a9fec3440");
+    RTF_ASSERT(configs[0].n_record_file_blocks.value() == 128);
+    RTF_ASSERT(configs[0].record_file_block_size.value() == 65536);
 
     RTF_ASSERT(configs[1].video_codec == "h264");
     RTF_ASSERT(configs[1].video_timebase == 90000);
     RTF_ASSERT(configs[1].audio_codec == "mp4a-latm");
     RTF_ASSERT(configs[1].audio_timebase == 48000);
+    RTF_ASSERT(configs[0].record_file_path.value() == "/recording/93f03645-0cc3-4c7a-a9e5-f3456a986440");
+    RTF_ASSERT(configs[0].n_record_file_blocks.value() == 128);
+    RTF_ASSERT(configs[0].record_file_block_size.value() == 65536);
 
     RTF_ASSERT(configs[2].video_codec == "h265");
     RTF_ASSERT(configs[2].video_timebase == 90000);
     RTF_ASSERT(configs[2].audio_codec == "pcmu");
     RTF_ASSERT(configs[2].audio_timebase == 8000);
+    RTF_ASSERT(configs[0].record_file_path.value() == "/recording/27d0f031-da8d-41a0-9687-5fd689a78bec");
+    RTF_ASSERT(configs[0].n_record_file_blocks.value() == 128);
+    RTF_ASSERT(configs[0].record_file_block_size.value() == 65536);
 
     RTF_ASSERT(configs[3].video_codec == "h265");
     RTF_ASSERT(configs[3].video_timebase == 90000);
     RTF_ASSERT(configs[3].audio_codec == "mp4a-latm");
     RTF_ASSERT(configs[3].audio_timebase == 48000);
+    RTF_ASSERT(configs[0].record_file_path.value() == "/recording/13be8a39-7e92-4aa1-abbd-7b441856afde");
+    RTF_ASSERT(configs[0].n_record_file_blocks.value() == 128);
+    RTF_ASSERT(configs[0].record_file_block_size.value() == 65536);
 
     fc->quit();
 }
@@ -228,10 +251,10 @@ void test_r_disco::test_r_disco_r_agent_start_stop()
     fct.detach();
 
     auto cfg = _create_mp_config(port,{
-        make_tuple("93950da6-fc12-493c-a051-c22a9fec3440","true_north_h264_aac.mkv","root","1234"),
-        make_tuple("93950da6-fc12-493c-a051-c22a9fec3440","true_north_h264_aac.mkv","root","1234"),
-        make_tuple("27d0f031-da8d-41a0-9687-5fd689a78bec","true_north_h265_mulaw.mkv","root","1234"),
-        make_tuple("13be8a39-7e92-4aa1-abbd-7b441856afde","true_north_h265_aac.mkv","root","1234")
+        make_tuple("93950da6-fc12-493c-a051-c22a9fec3440","true_north_h264_aac.mkv","root","1234","/recording/93950da6-fc12-493c-a051-c22a9fec3440","128","65536"),
+        make_tuple("93f03645-0cc3-4c7a-a9e5-f3456a986440","true_north_h264_aac.mkv","root","1234","/recording/93f03645-0cc3-4c7a-a9e5-f3456a986440","128","65536"),
+        make_tuple("27d0f031-da8d-41a0-9687-5fd689a78bec","true_north_h265_mulaw.mkv","root","1234","/recording/27d0f031-da8d-41a0-9687-5fd689a78bec","128","65536"),
+        make_tuple("13be8a39-7e92-4aa1-abbd-7b441856afde","true_north_h265_aac.mkv","root","1234","/recording/13be8a39-7e92-4aa1-abbd-7b441856afde","128","65536")
     });
 
     r_fs::write_file((uint8_t*)cfg.c_str(), cfg.size(), "top_dir" + r_fs::PATH_SLASH + "config" + r_fs::PATH_SLASH + "manual_config.json");

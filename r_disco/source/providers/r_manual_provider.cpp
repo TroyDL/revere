@@ -33,6 +33,9 @@ r_manual_provider::r_manual_provider(const string& top_dir) :
         auto id = device["id"];
         auto ipv4_address = device["ipv4_address"];
         auto rtsp_url = device["rtsp_url"];
+        auto record_file_path = device["record_file_path"];
+        int n_record_file_blocks = device["n_record_file_blocks"];
+        int record_file_block_size = device["record_file_block_size"];
 
         r_nullable<string> username, password;
         if(device.contains("username"))
@@ -64,6 +67,9 @@ r_manual_provider::r_manual_provider(const string& top_dir) :
         stream_config.id = id;
         stream_config.ipv4 = ipv4_address;
         stream_config.rtsp_url = rtsp_url;
+        stream_config.record_file_path = record_file_path;
+        stream_config.n_record_file_blocks = n_record_file_blocks;
+        stream_config.record_file_block_size = record_file_block_size;
         
         stream_config.video_codec = encoding_to_str(rtp_map->second.encoding);
         stream_config.video_timebase = rtp_map->second.time_base;

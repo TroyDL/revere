@@ -133,10 +133,15 @@ r_sqlite_conn r_devices::_open_or_create_db(const string& top_dir) const
             "audio_codec TEXT NOT NULL, "
             "audio_parameters TEXT, "
             "audio_timebase INTEGER NOT NULL, "
-            "state TEXT NOT NULL"
+            "state TEXT NOT NULL, "
+            "record_file_path TEXT, "
+            "n_record_file_blocks INTEGER, "
+            "record_file_block_size INTEGER"
         ");"
     );
-
+    std::string record_file_path;
+    int n_record_file_blocks {0};
+    int record_file_block_size {0};
     _upgrade_db(conn);
 
     return conn;

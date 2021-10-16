@@ -19,9 +19,9 @@ namespace r_mux
 
 enum r_demuxer_stream_type
 {
-    r_demuxer_STREAM_TYPE_UNKNOWN = -1,
-    r_demuxer_STREAM_TYPE_VIDEO,
-    r_demuxer_STREAM_TYPE_AUDIO,
+    R_DEMUXER_STREAM_TYPE_UNKNOWN = -1,
+    R_DEMUXER_STREAM_TYPE_VIDEO,
+    R_DEMUXER_STREAM_TYPE_AUDIO,
 };
 
 struct r_stream_info

@@ -46,7 +46,7 @@ TODO
 
 Compiling on Linux
 
-   To prepare a fresh Ubuntu 20.04 VM for compilation:
+   To prepare a fresh Ubuntu 21.10 VM for compilation:
       sudo apt update
       sudo apt install -y build-essential linux-headers-$(uname -r)
       <install virtualbox guest additions> Note: Configure your VM to have a decent amount of vram.

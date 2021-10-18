@@ -132,6 +132,9 @@ void r_server_response::write_response(r_stream_io& socket)
 
 #ifdef IS_LINUX
     char* cstr = ctime(&now);
+
+    if( cstr == nullptr )
+        R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling write_response()."));
 #endif
 #ifdef IS_WINDOWS
     char cstr[1024];
@@ -139,9 +142,6 @@ void r_server_response::write_response(r_stream_io& socket)
     if(ctime_s(cstr, 1024, &now) != 0)
         R_STHROW(r_http_exception_generic, ("Unable to get time string with ctime_s()."));
 #endif
-
-    if( cstr == nullptr )
-        R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling write_response()."));
 
     // RStrip to remove \n added by ctime
     string timeString = r_string_utils::rstrip(string(cstr));
@@ -320,6 +320,9 @@ bool r_server_response::_write_header(r_stream_io& socket)
     time_t now = time(0);
 #ifdef IS_LINUX
     char* cstr = ctime(&now);
+
+    if( cstr == nullptr )
+        R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling WriteResponse()."));
 #endif
 #ifdef IS_WINDOWS
     char cstr[1024];
@@ -327,8 +330,6 @@ bool r_server_response::_write_header(r_stream_io& socket)
     if(ctime_s(cstr, 1024, &now) != 0)
         R_STHROW(r_http_exception_generic, ("Unable to get time string with ctime_s()."));
 #endif
-    if( cstr == nullptr )
-        R_STHROW(r_http_exception_generic, ("Please set Content-Type: before calling WriteResponse()."));
 
     // RStrip to remove \n added by ctime
     string timeString = r_string_utils::rstrip(string(cstr));

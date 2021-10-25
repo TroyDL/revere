@@ -11,7 +11,7 @@ using namespace r_utils;
 using namespace r_utils::r_string_utils;
 using namespace std;
 
-r_devices::r_devices(const std::string& top_dir) :
+r_devices::r_devices(const string& top_dir) :
     _th(),
     _running(false),
     _top_dir(top_dir)
@@ -26,7 +26,7 @@ r_devices::~r_devices() noexcept
 void r_devices::start()
 {
     _running = true;
-    _th = std::thread(&r_devices::_entry_point, this);
+    _th = thread(&r_devices::_entry_point, this);
 }
 
 void r_devices::stop()
@@ -39,7 +39,7 @@ void r_devices::stop()
     }
 }
 
-void r_devices::insert_or_update_devices(const std::vector<r_stream_config>& stream_configs)
+void r_devices::insert_or_update_devices(const vector<pair<r_stream_config, string>>& stream_configs)
 {
     r_devices_cmd cmd;
     cmd.type = INSERT_OR_UPDATE_DEVICES;
@@ -48,7 +48,7 @@ void r_devices::insert_or_update_devices(const std::vector<r_stream_config>& str
     _db_work_q.post(cmd);
 }
 
-r_nullable<vector<r_camera>> r_devices::get_all_cameras()
+vector<r_camera> r_devices::get_all_cameras()
 {
     r_devices_cmd cmd;
     cmd.type = GET_ALL_CAMERAS;
@@ -56,7 +56,7 @@ r_nullable<vector<r_camera>> r_devices::get_all_cameras()
     return _db_work_q.post(cmd).get().cameras;
 }
 
-r_nullable<vector<r_camera>> r_devices::get_assigned_cameras()
+vector<r_camera> r_devices::get_assigned_cameras()
 {
     r_devices_cmd cmd;
     cmd.type = GET_ASSIGNED_CAMERAS;
@@ -79,7 +79,7 @@ void r_devices::_entry_point()
         auto maybe_cmd = _db_work_q.poll();
         if(!maybe_cmd.is_null())
         {
-            auto cmd = std::move(maybe_cmd.take());
+            auto cmd = move(maybe_cmd.take());
 
             try
             {
@@ -99,7 +99,7 @@ void r_devices::_entry_point()
             {
                 try
                 {
-                    cmd.second.set_exception(std::current_exception());
+                    cmd.second.set_exception(current_exception());
                 }
                 catch(...)
                 {
@@ -136,10 +136,11 @@ r_sqlite_conn r_devices::_open_or_create_db(const string& top_dir) const
             "state TEXT NOT NULL, "
             "record_file_path TEXT, "
             "n_record_file_blocks INTEGER, "
-            "record_file_block_size INTEGER"
+            "record_file_block_size INTEGER, "
+            "stream_config_hash TEXT NOT NULL"
         ");"
     );
-    std::string record_file_path;
+    string record_file_path;
     int n_record_file_blocks {0};
     int record_file_block_size {0};
     _upgrade_db(conn);
@@ -185,7 +186,7 @@ void r_devices::_set_db_version(const r_db::r_sqlite_conn& conn, int version) co
     conn.exec("PRAGMA user_version=" + to_string(version) + ";");
 }
 
-string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn, const r_stream_config& stream_config) const
+string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn, const r_stream_config& stream_config, const std::string& hash) const
 {
     auto result = conn.exec(
         r_string_utils::format(
@@ -204,7 +205,7 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
         query += ", video_timebase, audio_codec";
         if(!stream_config.audio_parameters.is_null())
             query += ", audio_parameters";
-        query += ", audio_timebase, state) VALUES (";
+        query += ", audio_timebase, state, stream_config_hash) VALUES (";
 
         query += r_string_utils::format(
             "'%s', '%s', '%s', '%s'",
@@ -225,9 +226,10 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
         if(!stream_config.audio_parameters.is_null())
             query += r_string_utils::format(", '%s'", stream_config.audio_parameters.value().c_str());
         
-        query += r_string_utils::format(", %d, '%s');",
+        query += r_string_utils::format(", %d, '%s', '%s');",
             stream_config.audio_timebase, 
-            "discovered"
+            "discovered",
+            hash.c_str()
         );
     }
     else
@@ -241,7 +243,8 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
                 "video_timebase=%d, "
                 "audio_codec='%s', "
                 "%s"
-                "audio_timebase=%d "
+                "audio_timebase=%d, "
+                "stream_config_hash='%s' "
             "WHERE id='%s';",
             stream_config.ipv4.c_str(),
             stream_config.rtsp_url.c_str(),
@@ -251,6 +254,7 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             stream_config.audio_codec.c_str(),
             (!stream_config.audio_parameters.is_null())?r_string_utils::format("audio_parameters='%s', ", stream_config.audio_parameters.value().c_str()).c_str():"",
             stream_config.audio_timebase,
+            hash.c_str(),
             stream_config.id.c_str()
         );
     }
@@ -273,14 +277,15 @@ r_camera r_devices::_create_camera(const map<string, r_nullable<string>>& row) c
     camera.audio_parameters = row.at("audio_parameters");
     camera.audio_timebase = s_to_int(row.at("audio_timebase").value());
     camera.state = row.at("state").value();
+    camera.stream_config_hash = row.at("stream_config_hash").value();
     return camera;
 }
 
-r_devices_cmd_result r_devices::_insert_or_update_devices(const r_db::r_sqlite_conn& conn, const std::vector<r_stream_config>& stream_configs) const
+r_devices_cmd_result r_devices::_insert_or_update_devices(const r_db::r_sqlite_conn& conn, const vector<pair<r_stream_config, string>>& stream_configs) const
 {
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
         for(auto& sc : stream_configs)
-            conn.exec(_create_insert_or_update_query(conn, sc));
+            conn.exec(_create_insert_or_update_query(conn, sc.first, sc.second));
     });
 
     return r_devices_cmd_result();
@@ -314,6 +319,19 @@ r_devices_cmd_result r_devices::_get_assigned_cameras(const r_sqlite_conn& conn)
 
 r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_camera& camera) const
 {
+    r_stream_config sc;
+    sc.id = camera.id;
+    sc.ipv4 = camera.ipv4;
+    sc.rtsp_url = camera.rtsp_url;
+    sc.video_codec = camera.video_codec;
+    sc.video_parameters = camera.video_parameters;
+    sc.video_timebase = camera.video_timebase;
+    sc.audio_codec = camera.audio_codec;
+    sc.audio_parameters = camera.audio_parameters;
+    sc.audio_timebase = camera.audio_timebase;
+
+    auto hash = hash_stream_config(sc);
+
     r_devices_cmd_result result;
 
     auto query = r_string_utils::format(
@@ -328,7 +346,8 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
                 "audio_codec='%s', "
                 "%s"
                 "audio_timebase=%d, "
-                "state='%s' "
+                "state='%s', "
+                "stream_config_hash='%s' "
             "WHERE id='%s';",
             camera.ipv4.c_str(),
             camera.rtsp_url.c_str(),
@@ -341,6 +360,7 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             (!camera.audio_parameters.is_null())?r_string_utils::format("audio_parameters='%s', ", camera.audio_parameters.value().c_str()).c_str():"",
             camera.audio_timebase,
             camera.state.c_str(),
+            hash.c_str(),
             camera.id.c_str()
         );
 

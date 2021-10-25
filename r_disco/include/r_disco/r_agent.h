@@ -25,7 +25,7 @@ namespace r_disco
 //       - onvif may have a GUID somewhere but if it doesn't, it looks like you can read /proc/net/arp to get HW addresses of recent connections
 //
 
-typedef std::function<void(const std::vector<r_stream_config>&)> changed_streams_cb;
+typedef std::function<void(const std::vector<std::pair<r_stream_config, std::string>>&)> changed_streams_cb;
 
 class r_agent
 {

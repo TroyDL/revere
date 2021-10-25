@@ -216,25 +216,25 @@ void test_r_disco::test_r_disco_r_manual_provider()
     RTF_ASSERT(configs[1].video_timebase == 90000);
     RTF_ASSERT(configs[1].audio_codec == "mp4a-latm");
     RTF_ASSERT(configs[1].audio_timebase == 48000);
-    RTF_ASSERT(configs[0].record_file_path.value() == "/recording/93f03645-0cc3-4c7a-a9e5-f3456a986440");
-    RTF_ASSERT(configs[0].n_record_file_blocks.value() == 128);
-    RTF_ASSERT(configs[0].record_file_block_size.value() == 65536);
+    RTF_ASSERT(configs[1].record_file_path.value() == "/recording/93f03645-0cc3-4c7a-a9e5-f3456a986440");
+    RTF_ASSERT(configs[1].n_record_file_blocks.value() == 128);
+    RTF_ASSERT(configs[1].record_file_block_size.value() == 65536);
 
     RTF_ASSERT(configs[2].video_codec == "h265");
     RTF_ASSERT(configs[2].video_timebase == 90000);
     RTF_ASSERT(configs[2].audio_codec == "pcmu");
     RTF_ASSERT(configs[2].audio_timebase == 8000);
-    RTF_ASSERT(configs[0].record_file_path.value() == "/recording/27d0f031-da8d-41a0-9687-5fd689a78bec");
-    RTF_ASSERT(configs[0].n_record_file_blocks.value() == 128);
-    RTF_ASSERT(configs[0].record_file_block_size.value() == 65536);
+    RTF_ASSERT(configs[2].record_file_path.value() == "/recording/27d0f031-da8d-41a0-9687-5fd689a78bec");
+    RTF_ASSERT(configs[2].n_record_file_blocks.value() == 128);
+    RTF_ASSERT(configs[2].record_file_block_size.value() == 65536);
 
     RTF_ASSERT(configs[3].video_codec == "h265");
     RTF_ASSERT(configs[3].video_timebase == 90000);
     RTF_ASSERT(configs[3].audio_codec == "mp4a-latm");
     RTF_ASSERT(configs[3].audio_timebase == 48000);
-    RTF_ASSERT(configs[0].record_file_path.value() == "/recording/13be8a39-7e92-4aa1-abbd-7b441856afde");
-    RTF_ASSERT(configs[0].n_record_file_blocks.value() == 128);
-    RTF_ASSERT(configs[0].record_file_block_size.value() == 65536);
+    RTF_ASSERT(configs[3].record_file_path.value() == "/recording/13be8a39-7e92-4aa1-abbd-7b441856afde");
+    RTF_ASSERT(configs[3].n_record_file_blocks.value() == 128);
+    RTF_ASSERT(configs[3].record_file_block_size.value() == 65536);
 
     fc->quit();
 }
@@ -262,7 +262,7 @@ void test_r_disco::test_r_disco_r_agent_start_stop()
     r_agent agent("top_dir");
 
     int num_found_configs = 0;
-    agent.set_stream_change_cb([&](const vector<r_stream_config>& configs){
+    agent.set_stream_change_cb([&](const vector<pair<r_stream_config, string>>& configs){
         num_found_configs += (int)configs.size();
     });
     agent.start();
@@ -274,9 +274,9 @@ void test_r_disco::test_r_disco_r_agent_start_stop()
     agent.stop();
 }
 
-vector<r_stream_config> _fake_stream_configs()
+vector<pair<r_stream_config, string>> _fake_stream_configs()
 {
-    vector<r_stream_config> configs;
+    vector<pair<r_stream_config, string>> configs;
 
     r_stream_config cfg;
     cfg.id = "93950da6-fc12-493c-a051-c22a9fec3440";
@@ -286,7 +286,7 @@ vector<r_stream_config> _fake_stream_configs()
     cfg.video_timebase = 90000;
     cfg.audio_codec = "mp4a-latm";
     cfg.audio_timebase = 48000;
-    configs.push_back(cfg);
+    configs.push_back(make_pair(cfg, hash_stream_config(cfg)));
 
     cfg.id = "27d0f031-da8d-41a0-9687-5fd689a78bec";
     cfg.ipv4 = "127.0.0.1";
@@ -295,7 +295,7 @@ vector<r_stream_config> _fake_stream_configs()
     cfg.video_timebase = 90000;
     cfg.audio_codec = "pcmu";
     cfg.audio_timebase = 8000;
-    configs.push_back(cfg);
+    configs.push_back(make_pair(cfg, hash_stream_config(cfg)));
 
     return configs;
 }
@@ -307,7 +307,7 @@ void test_r_disco::test_r_disco_r_devices_basic()
 
     devices.insert_or_update_devices(_fake_stream_configs());
 
-    auto all_cameras = devices.get_all_cameras().value();
+    auto all_cameras = devices.get_all_cameras();
 
     RTF_ASSERT(all_cameras.size() == 2);
     RTF_ASSERT(all_cameras[0].id == "93950da6-fc12-493c-a051-c22a9fec3440");
@@ -320,7 +320,7 @@ void test_r_disco::test_r_disco_r_devices_basic()
     all_cameras[1].state = "assigned";
     devices.save_camera(all_cameras[1]);
 
-    auto all_assigned_cameras = devices.get_assigned_cameras().value();
+    auto all_assigned_cameras = devices.get_assigned_cameras();
 
     RTF_ASSERT(all_assigned_cameras.size() == 1);
 

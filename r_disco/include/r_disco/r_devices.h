@@ -18,13 +18,16 @@ enum r_devices_cmd_type
     INSERT_OR_UPDATE_DEVICES = 0,
     GET_ALL_CAMERAS = 1,
     GET_ASSIGNED_CAMERAS = 2,
-    SAVE_CAMERA = 3
+    SAVE_CAMERA = 3,
+    GET_MODIFIED_CAMERAS = 4,
+    GET_ASSIGNED_CAMERAS_ADDED = 5,
+    GET_ASSIGNED_CAMERAS_REMOVED = 6
 };
 
 struct r_devices_cmd
 {
     r_devices_cmd_type type;
-    std::vector<r_stream_config> configs;
+    std::vector<std::pair<r_stream_config, std::string>> configs;
     r_camera camera;
 };
 
@@ -42,10 +45,14 @@ public:
     void start();
     void stop();
 
-    void insert_or_update_devices(const std::vector<r_stream_config>& stream_configs);
-    r_utils::r_nullable<std::vector<r_camera>> get_all_cameras();
-    r_utils::r_nullable<std::vector<r_camera>> get_assigned_cameras();
+    void insert_or_update_devices(const std::vector<std::pair<r_stream_config, std::string>>& stream_configs);
+    std::vector<r_camera> get_all_cameras();
+    std::vector<r_camera> get_assigned_cameras();
     void save_camera(const r_camera& camera);
+
+    std::vector<r_camera> get_modified_cameras(const std::vector<r_camera>& cameras);
+    std::vector<r_camera> get_assigned_cameras_added(const std::vector<r_camera>& cameras);
+    std::vector<r_camera> get_assigned_cameras_removed(const std::vector<r_camera>& cameras);
 
 private:
     void _entry_point();
@@ -56,10 +63,10 @@ private:
     int _get_db_version(const r_db::r_sqlite_conn& conn) const;
     void _set_db_version(const r_db::r_sqlite_conn& conn, int version) const;
 
-    std::string _create_insert_or_update_query(const r_db::r_sqlite_conn& conn, const r_stream_config& stream_config) const;
+    std::string _create_insert_or_update_query(const r_db::r_sqlite_conn& conn, const r_stream_config& stream_config, const std::string& hash) const;
     r_camera _create_camera(const std::map<std::string, r_utils::r_nullable<std::string>>& row) const;
 
-    r_devices_cmd_result _insert_or_update_devices(const r_db::r_sqlite_conn& conn, const std::vector<r_stream_config>& stream_configs) const;
+    r_devices_cmd_result _insert_or_update_devices(const r_db::r_sqlite_conn& conn, const std::vector<std::pair<r_stream_config, std::string>>& stream_configs) const;
     r_devices_cmd_result _get_all_cameras(const r_db::r_sqlite_conn& conn) const;
     r_devices_cmd_result _get_assigned_cameras(const r_db::r_sqlite_conn& conn) const;
     r_devices_cmd_result _save_camera(const r_db::r_sqlite_conn& conn, const r_camera& camera) const;

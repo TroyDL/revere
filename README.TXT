@@ -5,6 +5,8 @@ Project Goals
       - 4K, H.264, H.265, AAC (latm & generic), mulaw, b-frames
 
 TODO
+   - Modify r_disco to return
+       - 
    - Create r_vss library
        - r_vss is the video recorder.
        - Use r_disco to enumerate assigned cameras

@@ -98,7 +98,16 @@ void r_agent::_process_new_or_changed_streams_configs()
             }
         );
 
+        vector<pair<r_stream_config, string>> output;
+        transform(
+            begin(new_or_changed), end(new_or_changed),
+            back_inserter(output),
+            [](const r_stream_config& sc){
+                return make_pair(sc, hash_stream_config(sc));
+            }
+        );
+
         if(_changed_streams_cb)
-            _changed_streams_cb(new_or_changed);
+            _changed_streams_cb(output);
     }
 }

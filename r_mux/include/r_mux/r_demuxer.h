@@ -12,7 +12,6 @@ extern "C"
 {
 #include "libavformat/avformat.h"
 #include "libavcodec/avcodec.h"
-#include "libavcodec/bsf.h"
 }
 
 namespace r_mux

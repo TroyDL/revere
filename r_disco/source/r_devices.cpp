@@ -3,12 +3,15 @@
 #include "r_utils/r_file.h"
 #include "r_utils/r_string_utils.h"
 #include "r_utils/r_exception.h"
+#include "r_utils/r_functional.h"
 #include <thread>
+#include <algorithm>
 
 using namespace r_disco;
 using namespace r_db;
 using namespace r_utils;
 using namespace r_utils::r_string_utils;
+using namespace r_utils::r_funky;
 using namespace std;
 
 r_devices::r_devices(const string& top_dir) :
@@ -48,6 +51,21 @@ void r_devices::insert_or_update_devices(const vector<pair<r_stream_config, stri
     _db_work_q.post(cmd);
 }
 
+r_nullable<r_camera> r_devices::get_camera_by_id(const string& id)
+{
+    r_devices_cmd cmd;
+    cmd.type = GET_CAMERA_BY_ID;
+    cmd.id = id;
+
+    auto result = _db_work_q.post(cmd).get();
+
+    r_nullable<r_camera> camera;
+    if(!result.cameras.empty())
+        camera = result.cameras.front();
+
+    return camera;
+}
+
 vector<r_camera> r_devices::get_all_cameras()
 {
     r_devices_cmd cmd;
@@ -68,8 +86,42 @@ void r_devices::save_camera(const r_camera& camera)
 {
     r_devices_cmd cmd;
     cmd.type = SAVE_CAMERA;
-    cmd.camera = camera;
+    cmd.cameras.push_back(camera);
     _db_work_q.post(cmd).wait();
+}
+
+void r_devices::remove_camera(const r_camera& camera)
+{
+    r_devices_cmd cmd;
+    cmd.type = REMOVE_CAMERA;
+    cmd.cameras.push_back(camera);
+    _db_work_q.post(cmd).wait();
+}
+
+vector<r_camera> r_devices::get_modified_cameras(const vector<r_camera>& cameras)
+{
+    r_devices_cmd cmd;
+    cmd.type = GET_MODIFIED_CAMERAS;
+    cmd.cameras = cameras;
+    return _db_work_q.post(cmd).get().cameras;
+}
+
+vector<r_camera> r_devices::get_assigned_cameras_added(const vector<r_camera>& cameras)
+{
+    r_devices_cmd cmd;
+    cmd.type = GET_ASSIGNED_CAMERAS_ADDED;
+    cmd.cameras = cameras;
+
+    return _db_work_q.post(cmd).get().cameras;
+}
+
+vector<r_camera> r_devices::get_assigned_cameras_removed(const vector<r_camera>& cameras)
+{
+    r_devices_cmd cmd;
+    cmd.type = GET_ASSIGNED_CAMERAS_REMOVED;
+    cmd.cameras = cameras;
+
+    return _db_work_q.post(cmd).get().cameras;
 }
 
 void r_devices::_entry_point()
@@ -87,12 +139,30 @@ void r_devices::_entry_point()
 
                 if(cmd.first.type == INSERT_OR_UPDATE_DEVICES)
                     cmd.second.set_value(_insert_or_update_devices(conn, cmd.first.configs));
+                else if(cmd.first.type == GET_CAMERA_BY_ID)
+                    cmd.second.set_value(_get_camera_by_id(conn, cmd.first.id));
                 else if(cmd.first.type == GET_ALL_CAMERAS)
                     cmd.second.set_value(_get_all_cameras(conn));
                 else if(cmd.first.type == GET_ASSIGNED_CAMERAS)
                     cmd.second.set_value(_get_assigned_cameras(conn));
                 else if(cmd.first.type == SAVE_CAMERA)
-                    cmd.second.set_value(_save_camera(conn, cmd.first.camera));
+                {
+                    if(cmd.first.cameras.empty())
+                        R_THROW(("No cameras passed to SAVE_CAMERA."));
+                    cmd.second.set_value(_save_camera(conn, cmd.first.cameras.front()));
+                }
+                else if(cmd.first.type == REMOVE_CAMERA)
+                {
+                    if(cmd.first.cameras.empty())
+                        R_THROW(("No cameras passed to REMOVE_CAMERA."));
+                    cmd.second.set_value(_remove_camera(conn, cmd.first.cameras.front()));
+                }
+                else if(cmd.first.type == GET_MODIFIED_CAMERAS)
+                    cmd.second.set_value(_get_modified_cameras(conn, cmd.first.cameras));
+                else if(cmd.first.type == GET_ASSIGNED_CAMERAS_ADDED)
+                    cmd.second.set_value(_get_assigned_cameras_added(conn, cmd.first.cameras));
+                else if(cmd.first.type == GET_ASSIGNED_CAMERAS_REMOVED)
+                    cmd.second.set_value(_get_assigned_cameras_removed(conn, cmd.first.cameras));
                 else R_THROW(("Unknown work q command."));
             }
             catch(...)
@@ -291,6 +361,17 @@ r_devices_cmd_result r_devices::_insert_or_update_devices(const r_db::r_sqlite_c
     return r_devices_cmd_result();
 }
 
+r_devices_cmd_result r_devices::_get_camera_by_id(const r_sqlite_conn& conn, const string& id) const
+{
+    r_devices_cmd_result result;
+    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
+        auto qr = conn.exec(r_string_utils::format("SELECT * FROM cameras WHERE id='%s';", id.c_str()));
+        if(!qr.empty())
+            result.cameras.push_back(_create_camera(qr.front()));
+    });
+    return result;
+}
+
 r_devices_cmd_result r_devices::_get_all_cameras(const r_sqlite_conn& conn) const
 {
     r_devices_cmd_result result;
@@ -335,6 +416,45 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
     r_devices_cmd_result result;
 
     auto query = r_string_utils::format(
+            "REPLACE INTO cameras("
+                "id, ipv4, rtsp_url, %s%svideo_codec, %svideo_timebase, audio_codec, %saudio_timebase, state, stream_config_hash) "
+            "VALUES("
+                "'%s', "
+                "'%s', "
+                "'%s', "
+                "%s"
+                "%s"
+                "'%s', "
+                "%s"
+                "%d, "
+                "'%s', "
+                "%s"
+                "%d, "
+                "'%s', "
+                "'%s'"
+            ");",
+            (!camera.rtsp_username.is_null())?"rtsp_username, ":"",
+            (!camera.rtsp_password.is_null())?"rtsp_password, ":"",
+            (!camera.video_parameters.is_null())?"video_parameters, ":"",
+            (!camera.audio_parameters.is_null())?"audio_parameters, ":"",
+
+            camera.id.c_str(),
+            camera.ipv4.c_str(),
+            camera.rtsp_url.c_str(),
+            (!camera.rtsp_username.is_null())?r_string_utils::format("'%s', ", camera.rtsp_username.value().c_str()).c_str():"",
+            (!camera.rtsp_password.is_null())?r_string_utils::format("'%s', ", camera.rtsp_password.value().c_str()).c_str():"",
+            camera.video_codec.c_str(),
+            (!camera.video_parameters.is_null())?r_string_utils::format("'%s', ", camera.video_parameters.value().c_str()).c_str():"",
+            camera.video_timebase,
+            camera.audio_codec.c_str(),
+            (!camera.audio_parameters.is_null())?r_string_utils::format("'%s', ", camera.audio_parameters.value().c_str()).c_str():"",
+            camera.audio_timebase,
+            camera.state.c_str(),
+            hash.c_str()
+        );
+
+#if 0
+    auto query = r_string_utils::format(
             "UPDATE cameras SET "
                 "ipv4='%s', "
                 "rtsp_url='%s', "
@@ -363,10 +483,97 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             hash.c_str(),
             camera.id.c_str()
         );
+#endif
 
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
         conn.exec(query);
     });
+
+    return result;
+}
+
+r_devices_cmd_result r_devices::_remove_camera(const r_sqlite_conn& conn, const r_camera& camera) const
+{
+    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
+        conn.exec(r_string_utils::format("DELETE FROM cameras WHERE id='%s';", camera.id.c_str()));
+    });
+
+    return r_devices_cmd_result();
+}
+
+r_devices_cmd_result r_devices::_get_modified_cameras(const r_sqlite_conn& conn, const vector<r_camera>& cameras) const
+{
+    vector<r_camera> out_cameras;
+    r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
+        for(auto& c : cameras)
+        {
+            auto query = r_string_utils::format(
+                "SELECT * FROM cameras WHERE id=\"%s\" AND stream_config_hash!=\"%s\";",
+                c.id.c_str(),
+                c.stream_config_hash.c_str()
+            );
+
+            auto modified = conn.exec(query);
+            if(!modified.empty())
+                out_cameras.push_back(_create_camera(modified.front()));
+        }
+    });
+
+    r_devices_cmd_result result;
+    result.cameras = out_cameras;
+
+    return result;
+}
+
+r_devices_cmd_result r_devices::_get_assigned_cameras_added(const r_sqlite_conn& conn, const vector<r_camera>& cameras) const
+{
+    vector<string> input_ids;
+    transform(cameras.begin(), cameras.end(), back_inserter(input_ids),[](const r_camera& c){return c.id;});
+
+    auto qr = conn.exec("SELECT id FROM cameras WHERE state='assigned';");
+
+    vector<string> db_ids;
+    transform(qr.begin(), qr.end(), back_inserter(db_ids), [](const map<string, r_nullable<string>>& r){return r.at("id").value();});
+
+    // set_diff(a, b) - Returns the items in a that are not in b
+    auto added_ids = set_diff(db_ids, input_ids);
+
+    r_devices_cmd_result result;
+
+    for(auto added_id : added_ids)
+    {
+        qr = conn.exec(r_string_utils::format("SELECT * FROM cameras WHERE id='%s';", added_id.c_str()));
+        if(!qr.empty())
+
+            result.cameras.push_back(_create_camera(qr.front()));
+    }
+
+    return result;
+}
+
+r_devices_cmd_result r_devices::_get_assigned_cameras_removed(const r_sqlite_conn& conn, const vector<r_camera>& cameras) const
+{
+    vector<string> input_ids;
+    transform(cameras.begin(), cameras.end(), back_inserter(input_ids),[](const r_camera& c){return c.id;});
+
+    auto qr = conn.exec("SELECT id FROM cameras WHERE state='assigned';");
+
+    vector<string> db_ids;
+    transform(qr.begin(), qr.end(), back_inserter(db_ids), [](const map<string, r_nullable<string>>& r){return r.at("id").value();});
+
+    // set_diff(a, b) - Returns the items in a that are not in b
+    auto removed_ids = set_diff(input_ids, db_ids);
+
+    r_devices_cmd_result result;
+
+    for(auto removed_id : removed_ids)
+    {
+        for(auto& c : cameras)
+        {
+            if(removed_id == c.id)
+                result.cameras.push_back(c);
+        }
+    }
 
     return result;
 }

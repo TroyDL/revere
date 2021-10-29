@@ -24,8 +24,8 @@ struct r_stream_config
     int audio_timebase {0};
 
     r_utils::r_nullable<std::string> record_file_path;
-    r_utils::r_nullable<int> n_record_file_blocks {0};
-    r_utils::r_nullable<int> record_file_block_size {0};
+    r_utils::r_nullable<int> n_record_file_blocks;
+    r_utils::r_nullable<int> record_file_block_size;
 };
 
 std::string hash_stream_config(const r_stream_config& sc);

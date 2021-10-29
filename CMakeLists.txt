@@ -439,6 +439,29 @@ target_link_libraries(
     r_db
 )
 
+# r_vss
+#
+add_library(
+    r_vss 
+    r_vss/include/r_vss/r_stream_keeper.h
+    r_vss/source/r_stream_keeper.cpp
+    r_vss/include/r_vss/r_recording_context.h
+    r_vss/source/r_recording_context.cpp
+)
+
+target_include_directories(
+    r_vss PUBLIC
+    r_vss/include
+    r_utils/include
+    r_disco/include
+)
+
+target_link_libraries(
+    r_vss
+    r_utils
+    r_disco
+)
+
 # Unit Tests
 #
 add_executable(

@@ -258,47 +258,35 @@ void r_devices::_set_db_version(const r_db::r_sqlite_conn& conn, int version) co
 
 string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn, const r_stream_config& stream_config, const std::string& hash) const
 {
-    auto result = conn.exec(
-        r_string_utils::format(
-            "SELECT * FROM cameras WHERE id='%s';",
-            stream_config.id.c_str()
-        )
-    );
+    // Why not replace into? Because replace into replaces the whole row, and for the update case here we need
+    // to make sure we only update the columns we have values for.
+    auto result = conn.exec("SELECT * FROM cameras WHERE id='" + stream_config.id + "';");
 
     string query;
 
     if(result.empty())
     {
-        query = "INSERT INTO cameras (id, ipv4, rtsp_url, video_codec";
-        if(!stream_config.video_parameters.is_null())
-            query += ", video_parameters";
-        query += ", video_timebase, audio_codec";
-        if(!stream_config.audio_parameters.is_null())
-            query += ", audio_parameters";
-        query += ", audio_timebase, state, stream_config_hash) VALUES (";
+        query = r_string_utils::format(
+            "INSERT INTO cameras (id, ipv4, rtsp_url, video_codec, %svideo_timebase, audio_codec, %saudio_timebase, state, %s%s%sstream_config_hash) "
+            "VALUES('%s', '%s', '%s', '%s', %s%d, '%s', %s%d, 'discovered', %s%s%s'%s');",
+            (!stream_config.video_parameters.is_null())?"video_parameters, ":"",
+            (!stream_config.audio_parameters.is_null())?"audio_parameters, ":"",
+            (!stream_config.record_file_path.is_null())?"record_file_path, ":"",
+            (!stream_config.n_record_file_blocks.is_null())?"n_record_file_blocks, ":"",
+            (!stream_config.record_file_block_size.is_null())?"record_file_block_size, ":"",
 
-        query += r_string_utils::format(
-            "'%s', '%s', '%s', '%s'",
             stream_config.id.c_str(),
             stream_config.ipv4.c_str(),
             stream_config.rtsp_url.c_str(),
-            stream_config.video_codec.c_str()
-        );
-
-        if(!stream_config.video_parameters.is_null())
-            query += r_string_utils::format(", '%s'", stream_config.video_parameters.value().c_str());
-        
-        query += r_string_utils::format(", %d, '%s'",
+            stream_config.video_codec.c_str(),
+            (!stream_config.video_parameters.is_null())?r_string_utils::format("'%s', ", stream_config.video_parameters.value().c_str()).c_str():"",
             stream_config.video_timebase,
-            stream_config.audio_codec.c_str()
-        );
-
-        if(!stream_config.audio_parameters.is_null())
-            query += r_string_utils::format(", '%s'", stream_config.audio_parameters.value().c_str());
-        
-        query += r_string_utils::format(", %d, '%s', '%s');",
-            stream_config.audio_timebase, 
-            "discovered",
+            stream_config.audio_codec.c_str(),
+            (!stream_config.audio_parameters.is_null())?r_string_utils::format("'%s', ", stream_config.audio_parameters.value().c_str()).c_str():"",
+            stream_config.audio_timebase,
+            (!stream_config.record_file_path.is_null())?r_string_utils::format("'%s', ", stream_config.record_file_path.value().c_str()).c_str():"",
+            (!stream_config.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", stream_config.n_record_file_blocks.value()).c_str():"",
+            (!stream_config.record_file_block_size.is_null())?r_string_utils::format("%d, ", stream_config.record_file_block_size.value()).c_str():"",
             hash.c_str()
         );
     }
@@ -314,6 +302,9 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
                 "audio_codec='%s', "
                 "%s"
                 "audio_timebase=%d, "
+                "%s"
+                "%s"
+                "%s"
                 "stream_config_hash='%s' "
             "WHERE id='%s';",
             stream_config.ipv4.c_str(),
@@ -324,6 +315,9 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             stream_config.audio_codec.c_str(),
             (!stream_config.audio_parameters.is_null())?r_string_utils::format("audio_parameters='%s', ", stream_config.audio_parameters.value().c_str()).c_str():"",
             stream_config.audio_timebase,
+            (!stream_config.record_file_path.is_null())?r_string_utils::format("record_file_path='%s', ", stream_config.record_file_path.value().c_str()).c_str():"",
+            (!stream_config.n_record_file_blocks.is_null())?r_string_utils::format("n_record_file_blocks=%d, ", stream_config.n_record_file_blocks.value()).c_str():"",
+            (!stream_config.record_file_block_size.is_null())?r_string_utils::format("record_file_block_size=%d, ", stream_config.record_file_block_size.value()).c_str():"",
             hash.c_str(),
             stream_config.id.c_str()
         );
@@ -365,7 +359,7 @@ r_devices_cmd_result r_devices::_get_camera_by_id(const r_sqlite_conn& conn, con
 {
     r_devices_cmd_result result;
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
-        auto qr = conn.exec(r_string_utils::format("SELECT * FROM cameras WHERE id='%s';", id.c_str()));
+        auto qr = conn.exec("SELECT * FROM cameras WHERE id='" + id + "';");
         if(!qr.empty())
             result.cameras.push_back(_create_camera(qr.front()));
     });
@@ -453,38 +447,6 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             hash.c_str()
         );
 
-#if 0
-    auto query = r_string_utils::format(
-            "UPDATE cameras SET "
-                "ipv4='%s', "
-                "rtsp_url='%s', "
-                "%s"
-                "%s"
-                "video_codec='%s', "
-                "%s"
-                "video_timebase=%d, "
-                "audio_codec='%s', "
-                "%s"
-                "audio_timebase=%d, "
-                "state='%s', "
-                "stream_config_hash='%s' "
-            "WHERE id='%s';",
-            camera.ipv4.c_str(),
-            camera.rtsp_url.c_str(),
-            (!camera.rtsp_username.is_null())?r_string_utils::format("rtsp_username='%s', ", camera.rtsp_username.value().c_str()).c_str():"",
-            (!camera.rtsp_password.is_null())?r_string_utils::format("rtsp_password='%s', ", camera.rtsp_password.value().c_str()).c_str():"",
-            camera.video_codec.c_str(),
-            (!camera.video_parameters.is_null())?r_string_utils::format("video_parameters='%s', ", camera.video_parameters.value().c_str()).c_str():"",
-            camera.video_timebase,
-            camera.audio_codec.c_str(),
-            (!camera.audio_parameters.is_null())?r_string_utils::format("audio_parameters='%s', ", camera.audio_parameters.value().c_str()).c_str():"",
-            camera.audio_timebase,
-            camera.state.c_str(),
-            hash.c_str(),
-            camera.id.c_str()
-        );
-#endif
-
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
         conn.exec(query);
     });
@@ -495,7 +457,7 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
 r_devices_cmd_result r_devices::_remove_camera(const r_sqlite_conn& conn, const r_camera& camera) const
 {
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
-        conn.exec(r_string_utils::format("DELETE FROM cameras WHERE id='%s';", camera.id.c_str()));
+        conn.exec("DELETE FROM cameras WHERE id='" + camera.id + "';");
     });
 
     return r_devices_cmd_result();
@@ -528,12 +490,12 @@ r_devices_cmd_result r_devices::_get_modified_cameras(const r_sqlite_conn& conn,
 r_devices_cmd_result r_devices::_get_assigned_cameras_added(const r_sqlite_conn& conn, const vector<r_camera>& cameras) const
 {
     vector<string> input_ids;
-    transform(cameras.begin(), cameras.end(), back_inserter(input_ids),[](const r_camera& c){return c.id;});
+    transform(begin(cameras), end(cameras), back_inserter(input_ids),[](const r_camera& c){return c.id;});
 
     auto qr = conn.exec("SELECT id FROM cameras WHERE state='assigned';");
 
     vector<string> db_ids;
-    transform(qr.begin(), qr.end(), back_inserter(db_ids), [](const map<string, r_nullable<string>>& r){return r.at("id").value();});
+    transform(begin(qr), end(qr), back_inserter(db_ids), [](const map<string, r_nullable<string>>& r){return r.at("id").value();});
 
     // set_diff(a, b) - Returns the items in a that are not in b
     auto added_ids = set_diff(db_ids, input_ids);
@@ -542,9 +504,8 @@ r_devices_cmd_result r_devices::_get_assigned_cameras_added(const r_sqlite_conn&
 
     for(auto added_id : added_ids)
     {
-        qr = conn.exec(r_string_utils::format("SELECT * FROM cameras WHERE id='%s';", added_id.c_str()));
+        qr = conn.exec("SELECT * FROM cameras WHERE id='" + added_id + "';");
         if(!qr.empty())
-
             result.cameras.push_back(_create_camera(qr.front()));
     }
 
@@ -553,27 +514,23 @@ r_devices_cmd_result r_devices::_get_assigned_cameras_added(const r_sqlite_conn&
 
 r_devices_cmd_result r_devices::_get_assigned_cameras_removed(const r_sqlite_conn& conn, const vector<r_camera>& cameras) const
 {
+    map<string, r_camera> cmap;
+    for(auto& c : cameras)
+        cmap[c.id] = c;
+
     vector<string> input_ids;
-    transform(cameras.begin(), cameras.end(), back_inserter(input_ids),[](const r_camera& c){return c.id;});
+    transform(begin(cameras), end(cameras), back_inserter(input_ids),[](const r_camera& c){return c.id;});
 
     auto qr = conn.exec("SELECT id FROM cameras WHERE state='assigned';");
 
     vector<string> db_ids;
-    transform(qr.begin(), qr.end(), back_inserter(db_ids), [](const map<string, r_nullable<string>>& r){return r.at("id").value();});
+    transform(begin(qr), end(qr), back_inserter(db_ids), [](const map<string, r_nullable<string>>& r){return r.at("id").value();});
 
     // set_diff(a, b) - Returns the items in a that are not in b
     auto removed_ids = set_diff(input_ids, db_ids);
 
     r_devices_cmd_result result;
-
-    for(auto removed_id : removed_ids)
-    {
-        for(auto& c : cameras)
-        {
-            if(removed_id == c.id)
-                result.cameras.push_back(c);
-        }
-    }
+    transform(begin(removed_ids), end(removed_ids), back_inserter(result.cameras),[&cmap](const string& id){return cmap[id];});
 
     return result;
 }

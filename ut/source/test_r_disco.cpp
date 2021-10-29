@@ -299,7 +299,6 @@ vector<pair<r_stream_config, string>> _fake_stream_configs()
 
     cfg.id = "fae9db8f-08a5-48b7-a22d-1c19a0c05c4f";
     cfg.ipv4 = "127.0.0.1";
-
     cfg.rtsp_url = "rtsp://url";
     cfg.video_codec = "h265";
     cfg.video_parameters = "foo=bar";

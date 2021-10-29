@@ -170,8 +170,6 @@ void test_r_pipeline::test_gst_source_h264_aac()
 
     fc->quit();
 
-    printf("audio_channels=%u, audio_sample_rate=%u",audio_channels,audio_sample_rate);
-
     RTF_ASSERT(got_ready && got_audio && got_video);
 }
 
@@ -524,4 +522,3 @@ void test_r_pipeline::test_stream_info_parse_h265_sps()
 
     fc->quit();
 }
-

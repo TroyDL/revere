@@ -173,4 +173,7 @@ int rtf_next_port();
 
 #define RTF_NEXT_PORT() rtf_next_port()
 
+bool rtf_ends_with(const std::string& a, const std::string& b);
+std::vector<std::string> rtf_regular_files_in_dir(const std::string& dir);
+
 #endif

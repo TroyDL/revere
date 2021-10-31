@@ -454,12 +454,14 @@ target_include_directories(
     r_vss/include
     r_utils/include
     r_disco/include
+    r_storage/include
 )
 
 target_link_libraries(
     r_vss
     r_utils
     r_disco
+    r_storage
 )
 
 # Unit Tests
@@ -469,6 +471,8 @@ add_executable(
     ut/include/bad_guy.h
     ut/include/framework.h
     ut/source/framework.cpp
+    ut/include/utils.h
+    ut/source/utils.cpp
     ut/include/test_r_utils.h
     ut/source/test_r_utils.cpp
     ut/include/test_r_http.h
@@ -483,6 +487,8 @@ add_executable(
     ut/source/test_r_storage.cpp
     ut/include/test_r_disco.h
     ut/source/test_r_disco.cpp
+    ut/include/test_r_vss.h
+    ut/source/test_r_vss.cpp
 )
 
 target_include_directories(
@@ -496,6 +502,7 @@ target_include_directories(
     r_mux/include
     r_storage/include
     r_disco/include
+    r_vss/include
     ${GSTREAMER_INCLUDE_DIRS}
     ${FFMPEG_INCLUDE_DIRS}
 )
@@ -514,6 +521,7 @@ target_link_libraries(
     r_mux
     r_storage
     r_disco
+    r_vss
     ${GSTREAMER_LIBS}
     ${FFMPEG_LIBS}
 )

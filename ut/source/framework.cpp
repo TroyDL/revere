@@ -5,10 +5,14 @@
 #include <stdlib.h>
 #ifdef IS_WINDOWS
 #include <Windows.h>
+#include <tchar.h> 
+#include <stdio.h>
+#include <strsafe.h>
 #endif
 #ifdef IS_LINUX
 #include <sys/time.h>
 #include <unistd.h>
+#include <dirent.h>
 #endif
 
 using namespace std;
@@ -108,6 +112,65 @@ void handle_terminate()
             printf("caught an unknown exception in custom terminate handler.\n");
         }
     }
+}
+
+bool rtf_ends_with(const string& a, const string& b)
+{
+    if (b.size() > a.size()) return false;
+    return std::equal(a.begin() + a.size() - b.size(), a.end(), b.begin());
+}
+
+vector<string> rtf_regular_files_in_dir(const string& dir)
+{
+    vector<string> names;
+
+#ifdef IS_LINUX
+    DIR* d = opendir(dir.c_str());
+    if(!d)
+        throw std::runtime_error("Unable to open directory");
+    
+    struct dirent* e = readdir(d);
+
+    if(e)
+    {
+        do
+        {
+            string name(e->d_name);
+            if(e->d_type == DT_REG && name != "." && name != "..")
+                names.push_back(name);
+            e = readdir(d);
+        } while(e);
+    }
+
+    closedir(d);
+#endif
+
+#ifdef IS_WINDOWS
+   WIN32_FIND_DATA ffd;
+   TCHAR szDir[1024];
+   HANDLE hFind;
+   
+   StringCchCopyA(szDir, 1024, dir.c_str());
+   StringCchCatA(szDir, 1024, "\\*");
+
+   // Find the first file in the directory.
+
+   hFind = FindFirstFileA(szDir, &ffd);
+
+   if (INVALID_HANDLE_VALUE == hFind) 
+       throw std::runtime_error("Unable to open directory");
+
+   do
+   {
+      if(!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+         names.push_back(string(ffd.cFileName)); 
+   }
+   while (FindNextFileA(hFind, &ffd) != 0);
+
+   FindClose(hFind);
+#endif
+
+    return names;
 }
 
 int main( int argc, char* argv[] )

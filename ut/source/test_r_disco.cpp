@@ -1,5 +1,6 @@
 
 #include "test_r_disco.h"
+#include "utils.h"
 #include "r_pipeline/r_gst_source.h"
 #include "r_pipeline/r_arg.h"
 #include "r_pipeline/r_stream_info.h"
@@ -104,80 +105,6 @@ void test_r_disco::teardown()
         r_fs::rmdir("top_dir" + r_fs::PATH_SLASH + "db");
     if(r_fs::file_exists("top_dir"))
         r_fs::rmdir("top_dir");
-}
-
-static bool _ends_with(const string& a, const string& b)
-{
-    if (b.size() > a.size()) return false;
-    return std::equal(a.begin() + a.size() - b.size(), a.end(), b.begin());
-}
-
-static vector<string> _regular_files_in_dir(const string& dir)
-{
-    vector<string> names;
-
-#ifdef IS_LINUX
-    DIR* d = opendir(dir.c_str());
-    if(!d)
-        throw std::runtime_error("Unable to open directory");
-    
-    struct dirent* e = readdir(d);
-
-    if(e)
-    {
-        do
-        {
-            string name(e->d_name);
-            if(e->d_type == DT_REG && name != "." && name != "..")
-                names.push_back(name);
-            e = readdir(d);
-        } while(e);
-    }
-
-    closedir(d);
-#endif
-
-#ifdef IS_WINDOWS
-   WIN32_FIND_DATA ffd;
-   TCHAR szDir[1024];
-   HANDLE hFind;
-   
-   StringCchCopyA(szDir, 1024, dir.c_str());
-   StringCchCatA(szDir, 1024, "\\*");
-
-   // Find the first file in the directory.
-
-   hFind = FindFirstFileA(szDir, &ffd);
-
-   if (INVALID_HANDLE_VALUE == hFind) 
-       throw std::runtime_error("Unable to open directory");
-
-   do
-   {
-      if(!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-         names.push_back(string(ffd.cFileName)); 
-   }
-   while (FindNextFileA(hFind, &ffd) != 0);
-
-   FindClose(hFind);
-#endif
-
-    return names;
-}
-
-static shared_ptr<r_fake_camera> _create_fc(int port, const string& username, const string& password)
-{
-    auto fr = r_utils::r_std_utils::get_env("FAKEY_ROOT");
-
-    auto server_root = (fr.empty())?string("."):fr;
-
-    auto file_names = _regular_files_in_dir(server_root);
-
-    vector<string> media_file_names;
-    copy_if(begin(file_names), end(file_names), back_inserter(media_file_names),
-        [](const string& file_name){return _ends_with(file_name, ".mp4") || _ends_with(file_name, ".mkv");});
-
-    return make_shared<r_fake_camera>(server_root, media_file_names, port, username, password);
 }
 
 void test_r_disco::test_r_disco_r_manual_provider()
@@ -286,6 +213,9 @@ vector<pair<r_stream_config, string>> _fake_stream_configs()
     cfg.video_timebase = 90000;
     cfg.audio_codec = "mp4a-latm";
     cfg.audio_timebase = 48000;
+    cfg.record_file_path = "/recording/93950da6-fc12-493c-a051-c22a9fec3440";
+    cfg.n_record_file_blocks = 10;
+    cfg.record_file_block_size = 2000;
     configs.push_back(make_pair(cfg, hash_stream_config(cfg)));
 
     cfg.id = "27d0f031-da8d-41a0-9687-5fd689a78bec";
@@ -295,6 +225,9 @@ vector<pair<r_stream_config, string>> _fake_stream_configs()
     cfg.video_timebase = 90000;
     cfg.audio_codec = "pcmu";
     cfg.audio_timebase = 8000;
+    cfg.record_file_path = "/recording/27d0f031-da8d-41a0-9687-5fd689a78bec";
+    cfg.n_record_file_blocks = 20;
+    cfg.record_file_block_size = 4000;
     configs.push_back(make_pair(cfg, hash_stream_config(cfg)));
 
     cfg.id = "fae9db8f-08a5-48b7-a22d-1c19a0c05c4f";
@@ -306,6 +239,9 @@ vector<pair<r_stream_config, string>> _fake_stream_configs()
     cfg.audio_codec = "mp4a-latm";
     cfg.audio_parameters = "foo=bar";
     cfg.audio_timebase = 8000;
+    cfg.record_file_path = "/recording/fae9db8f-08a5-48b7-a22d-1c19a0c05c4f";
+    cfg.n_record_file_blocks = 30;
+    cfg.record_file_block_size = 6000;
     configs.push_back(make_pair(cfg, hash_stream_config(cfg)));
 
     return configs;
@@ -323,8 +259,14 @@ void test_r_disco::test_r_disco_r_devices_basic()
     RTF_ASSERT(all_cameras.size() == 3);
     RTF_ASSERT(all_cameras[0].id == "93950da6-fc12-493c-a051-c22a9fec3440");
     RTF_ASSERT(all_cameras[0].state == "discovered");
+    RTF_ASSERT(all_cameras[0].record_file_path == "/recording/93950da6-fc12-493c-a051-c22a9fec3440");
+    RTF_ASSERT(all_cameras[0].n_record_file_blocks == 10);
+    RTF_ASSERT(all_cameras[0].record_file_block_size == 2000);
     RTF_ASSERT(all_cameras[1].id == "27d0f031-da8d-41a0-9687-5fd689a78bec");
     RTF_ASSERT(all_cameras[1].state == "discovered");
+    RTF_ASSERT(all_cameras[1].record_file_path == "/recording/27d0f031-da8d-41a0-9687-5fd689a78bec");
+    RTF_ASSERT(all_cameras[1].n_record_file_blocks == 20);
+    RTF_ASSERT(all_cameras[1].record_file_block_size == 4000);
 
     all_cameras[1].rtsp_username = "root";
     all_cameras[1].rtsp_password = "1234";
@@ -337,6 +279,9 @@ void test_r_disco::test_r_disco_r_devices_basic()
 
     RTF_ASSERT(all_assigned_cameras[0].id == "27d0f031-da8d-41a0-9687-5fd689a78bec");
     RTF_ASSERT(all_assigned_cameras[0].state == "assigned");
+    RTF_ASSERT(all_assigned_cameras[0].record_file_path == "/recording/27d0f031-da8d-41a0-9687-5fd689a78bec");
+    RTF_ASSERT(all_assigned_cameras[0].n_record_file_blocks == 20);
+    RTF_ASSERT(all_assigned_cameras[0].record_file_block_size == 4000);
     RTF_ASSERT(all_assigned_cameras[0].rtsp_username == "root");
     RTF_ASSERT(all_assigned_cameras[0].rtsp_password == "1234");
 

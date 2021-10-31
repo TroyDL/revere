@@ -2,6 +2,7 @@
 #define _CRT_RAND_S
 #include <stdlib.h>
 #endif
+#include "utils.h"
 #include "r_storage/r_dumbdex.h"
 #include "r_storage/r_ind_block.h"
 #include "r_storage/r_storage_file.h"
@@ -13,7 +14,6 @@
 #include "r_pipeline/r_gst_source.h"
 #include "r_pipeline/r_arg.h"
 #include "r_pipeline/r_stream_info.h"
-#include "r_fakey/r_fake_camera.h"
 #include "r_mux/r_muxer.h"
 #include "test_r_storage.h"
 
@@ -31,19 +31,12 @@
 #include <cstring>
 #include <sys/types.h>
 #ifdef IS_WINDOWS
-#include <Windows.h>
-#include <tchar.h> 
-#include <stdio.h>
-#include <strsafe.h>
 #pragma warning( push )
 #pragma warning( disable : 4244 )
 #endif
 #include <gst/gst.h>
 #ifdef IS_WINDOWS
 #pragma warning( pop )
-#endif
-#ifdef IS_LINUX
-#include <dirent.h>
 #endif
 
 using namespace std;
@@ -74,80 +67,6 @@ void test_r_storage::setup()
 void test_r_storage::teardown()
 {
     _whack_files();
-}
-
-static bool _ends_with(const string& a, const string& b)
-{
-    if (b.size() > a.size()) return false;
-    return std::equal(a.begin() + a.size() - b.size(), a.end(), b.begin());
-}
-
-static vector<string> _regular_files_in_dir(const string& dir)
-{
-    vector<string> names;
-
-#ifdef IS_LINUX
-    DIR* d = opendir(dir.c_str());
-    if(!d)
-        throw std::runtime_error("Unable to open directory");
-    
-    struct dirent* e = readdir(d);
-
-    if(e)
-    {
-        do
-        {
-            string name(e->d_name);
-            if(e->d_type == DT_REG && name != "." && name != "..")
-                names.push_back(name);
-            e = readdir(d);
-        } while(e);
-    }
-
-    closedir(d);
-#endif
-
-#ifdef IS_WINDOWS
-   WIN32_FIND_DATA ffd;
-   TCHAR szDir[1024];
-   HANDLE hFind;
-   
-   StringCchCopyA(szDir, 1024, dir.c_str());
-   StringCchCatA(szDir, 1024, "\\*");
-
-   // Find the first file in the directory.
-
-   hFind = FindFirstFileA(szDir, &ffd);
-
-   if (INVALID_HANDLE_VALUE == hFind) 
-       throw std::runtime_error("Unable to open directory");
-
-   do
-   {
-      if(!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-         names.push_back(string(ffd.cFileName)); 
-   }
-   while (FindNextFileA(hFind, &ffd) != 0);
-
-   FindClose(hFind);
-#endif
-
-    return names;
-}
-
-static shared_ptr<r_fake_camera> _create_fc(int port)
-{
-    auto fr = r_utils::r_std_utils::get_env("FAKEY_ROOT");
-
-    auto server_root = (fr.empty())?string("."):fr;
-
-    auto file_names = _regular_files_in_dir(server_root);
-
-    vector<string> media_file_names;
-    copy_if(begin(file_names), end(file_names), back_inserter(media_file_names),
-        [](const string& file_name){return _ends_with(file_name, ".mp4") || _ends_with(file_name, ".mkv");});
-
-    return make_shared<r_fake_camera>(server_root, media_file_names, port);
 }
 
 static int _random()
@@ -761,7 +680,8 @@ void test_r_storage::test_r_storage_file_basic()
     vector<uint8_t> frame(256);
     std::iota(begin(frame), end(frame), 0);
 
-    auto wc = sf.create_write_context("vname", "vparam", "aname", "aparam");
+    r_nullable<string> vp = string("vparam"), ap = string("aparam");
+    auto wc = sf.create_write_context("vname", vp, "aname", ap);
 
     int64_t ts = 100, pts = 10;
     for(int i = 0; i < 10000; ++i)
@@ -823,9 +743,10 @@ void test_r_storage::test_r_storage_file_fake_camera()
         audio_codec_name = a_info.first;
         audio_codec_parameters = a_info.second;
 
+        printf("video_codec_name=%s\n",video_codec_name.c_str());
+        printf("video_codec_parameters=%s\n",video_codec_parameters.c_str());
+
         sf = r_storage_file("ten_mb_file");
-        printf("audio_codec_name=%s\n",audio_codec_name.c_str());
-        printf("audio_codec_parameters=%s\n",audio_codec_parameters.c_str());
         ctx = sf.create_write_context(video_codec_name, video_codec_parameters, audio_codec_name, audio_codec_parameters);
     });
 

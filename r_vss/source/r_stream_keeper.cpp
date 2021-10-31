@@ -65,12 +65,8 @@ vector<r_camera> r_stream_keeper::_get_current_cameras()
 {
     vector<r_camera> cameras;
     cameras.reserve(_streams.size());
-    transform(
-        begin(_streams),
-        end(_streams),
-        back_inserter(cameras),
-        [](const pair<string, r_recording_context>& p) {return p.second.camera();}
-    );
+    for(auto& c : _streams)
+        cameras.push_back(c.second.camera());
     return cameras;
 }
 
@@ -79,10 +75,7 @@ void r_stream_keeper::_add_recording_contexts(const vector<r_camera>& cameras)
     for(const auto& camera : cameras)
     {
         if(!_streams.count(camera.id))
-        {
-            r_recording_context rc(camera);
-            _streams.emplace(camera.id, rc);
-        }
+            _streams.emplace(camera.id, camera);
     }
 }
 

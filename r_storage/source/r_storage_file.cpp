@@ -51,17 +51,17 @@ r_storage_file::~r_storage_file() noexcept
 }
 
 r_storage_write_context r_storage_file::create_write_context(
-    const std::string& video_codec_name,
-    const std::string& video_codec_parameters,
-    const std::string& audio_codec_name,
-    const std::string& audio_codec_parameters
+    const string& video_codec_name,
+    const r_nullable<string>& video_codec_parameters,
+    const string& audio_codec_name,
+    const r_nullable<string>& audio_codec_parameters
 )
 {
     r_storage_write_context ctx;
     ctx.video_codec_name = video_codec_name;
-    ctx.video_codec_parameters = video_codec_parameters;
+    ctx.video_codec_parameters = (!video_codec_parameters.is_null())?video_codec_parameters.value():"";
     ctx.audio_codec_name = audio_codec_name;
-    ctx.audio_codec_parameters = audio_codec_parameters;
+    ctx.audio_codec_parameters = (!audio_codec_parameters.is_null())?audio_codec_parameters.value():"";
     return ctx;
 }
 

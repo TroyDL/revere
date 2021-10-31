@@ -1,5 +1,6 @@
 
 #include "test_r_pipeline.h"
+#include "utils.h"
 #include "bad_guy.h"
 #include "r_pipeline/r_gst_source.h"
 #include "r_pipeline/r_arg.h"
@@ -17,19 +18,12 @@
 #include <iterator>
 #include <chrono>
 #ifdef IS_WINDOWS
-#include <Windows.h>
-#include <tchar.h> 
-#include <stdio.h>
-#include <strsafe.h>
 #pragma warning( push )
 #pragma warning( disable : 4244 )
 #endif
 #include <gst/gst.h>
 #ifdef IS_WINDOWS
 #pragma warning( pop )
-#endif
-#ifdef IS_LINUX
-#include <dirent.h>
 #endif
 
 using namespace std;
@@ -47,80 +41,6 @@ void test_r_pipeline::setup()
 
 void test_r_pipeline::teardown()
 {
-}
-
-static bool _ends_with(const string& a, const string& b)
-{
-    if (b.size() > a.size()) return false;
-    return std::equal(a.begin() + a.size() - b.size(), a.end(), b.begin());
-}
-
-static vector<string> _regular_files_in_dir(const string& dir)
-{
-    vector<string> names;
-
-#ifdef IS_LINUX
-    DIR* d = opendir(dir.c_str());
-    if(!d)
-        throw std::runtime_error("Unable to open directory");
-    
-    struct dirent* e = readdir(d);
-
-    if(e)
-    {
-        do
-        {
-            string name(e->d_name);
-            if(e->d_type == DT_REG && name != "." && name != "..")
-                names.push_back(name);
-            e = readdir(d);
-        } while(e);
-    }
-
-    closedir(d);
-#endif
-
-#ifdef IS_WINDOWS
-   WIN32_FIND_DATA ffd;
-   TCHAR szDir[1024];
-   HANDLE hFind;
-   
-   StringCchCopyA(szDir, 1024, dir.c_str());
-   StringCchCatA(szDir, 1024, "\\*");
-
-   // Find the first file in the directory.
-
-   hFind = FindFirstFileA(szDir, &ffd);
-
-   if (INVALID_HANDLE_VALUE == hFind) 
-       throw std::runtime_error("Unable to open directory");
-
-   do
-   {
-      if(!(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-         names.push_back(string(ffd.cFileName)); 
-   }
-   while (FindNextFileA(hFind, &ffd) != 0);
-
-   FindClose(hFind);
-#endif
-
-    return names;
-}
-
-static shared_ptr<r_fake_camera> _create_fc(int port)
-{
-    auto fr = r_utils::r_std_utils::get_env("FAKEY_ROOT");
-
-    auto server_root = (fr.empty())?string("."):fr;
-
-    auto file_names = _regular_files_in_dir(server_root);
-
-    vector<string> media_file_names;
-    copy_if(begin(file_names), end(file_names), back_inserter(media_file_names),
-        [](const string& file_name){return _ends_with(file_name, ".mp4") || _ends_with(file_name, ".mkv");});
-
-    return make_shared<r_fake_camera>(server_root, media_file_names, port);
 }
 
 void test_r_pipeline::test_gst_source_h264_aac()

@@ -21,6 +21,9 @@ struct r_camera
     r_utils::r_nullable<std::string> audio_parameters;
     int audio_timebase;
     std::string state;
+    r_utils::r_nullable<std::string> record_file_path;
+    r_utils::r_nullable<int> n_record_file_blocks;
+    r_utils::r_nullable<int> record_file_block_size;
     std::string stream_config_hash;
 };
 

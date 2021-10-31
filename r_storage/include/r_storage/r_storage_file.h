@@ -49,9 +49,9 @@ public:
 
     r_storage_write_context create_write_context(
         const std::string& video_codec_name,
-        const std::string& video_codec_parameters,
+        const r_utils::r_nullable<std::string>& video_codec_parameters,
         const std::string& audio_codec_name,
-        const std::string& audio_codec_parameters
+        const r_utils::r_nullable<std::string>& audio_codec_parameters
     );
 
     void write_frame(const r_storage_write_context& ctx, r_storage_media_type media_type, const uint8_t* p, size_t size, bool key, int64_t ts, int64_t pts);

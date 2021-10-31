@@ -13,7 +13,7 @@ r_recording_context::r_recording_context(const r_camera& camera) :
     _camera(camera),
     _source(),
     _storage_file(camera.record_file_path.value()),
-    _storage_write_context(_storage_file.create_write_context(camera.video_codec, camera.video_parameters, camera.audio_codec, camera.audio_parameters)),
+    _storage_write_context(_storage_file.create_write_context(camera.video_codec, camera.video_codec_parameters, camera.audio_codec, camera.audio_codec_parameters)),
     _sample_write_lock()
 {
     vector<r_arg> arguments;

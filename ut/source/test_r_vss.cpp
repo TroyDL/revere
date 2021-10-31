@@ -76,7 +76,7 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     cfg.ipv4 = "127.0.0.1";
     cfg.rtsp_url = r_string_utils::format("rtsp://127.0.0.1:%d/true_north_h264_aac.mp4", port);
     cfg.video_codec = "h264";
-    cfg.video_parameters = "control=stream=0, framerate=23.976023976023978, mediaclk=sender, packetization-mode=1, profile-level-id=64000a, sprop-parameter-sets=Z2QACqzZRifmwFqAgICgAAB9IAAXcAHiRLLA,aOvjyyLA, ts-refclk=local";
+    cfg.video_codec_parameters = "control=stream=0, framerate=23.976023976023978, mediaclk=sender, packetization-mode=1, profile-level-id=64000a, sprop-parameter-sets=Z2QACqzZRifmwFqAgICgAAB9IAAXcAHiRLLA,aOvjyyLA, ts-refclk=local";
     cfg.video_timebase = 90000;
     cfg.audio_codec = "mp4a-latm";
     cfg.audio_timebase = 48000;

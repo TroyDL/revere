@@ -234,10 +234,10 @@ vector<pair<r_stream_config, string>> _fake_stream_configs()
     cfg.ipv4 = "127.0.0.1";
     cfg.rtsp_url = "rtsp://url";
     cfg.video_codec = "h265";
-    cfg.video_parameters = "foo=bar";
+    cfg.video_codec_parameters = "foo=bar";
     cfg.video_timebase = 90000;
     cfg.audio_codec = "mp4a-latm";
-    cfg.audio_parameters = "foo=bar";
+    cfg.audio_codec_parameters = "foo=bar";
     cfg.audio_timebase = 8000;
     cfg.record_file_path = "/recording/fae9db8f-08a5-48b7-a22d-1c19a0c05c4f";
     cfg.n_record_file_blocks = 30;

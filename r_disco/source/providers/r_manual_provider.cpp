@@ -77,7 +77,7 @@ r_manual_provider::r_manual_provider(const string& top_dir) :
         string video_attributes;
         for(auto b = begin(video_media.attributes), e = end(video_media.attributes); b != e; ++b)
             video_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
-        stream_config.video_parameters.set_value(video_attributes);
+        stream_config.video_codec_parameters.set_value(video_attributes);
 
         if(sdp_media.find("audio") != sdp_media.end())
         {
@@ -100,7 +100,7 @@ r_manual_provider::r_manual_provider(const string& top_dir) :
             string audio_attributes;
             for(auto b = begin(audio_media.attributes), e = end(audio_media.attributes); b != e; ++b)
                 audio_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
-            stream_config.audio_parameters.set_value(audio_attributes);
+            stream_config.audio_codec_parameters.set_value(audio_attributes);
         }
 
         _configs.push_back(stream_config);

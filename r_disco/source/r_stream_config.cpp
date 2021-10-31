@@ -15,13 +15,13 @@ string r_disco::hash_stream_config(const r_stream_config& sc)
     h.update((uint8_t*)sc.rtsp_url.c_str(), sc.rtsp_url.length());
 
     h.update((uint8_t*)sc.video_codec.c_str(), sc.video_codec.length());
-    if(!sc.video_parameters.is_null())
-        h.update((uint8_t*)sc.video_parameters.value().c_str(), sc.video_parameters.value().length());
+    if(!sc.video_codec_parameters.is_null())
+        h.update((uint8_t*)sc.video_codec_parameters.value().c_str(), sc.video_codec_parameters.value().length());
     h.update((uint8_t*)&sc.video_timebase, sizeof(sc.video_timebase));
 
     h.update((uint8_t*)sc.audio_codec.c_str(), sc.audio_codec.length());
-    if(!sc.audio_parameters.is_null())
-        h.update((uint8_t*)sc.audio_parameters.value().c_str(), sc.audio_parameters.value().length());
+    if(!sc.audio_codec_parameters.is_null())
+        h.update((uint8_t*)sc.audio_codec_parameters.value().c_str(), sc.audio_codec_parameters.value().length());
     h.update((uint8_t*)&sc.audio_timebase, sizeof(sc.audio_timebase));
 
 #if 0

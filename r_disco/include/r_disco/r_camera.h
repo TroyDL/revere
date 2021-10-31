@@ -15,10 +15,10 @@ struct r_camera
     r_utils::r_nullable<std::string> rtsp_username;
     r_utils::r_nullable<std::string> rtsp_password;
     std::string video_codec;
-    r_utils::r_nullable<std::string> video_parameters;
+    r_utils::r_nullable<std::string> video_codec_parameters;
     int video_timebase;
     std::string audio_codec;
-    r_utils::r_nullable<std::string> audio_parameters;
+    r_utils::r_nullable<std::string> audio_codec_parameters;
     int audio_timebase;
     std::string state;
     r_utils::r_nullable<std::string> record_file_path;

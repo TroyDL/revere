@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <memory>
+#include <algorithm>
 
 using namespace r_utils;
 using namespace r_storage;
@@ -83,42 +84,62 @@ r_storage_file& r_storage_file::operator=(r_storage_file&& other) noexcept
 
 void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_media_type media_type, const uint8_t* p, size_t size, bool key, int64_t ts, int64_t pts)
 {
-    if(media_type >= R_STORAGE_MEDIA_TYPE_MAX)
+    if(media_type >= R_STORAGE_MEDIA_TYPE_ALL)
         R_THROW(("Invalid storage media type."));
-
-    auto& buffer = _gop_buffer[media_type].first;
 
     if(key)
     {
-        // If the incoming buffer is a key frame AND we already have data in the buffer then that means we have a
-        // complete GOP in the buffer and it's time to write it.
-        if(!buffer.empty())
+        for(auto& gop : _gop_buffer)
         {
-            auto gop_ts = _gop_buffer[media_type].second;
-
-            // If we don't have an index block or the one we have won't fit the gop buffer, then get a new one.
-            if(_current_block.is_null() || !_current_block.value().fits(buffer.size()))
-                _current_block.assign(_get_index_block(ctx, _block_index.insert(gop_ts), gop_ts, _h.block_size / buffer.size()));
-
-            _current_block.raw().append(buffer.data(), buffer.size(), media_type, 0, gop_ts);
-
-            buffer.resize(0);
+            // mark any existing incomplete gop's of the same type as complete
+            if(gop.media_type == media_type && gop.complete == false)
+                gop.complete = true;
         }
 
-        _gop_buffer[media_type].second = ts;
+        _gop g;
+        g.complete = false;
+        g.ts = ts;
+        g.data.resize(size + r_rel_block::PER_FRAME_OVERHEAD);
+        g.media_type = media_type;
+        r_rel_block::append(g.data.data(), p, size, pts, 1);
+        _gop_buffer.push_back(g);
+    }
+    else
+    {
+        // find out incomplete gop of this media_type and append this frame to it.
+
+        auto found = find_if(
+            begin(_gop_buffer), 
+            end(_gop_buffer), 
+            [&](const _gop& g) {return g.media_type == media_type && g.complete == false;}
+        );
+        if(found == end(_gop_buffer))
+            R_THROW(("No incomplete GOP found for media type."));
+
+        auto current_size = found->data.size();
+        auto new_size = current_size + size + r_rel_block::PER_FRAME_OVERHEAD;
+
+        if(new_size > _h.block_size)
+            R_THROW(("GOP is larger than our storage block size!"));
+
+        if(found->data.capacity() < new_size)
+            found->data.reserve(new_size * 2);
+
+        found->data.resize(new_size);
+
+        r_rel_block::append(&found->data[current_size], p, size, pts, 0);
     }
 
-    auto current_size = buffer.size();
-    auto new_size = current_size + size + r_rel_block::PER_FRAME_OVERHEAD;
-    if(buffer.capacity() < new_size)
-        buffer.reserve(new_size);
+    while(_gop_buffer.front().complete)
+    {
+        _gop g = _gop_buffer.front();
+        _gop_buffer.pop_front();
 
-    buffer.resize(new_size);
+        if(_current_block.is_null() || !_current_block.value().fits(g.data.size()))
+            _current_block.assign(_get_index_block(ctx, _block_index.insert(g.ts), g.ts, _h.block_size / g.data.size()));
 
-    if(new_size > _h.block_size)
-        R_THROW(("GOP is larger than our storage block size!"));
-
-    r_rel_block::append(&buffer[current_size], p, size, pts, (key)?1:0);
+        _current_block.raw().append(g.data.data(), g.data.size(), g.media_type, 0, g.ts);
+    }
 }
 
 vector<uint8_t> _s_to_buffer(const string& s)
@@ -159,6 +180,7 @@ vector<uint8_t> r_storage_file::query(r_storage_media_type media_type, int64_t s
                 bt["frames"][fi]["data"] = frame_buffer;
                 bt["frames"][fi]["pts"] = r_string_utils::int64_to_s(frame_info.pts);
                 bt["frames"][fi]["key"] = (frame_info.flags>0)?string("true"):string("false");
+                bt["frames"][fi]["stream_id"] = r_string_utils::uint8_to_s(ibii.stream_id);
 
                 rbi.next();
                 ++fi;
@@ -310,8 +332,7 @@ void r_storage_file::_visit_ind_blocks(r_storage_media_type media_type, int64_t 
 
             ibi.next();
         }
-
-        if(ibi == ind_block.end())
+        else
         {
             di.next();
             if(!di.valid())

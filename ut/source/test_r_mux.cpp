@@ -73,7 +73,7 @@ void test_r_mux::test_basic_mux()
         r_muxer muxer("output69.mp4");
 
         muxer.add_video_stream(vsi.frame_rate, vsi.codec_id, vsi.resolution.first, vsi.resolution.second, vsi.profile, vsi.level);
-        muxer.add_audio_stream(asi.codec_id, asi.bits_per_raw_sample, asi.channels, asi.sample_rate);
+        muxer.add_audio_stream(asi.codec_id, asi.channels, asi.sample_rate);
 
         muxer.set_video_extradata(demuxer.get_extradata(input_video_stream_index));
         muxer.set_audio_extradata(demuxer.get_extradata(input_audio_stream_index));

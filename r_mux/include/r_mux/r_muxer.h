@@ -38,7 +38,7 @@ public:
     r_muxer& operator=(r_muxer&&) = delete;
 
     void add_video_stream(AVRational frame_rate, AVCodecID codec_id, uint16_t w, uint16_t h, int profile, int level);
-    void add_audio_stream(AVCodecID codec_id, uint8_t bits_per_raw_sample, uint8_t channels, uint32_t sample_rate);
+    void add_audio_stream(AVCodecID codec_id, uint8_t channels, uint32_t sample_rate);
 
     void set_video_extradata(const std::vector<uint8_t>& ed);
     void set_audio_extradata(const std::vector<uint8_t>& ed);

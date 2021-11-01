@@ -28,26 +28,28 @@ r_recording_context::r_recording_context(const r_camera& camera) :
 
     _source.set_audio_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
         lock_guard<mutex> g(this->_sample_write_lock);
+        auto ts = sc.audio_stream_start_ts() + pts;
         this->_storage_file.write_frame(
             this->_storage_write_context,
             R_STORAGE_MEDIA_TYPE_AUDIO,
             p,
             sz,
             key,
-            sc.audio_stream_start_ts() + pts,
+            ts,
             pts
         );
     });
 
     _source.set_video_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
         lock_guard<mutex> g(this->_sample_write_lock);
+        auto ts = sc.video_stream_start_ts() + pts;
         this->_storage_file.write_frame(
             this->_storage_write_context,
             R_STORAGE_MEDIA_TYPE_VIDEO,
             p,
             sz,
             key,
-            sc.video_stream_start_ts() + pts,
+            ts,
             pts
         );
     });

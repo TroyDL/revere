@@ -68,7 +68,8 @@ void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, ui
     }
     else
     {
-        int64_t big_offset_time = ts - _read_base_time();
+        int64_t base_time = _read_base_time();
+        int64_t big_offset_time = ts - base_time;
         if(big_offset_time > 86400000)
             R_THROW(("Too much time in block!"));
         

@@ -10,6 +10,7 @@
 #include "r_utils/r_nullable.h"
 #include <string>
 #include <vector>
+#include <deque>
 #include <limits>
 #include <climits>
 
@@ -71,6 +72,14 @@ private:
         uint32_t block_size;
     };
 
+    struct _gop
+    {
+        bool complete {false};
+        int64_t ts {0};
+        std::vector<uint8_t> data;
+        r_storage_media_type media_type;
+    };
+
     enum r_storage_file_enum
     {
         R_STORAGE_FILE_HEADER_SIZE = 128
@@ -88,7 +97,9 @@ private:
     _header _h;
     r_utils::r_memory_map _dumbdex_map;
     r_dumbdex _block_index;
-    std::map<uint8_t, std::pair<std::vector<uint8_t>, int64_t>> _gop_buffer;
+    //std::map<uint8_t, std::pair<std::vector<uint8_t>, int64_t>> _gop_buffer;
+    std::deque<_gop> _gop_buffer;
+    
     r_utils::r_memory_map _ind_map;
     r_utils::r_nullable<r_ind_block> _current_block;
 };

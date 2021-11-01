@@ -73,7 +73,7 @@ void r_muxer::add_video_stream(AVRational frame_rate, AVCodecID codec_id, uint16
     _video_stream->time_base.den = frame_rate.num;
 }
 
-void r_muxer::add_audio_stream(AVCodecID codec_id, uint8_t bits_per_raw_sample, uint8_t channels, uint32_t sample_rate)
+void r_muxer::add_audio_stream(AVCodecID codec_id, uint8_t channels, uint32_t sample_rate)
 {
     auto codec = avcodec_find_encoder(codec_id);
 
@@ -83,7 +83,7 @@ void r_muxer::add_audio_stream(AVCodecID codec_id, uint8_t bits_per_raw_sample, 
 
     _audio_stream->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
     _audio_stream->codecpar->codec_id = codec_id;
-    _audio_stream->codecpar->bits_per_raw_sample = bits_per_raw_sample;
+    //_audio_stream->codecpar->bits_per_raw_sample = bits_per_raw_sample;
     _audio_stream->codecpar->channels = channels;
     _audio_stream->codecpar->sample_rate = sample_rate;
     _audio_stream->time_base.num = 1;

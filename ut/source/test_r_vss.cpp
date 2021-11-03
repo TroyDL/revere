@@ -54,7 +54,6 @@ void test_r_vss::teardown()
 
 void test_r_vss::test_r_stream_keeper_basic_recording()
 {
-
     // First create a storage file for holding our video...
     string storage_file_path = "ten_mb_file";
 

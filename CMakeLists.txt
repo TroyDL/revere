@@ -464,6 +464,32 @@ target_link_libraries(
     r_storage
 )
 
+# revere
+#
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR}Multimedia REQUIRED)
+
+add_executable(
+    tray_example
+    tray_example/source/main.cpp
+    tray_example/source/tray_example.qrc
+    tray_example/source/window.cpp
+    tray_example/source/window.h
+)
+
+target_link_libraries(
+    tray_example PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Multimedia
+)
+
 # Unit Tests
 #
 add_executable(

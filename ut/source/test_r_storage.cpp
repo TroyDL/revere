@@ -742,10 +742,6 @@ void test_r_storage::test_r_storage_file_fake_camera()
         auto a_info = sdp_media_to_s(AUDIO_MEDIA, sdp_media);
         audio_codec_name = a_info.first;
         audio_codec_parameters = a_info.second;
-
-        printf("video_codec_name=%s\n",video_codec_name.c_str());
-        printf("video_codec_parameters=%s\n",video_codec_parameters.c_str());
-
         sf = r_storage_file("ten_mb_file");
         ctx = sf.create_write_context(video_codec_name, video_codec_parameters, audio_codec_name, audio_codec_parameters);
     });

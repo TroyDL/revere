@@ -5,25 +5,21 @@ Project Goals
       - 4K, H.264, H.265, AAC (latm & generic), mulaw, b-frames
 
 TODO
-   - Modify r_disco to return
-       - 
-   - Create r_vss library
-       - r_vss is the video recorder.
-       - Use r_disco to enumerate assigned cameras
-       - Every few seconds:
-           - Prune record contexts not receiving data or whose configuration has changed.
-           - Query our assigned cameras
-           - Enumerate already recording cameras
-           - Start and Stop record contexts as necessary
-       - "record context"
-           - r_pipeline::r_gst_source to pull stream
-           - r_storage::r_storage_file to record
-           - To what file?
-               - Camera database should also have recording configuration
-               - Recording configuration
-                   - What file to record to
-               - Canned recording configuration for now BUT the final app should have a wizard for 
-                 configuring a camera (stream briefly to estimate bitrate and a UI to configure recording retention / file size)
+   - r_vss
+       - detect and remove dead streams
+       - create API backend for storage file creation
+           - return bitrate for rtsp url
+           - create class with bitrate + retention days input returning filesize
+       - create API for assigning cameras
+       - Add api to stream keeper to query stats information about running streams:
+         - number and type of streams (video & audio or just video)
+         - bitrate
+       - Add muxed file query API
+       - Add jpg API
+   - Add encode / decode lib
+   - recording service
+       - run in tray
+       - context menu
    - Port libonvif
        - Rewrite libonvif to be C++
            - Use our exceptions

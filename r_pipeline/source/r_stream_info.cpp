@@ -238,7 +238,7 @@ struct r_h264_sps r_pipeline::parse_h264_sps(const vector<uint8_t>& sps)
         R_THROW(("Unable to locate h264 sps."));
 
     GstH264SPS sps_info;
-    gst_h264_parser_parse_sps(nal_parser.get(), &nal_unit, &sps_info, false);
+    gst_h264_parser_parse_sps(nal_parser.get(), &nal_unit, &sps_info);
 
     r_h264_sps result;
     result.profile_idc = sps_info.profile_idc;

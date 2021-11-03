@@ -41,7 +41,7 @@ public:
 #pragma warning(push)
 #pragma warning(disable : 4996)
         r_file obj;
-        fopen_s(&obj._f, path.c_str(), mode.c_str());
+        obj._f = _fsopen(path.c_str(), mode.c_str(), _SH_DENYNO);
         if(!obj._f)
             R_STHROW(r_not_found_exception, ("Unable to open: %s",path.c_str()));
         return obj;

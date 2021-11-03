@@ -3,6 +3,7 @@
 #include "framework.h"
 #include "r_utils/r_std_utils.h"
 #include <algorithm>
+#include <iterator>
 
 using namespace std;
 using namespace r_fakey;

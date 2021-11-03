@@ -7,6 +7,7 @@
 #include <numeric>
 #include <functional>
 #include <vector>
+#include <iterator>
 
 namespace r_utils
 {

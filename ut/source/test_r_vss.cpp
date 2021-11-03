@@ -103,7 +103,7 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     devices.save_camera(c);
 
     // Recording for 10 seconds should guarantee we actually get some audio and video.
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::seconds(15));
 
     // Create a storage file object so we can query from it...
     r_storage_file sf(cfg.record_file_path.value());

@@ -98,6 +98,8 @@ public:
     }
 };
 
+#if 0
+
 // if you use C++ exception handling: install a translator function
 // with set_se_translator(). In the context of that function (but *not*
 // afterwards), you can either do your stack dump, or save the CONTEXT
@@ -191,11 +193,51 @@ DWORD generate_stack_trace(char* buffer, EXCEPTION_POINTERS *ep)
 static void _stack_bootstrap()
 {
     __try {
-        int f = 0;
-        f = 7 / f;   // Trigger a divide-by-zero exception
+        RaiseException(EXCEPTION_BREAKPOINT, 0, 0, NULL);
     }
     __except(generate_stack_trace(stack_buffer, GetExceptionInformation())) {
     }
+}
+#endif
+
+static string generate_stack()
+{
+    string out;
+    // Set up the symbol options so that we can gather information from the current
+    // executable's PDB files, as well as the Microsoft symbol servers.  We also want
+    // to undecorate the symbol names we're returned.  If you want, you can add other
+    // symbol servers or paths via a semi-colon separated list in SymInitialized.
+    ::SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_INCLUDE_32BIT_MODULES | SYMOPT_UNDNAME);
+    if(!::SymInitialize(::GetCurrentProcess(), "http://msdl.microsoft.com/download/symbols", TRUE))
+        return string();
+ 
+    // Capture up to 25 stack frames from the current call stack.  We're going to
+    // skip the first stack frame returned because that's the GetStackWalk function
+    // itself, which we don't care about.
+    PVOID addrs[ 25 ] = { 0 };
+    USHORT frames = CaptureStackBackTrace( 1, 25, addrs, NULL );
+ 
+    for (USHORT i = 0; i < frames; i++) {
+        // Allocate a buffer large enough to hold the symbol information on the stack and get 
+        // a pointer to the buffer.  We also have to set the size of the symbol structure itself
+        // and the number of bytes reserved for the name.
+        ULONG64 buffer[ (sizeof( SYMBOL_INFO ) + 1024 + sizeof( ULONG64 ) - 1) / sizeof( ULONG64 ) ] = { 0 };
+        SYMBOL_INFO *info = (SYMBOL_INFO *)buffer;
+        info->SizeOfStruct = sizeof( SYMBOL_INFO );
+        info->MaxNameLen = 1024;
+ 
+        // Attempt to get information about the symbol and add it to our output parameter.
+        DWORD64 displacement = 0;
+        if (::SymFromAddr( ::GetCurrentProcess(), (DWORD64)addrs[ i ], &displacement, info )) {
+            out.append( "[" + std::to_string( i ) + "] ");
+            out.append( info->Name, info->NameLen );
+            out.append( "\n" );
+        }
+    }
+ 
+    ::SymCleanup(::GetCurrentProcess());
+
+    return out; 
 }
 
 #endif
@@ -203,8 +245,7 @@ static void _stack_bootstrap()
 string r_utils::r_stack_trace::get_stack(char sep)
 {
 #ifdef IS_WINDOWS
-    _stack_bootstrap();
-    return string(stack_buffer);
+    return generate_stack();
 #else
     void* trace[256];
     int traceSize = ::backtrace(trace, 256);

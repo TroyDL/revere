@@ -65,7 +65,8 @@ public:
     r_blob_tree& operator=(const std::string& value)
     {
         _payload_storage.resize(value.length());
-        memcpy(&_payload_storage[0], value.c_str(), value.length());
+        if(!_payload_storage.empty())
+            memcpy(&_payload_storage[0], value.c_str(), value.length());
 
         return *this;
     }
@@ -84,6 +85,9 @@ public:
 
     inline std::string get_string() const
     {
+        if(_payload_storage.empty())
+            R_THROW(("Unable to fetch empty value."));
+
         return std::string((char*)&_payload_storage[0], _payload_storage.size());
     }
 

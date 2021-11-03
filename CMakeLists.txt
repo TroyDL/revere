@@ -464,7 +464,7 @@ target_link_libraries(
     r_storage
 )
 
-# revere
+# tray_example
 #
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)

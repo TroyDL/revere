@@ -6,6 +6,7 @@
 #include "r_utils/r_functional.h"
 #include <thread>
 #include <algorithm>
+#include <iterator>
 
 using namespace r_disco;
 using namespace r_db;

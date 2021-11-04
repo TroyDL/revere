@@ -1,8 +1,12 @@
 
 Project Goals
-   - The "Apache" of open source video surveillance software: e.g. the default.
-      - Software should run on almost anything and scale its capabilities automatically.
-      - 4K, H.264, H.265, AAC (latm & generic), mulaw, b-frames
+   - Simple open source video surveilance software.
+   - Onvif, 4K, H.264, H.265, mu-law, AAC (latm & generic), b-frames
+   - Linux & Windows
+   - Software should run on almost anything (desktop, server, raspberry pi, etc...) and scale its capabilities automatically.
+   - Pre Allocated Storage
+       - Select the number of days of retention you want for a camera and all the disk space is allocated up front (and never exceeded).
+   
 
 TODO
    - recording service

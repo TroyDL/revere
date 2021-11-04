@@ -322,6 +322,24 @@ void test_r_pipeline::test_gst_source_bframes()
     fc->quit();
 }
 
+void test_r_pipeline::test_gst_source_fetch_bytes_per_second()
+{
+    int port = RTF_NEXT_PORT();
+
+    auto fc = _create_fc(port);
+
+    auto fct = thread([&](){
+        fc->start();
+    });
+    fct.detach();
+
+    auto bytes_per_second = fetch_bytes_per_second(r_string_utils::format("rtsp://127.0.0.1:%d/true_north_h264_aac.mkv", port), 15);
+
+    fc->quit();
+
+    RTF_ASSERT(bytes_per_second >= 16000 && bytes_per_second <= 24000);
+}
+
 void test_r_pipeline::test_stream_info_get_info_frames()
 {
     int port = RTF_NEXT_PORT();

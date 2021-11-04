@@ -14,9 +14,11 @@ using namespace r_utils::r_std_utils;
 using namespace std;
 using namespace std::chrono;
 
-map<string, r_sdp_media> r_pipeline::fetch_sdp_media(const string& rtsp_url,
-                                                     const r_nullable<string>& username,
-                                                     const r_nullable<string>& password)
+map<string, r_sdp_media> r_pipeline::fetch_sdp_media(
+    const string& rtsp_url,
+    const r_nullable<string>& username,
+    const r_nullable<string>& password
+)
 {
     vector<r_arg> arguments;
     add_argument(arguments, "url", rtsp_url);
@@ -46,6 +48,60 @@ map<string, r_sdp_media> r_pipeline::fetch_sdp_media(const string& rtsp_url,
     src.stop();
 
     return medias;
+}
+
+int64_t r_pipeline::fetch_bytes_per_second(
+    const std::string& rtsp_url,
+    int measured_duration_seconds,
+    const r_utils::r_nullable<std::string>& username,
+    const r_utils::r_nullable<std::string>& password
+)
+{
+    vector<r_arg> arguments;
+    add_argument(arguments, "url", rtsp_url);
+
+    if(!username.is_null())
+        add_argument(arguments, "username", username.value());
+
+    if(!password.is_null())
+        add_argument(arguments, "password", password.value());
+
+    r_gst_source src;
+    src.set_args(arguments);
+
+    bool done = false;
+
+    int64_t audio_byte_total = 0;
+    src.set_audio_sample_cb([&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        if(!done)
+            audio_byte_total += sz;
+    });
+
+    bool stream_start_time_set = false;
+    system_clock::time_point stream_start_time;    
+
+    int64_t video_byte_total = 0;
+    src.set_video_sample_cb([&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        if(!stream_start_time_set)
+        {
+            stream_start_time_set = true;
+            stream_start_time = system_clock::now();
+        }
+        if(!done)
+            video_byte_total += sz;
+    });
+
+    src.play();
+
+    std::this_thread::sleep_for(std::chrono::seconds(measured_duration_seconds));
+
+    done = true;
+
+    auto delta = system_clock::now() - stream_start_time;
+
+    src.stop();
+
+    return (int64_t)(((double)(audio_byte_total + video_byte_total)) / (double)duration_cast<seconds>(delta).count());
 }
 
 r_gst_source::r_gst_source() :

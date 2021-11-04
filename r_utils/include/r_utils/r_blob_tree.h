@@ -26,15 +26,7 @@ public:
         NT_ARRAY,
         NT_LEAF
     };
-#if 0
-    r_blob_tree() {}
 
-    r_blob_tree(const r_blob_tree&) = delete;
-    r_blob_tree(r_blob_tree&&) noexcept = delete;
-
-    r_blob_tree& operator=(const r_blob_tree&) = delete;
-    r_blob_tree& operator=(r_blob_tree&&) noexcept = delete;
-#endif
     static std::vector<uint8_t> serialize(const r_blob_tree& rt, uint32_t version);
 
     static r_blob_tree deserialize(const uint8_t* p, size_t size, uint32_t& version);

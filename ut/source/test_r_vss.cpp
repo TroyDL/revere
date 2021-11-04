@@ -99,8 +99,8 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
 
     // Setting our fake stream to "assigned" makes stream_keeper start recording...
     auto c = devices.get_camera_by_id("9d807570-3d0e-4f87-9773-ae8d6471eab6").value();
-    c.state = "assigned";
-    devices.save_camera(c);
+
+    devices.assign_camera(c);
 
     // Recording for 10 seconds should guarantee we actually get some audio and video.
     std::this_thread::sleep_for(std::chrono::seconds(15));

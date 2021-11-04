@@ -99,6 +99,12 @@ void r_devices::remove_camera(const r_camera& camera)
     _db_work_q.post(cmd).wait();
 }
 
+void r_devices::assign_camera(r_camera& camera)
+{
+    camera.state = "assigned";
+    save_camera(camera);
+}
+
 vector<r_camera> r_devices::get_modified_cameras(const vector<r_camera>& cameras)
 {
     r_devices_cmd cmd;

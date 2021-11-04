@@ -65,6 +65,8 @@ public:
 
     static void allocate(const std::string& file_name, size_t block_size, size_t num_blocks);
 
+    static int64_t required_file_size_for_retention_hours(int64_t retention_hours, int64_t byte_rate);
+
 private:
     struct _header
     {

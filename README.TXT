@@ -5,33 +5,31 @@ Project Goals
       - 4K, H.264, H.265, AAC (latm & generic), mulaw, b-frames
 
 TODO
-   - r_vss
-       - detect and remove dead streams
-       - create API backend for storage file creation
-           - return bitrate for rtsp url
-           - create class with bitrate + retention days input returning filesize
-       - create API for assigning cameras
-       - Add api to stream keeper to query stats information about running streams:
-         - number and type of streams (video & audio or just video)
-         - bitrate
-       - Add muxed file query API
-       - Add jpg API
-   - Add encode / decode lib
    - recording service
+       - we need a name for this (silo, )
        - run in tray
        - context menu
+       - UI for discovering cameras
+           - Add camera wizard
+       - UI for monitoring
+           - Show camera status (discovered, assigned, current recording bitrate etc)
+       - Phase 1
+           - Load a window layout from a .ui file
+               - Be minimizable to the tray
+
    - Port libonvif
        - Rewrite libonvif to be C++
            - Use our exceptions
            - Use RAII
            - Add libxml2 to windows deps
        - Use to implement r_disco provider
-   - Create QT Revere VMS application
-       - Cross platform QT tray service
-       - UI for discovering cameras
-           - Add camera wizard
-       - UI for monitoring
-           - Show camera status (discovered, assigned, current recording bitrate etc)
+   - r_vss
+       - Add api to stream keeper to query stats information about running streams:
+         - number and type of streams (video & audio or just video)
+         - bitrate
+       - Add muxed file query API
+       - Add jpg API
+   - Add encode / decode lib
    - Viewer
        - Cross platform QT Viewer
        - CRAZY fast + tons of keyboard shortcuts + super minimal UI

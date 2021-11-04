@@ -54,6 +54,7 @@ public:
     std::vector<r_camera> get_assigned_cameras();
     void save_camera(const r_camera& camera);
     void remove_camera(const r_camera& camera);
+    void assign_camera(r_camera& camera);
 
     std::vector<r_camera> get_modified_cameras(const std::vector<r_camera>& cameras);
     std::vector<r_camera> get_assigned_cameras_added(const std::vector<r_camera>& cameras);

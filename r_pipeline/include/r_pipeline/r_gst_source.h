@@ -39,6 +39,13 @@ std::map<std::string, r_sdp_media> fetch_sdp_media(
     const r_utils::r_nullable<std::string>& password = r_utils::r_nullable<std::string>()
 );
 
+int64_t fetch_bytes_per_second(
+    const std::string& rtsp_url,
+    int measured_duration_seconds = 15,
+    const r_utils::r_nullable<std::string>& username = r_utils::r_nullable<std::string>(),
+    const r_utils::r_nullable<std::string>& password = r_utils::r_nullable<std::string>()
+);
+
 class r_gst_source
 {
 public:

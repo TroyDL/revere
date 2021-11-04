@@ -75,6 +75,21 @@ void erase_if(CONT& c, const PRED& p)
     }
 }
 
+template <class InputIterator, class OutputIterator, class UnaryOperator, class Pred>
+OutputIterator transform_if(InputIterator first1, InputIterator last1,
+                            OutputIterator result, UnaryOperator op, Pred pred)
+{
+    while (first1 != last1) 
+    {
+        if (pred(*first1)) {
+            *result = op(*first1);
+            ++result;
+        }
+        ++first1;
+    }
+    return result;
+}
+
 }
 
 }

@@ -2,6 +2,7 @@
 #include "r_vss/r_stream_keeper.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_std_utils.h"
+#include "r_utils/r_functional.h"
 #include <algorithm>
 
 using namespace r_vss;
@@ -56,6 +57,9 @@ void r_stream_keeper::_entry_point()
 
             _add_recording_contexts(_devices.get_assigned_cameras_added(_get_current_cameras()));
         }
+
+        // remove dead recording contexts...
+        r_funky::erase_if(_streams, [](const auto& c){return c.second.dead();});
 
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }

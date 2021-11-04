@@ -8,13 +8,17 @@ using namespace r_disco;
 using namespace r_pipeline;
 using namespace r_storage;
 using namespace std;
+using namespace std::chrono;
 
 r_recording_context::r_recording_context(const r_camera& camera) :
     _camera(camera),
     _source(),
     _storage_file(camera.record_file_path.value()),
     _storage_write_context(_storage_file.create_write_context(camera.video_codec, camera.video_codec_parameters, camera.audio_codec, camera.audio_codec_parameters)),
-    _sample_write_lock()
+    _sample_write_lock(),
+    _last_v_time(system_clock::now()),
+    _last_a_time(system_clock::now()),
+    _has_audio(false)
 {
     vector<r_arg> arguments;
     add_argument(arguments, "url", _camera.rtsp_url);
@@ -27,6 +31,8 @@ r_recording_context::r_recording_context(const r_camera& camera) :
     _source.set_args(arguments);
 
     _source.set_audio_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        _has_audio = true;
+        _last_a_time = system_clock::now();
         lock_guard<mutex> g(this->_sample_write_lock);
         auto ts = sc.audio_stream_start_ts() + pts;
         this->_storage_file.write_frame(
@@ -41,6 +47,7 @@ r_recording_context::r_recording_context(const r_camera& camera) :
     });
 
     _source.set_video_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        _last_v_time = system_clock::now();
         lock_guard<mutex> g(this->_sample_write_lock);
         auto ts = sc.video_stream_start_ts() + pts;
         this->_storage_file.write_frame(
@@ -62,7 +69,10 @@ r_recording_context::r_recording_context(r_recording_context&& other) noexcept :
     _source(move(other._source)),
     _storage_file(move(other._storage_file)),
     _storage_write_context(move(other._storage_write_context)),
-    _sample_write_lock()
+    _sample_write_lock(),
+    _last_v_time(move(other._last_v_time)),
+    _last_a_time(move(other._last_a_time)),
+    _has_audio(move(other._has_audio))
 {
 }
 
@@ -77,7 +87,18 @@ r_recording_context& r_recording_context::operator=(r_recording_context&& other)
     _source = move(other._source);
     _storage_file = move(other._storage_file);
     _storage_write_context = move(other._storage_write_context);
+    _last_v_time = move(other._last_v_time);
+    _last_a_time = move(other._last_a_time);
+    _has_audio = move(other._has_audio);
     return *this;
+}
+
+bool r_recording_context::dead() const
+{
+    auto now = system_clock::now();
+    auto video_dead = ((now - _last_v_time) > seconds(20));
+    bool is_dead = (_has_audio)?((now - _last_a_time) > seconds(20))||video_dead:video_dead;
+    return is_dead;
 }
 
 r_camera r_recording_context::camera() const

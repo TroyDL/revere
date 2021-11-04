@@ -287,6 +287,13 @@ void r_storage_file::allocate(const std::string& file_name, size_t block_size, s
     }
 }
 
+int64_t r_storage_file::required_file_size_for_retention_hours(int64_t retention_hours, int64_t byte_rate)
+{
+    // This may need to get more complicated in the future. The overhead should be linear however so we
+    // we should be able to compute a constant overhead factor.
+    return byte_rate * 60 * 60 * retention_hours;
+}
+
 r_storage_file::_header r_storage_file::_read_header(const std::string& file_name)
 {
     auto tmp_f = r_file::open(file_name, "r+");

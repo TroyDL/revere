@@ -6,6 +6,7 @@
 #include "r_pipeline/r_gst_source.h"
 #include "r_storage/r_storage_file.h"
 #include <mutex>
+#include <chrono>
 
 namespace r_vss
 {
@@ -21,6 +22,8 @@ public:
     r_recording_context& operator=(const r_recording_context&) = delete;
     r_recording_context& operator=(r_recording_context&&) noexcept;
 
+    bool dead() const;
+
     r_disco::r_camera camera() const;
 
 private:
@@ -29,6 +32,9 @@ private:
     r_storage::r_storage_file _storage_file;
     r_storage::r_storage_write_context _storage_write_context;
     std::mutex _sample_write_lock;
+    std::chrono::system_clock::time_point _last_v_time;
+    std::chrono::system_clock::time_point _last_a_time;
+    bool _has_audio;
 };
 
 }

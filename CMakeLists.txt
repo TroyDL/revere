@@ -11,6 +11,18 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     add_compile_definitions(IS_LINUX)
 endif()
 
+# Global Qt Config
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR}Multimedia REQUIRED)
+
+
 # 3rd Party Deps
 
 # GStreamer
@@ -464,17 +476,26 @@ target_link_libraries(
     r_storage
 )
 
-# tray_example
+# silo
 #
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
+add_executable(
+    silo
+    silo/source/main.cpp
+    silo/source/mainwindow.h
+    silo/source/mainwindow.cpp
+    silo/source/mainwindow.ui
+    silo/source/silo.qrc
+)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR}Multimedia REQUIRED)
+target_link_libraries(
+    silo PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Multimedia
+)
+
+# tray_example
+#
 
 add_executable(
     tray_example

@@ -19,9 +19,9 @@ struct r_stream_config
     r_utils::r_nullable<std::string> video_codec_parameters;
     int video_timebase {0};
 
-    std::string audio_codec;
+    r_utils::r_nullable<std::string> audio_codec;
     r_utils::r_nullable<std::string> audio_codec_parameters;
-    int audio_timebase {0};
+    r_utils::r_nullable<int> audio_timebase {0};
 
     r_utils::r_nullable<std::string> record_file_path;
     r_utils::r_nullable<int> n_record_file_blocks;

@@ -3,7 +3,11 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
+#include "r_disco/r_agent.h"
+#include "r_disco/r_devices.h"
+#include "r_vss/r_stream_keeper.h"
 #include <memory>
+#include <string>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -23,12 +27,17 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow* _ui;
 
-    QAction* restoreAction;
-    QAction* quitAction;
+    QAction* _restoreAction;
+    QAction* _quitAction;
 
-    QSystemTrayIcon* trayIcon;
-    QMenu* trayIconMenu;
+    QSystemTrayIcon* _trayIcon;
+    QMenu* _trayIconMenu;
+
+    std::string _topDir;
+
+    r_disco::r_agent _agent;
+    r_disco::r_devices _devices;
 };
 #endif

@@ -11,6 +11,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     add_compile_definitions(IS_LINUX)
 endif()
 
+find_package(Threads)
+
 # Global Qt Config
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -18,10 +20,9 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+find_package(QT NAMES Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR}Multimedia REQUIRED)
-
 
 # 3rd Party Deps
 
@@ -303,6 +304,7 @@ target_include_directories(
 target_link_libraries(
     r_db 
     r_utils
+    ${CMAKE_DL_LIBS}
 )
 
 # r_mux
@@ -485,30 +487,49 @@ add_executable(
     silo/source/mainwindow.h
     silo/source/mainwindow.cpp
     silo/source/mainwindow.ui
+    silo/source/utils.h
+    silo/source/utils.cpp
     silo/source/silo.qrc
 )
 
-target_link_libraries(
-    silo PRIVATE
-    Qt${QT_VERSION_MAJOR}::Widgets
-    Qt${QT_VERSION_MAJOR}::Multimedia
+target_include_directories(
+    silo PUBLIC 
+    r_utils/include
+    r_http/include
+    r_db/include
+    r_pipeline/include
+    r_fakey/include
+    r_mux/include
+    r_storage/include
+    r_disco/include
+    r_vss/include
+    ${GSTREAMER_INCLUDE_DIRS}
+    ${FFMPEG_INCLUDE_DIRS}
 )
 
-# tray_example
-#
-
-add_executable(
-    tray_example
-    tray_example/source/main.cpp
-    tray_example/source/tray_example.qrc
-    tray_example/source/window.cpp
-    tray_example/source/window.h
+target_link_directories(
+    silo PUBLIC
+    ${GSTREAMER_LIB_DIRS}
+    ${FFMPEG_LIB_DIRS}
 )
 
 target_link_libraries(
-    tray_example PRIVATE
+    silo LINK_PUBLIC
+    r_http
+    r_db
+    r_utils
+    r_pipeline
+    r_fakey
+    r_mux
+    r_storage
+    r_disco
+    r_vss
+    ${GSTREAMER_LIBS}
+    ${FFMPEG_LIBS}
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Multimedia
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
 )
 
 # Unit Tests

@@ -51,7 +51,7 @@ public:
     r_storage_write_context create_write_context(
         const std::string& video_codec_name,
         const r_utils::r_nullable<std::string>& video_codec_parameters,
-        const std::string& audio_codec_name,
+        const r_utils::r_nullable<std::string>& audio_codec_name,
         const r_utils::r_nullable<std::string>& audio_codec_parameters
     );
 

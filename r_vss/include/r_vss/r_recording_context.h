@@ -26,6 +26,8 @@ public:
 
     r_disco::r_camera camera() const;
 
+    int32_t bytes_per_second() const;
+
 private:
     r_disco::r_camera _camera;
     r_pipeline::r_gst_source _source;
@@ -35,6 +37,9 @@ private:
     std::chrono::system_clock::time_point _last_v_time;
     std::chrono::system_clock::time_point _last_a_time;
     bool _has_audio;
+    std::chrono::system_clock::time_point _stream_start_ts;
+    uint64_t _v_bytes_received;
+    uint64_t _a_bytes_received;
 };
 
 }

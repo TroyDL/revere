@@ -105,6 +105,8 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     // Recording for 10 seconds should guarantee we actually get some audio and video.
     std::this_thread::sleep_for(std::chrono::seconds(15));
 
+    RTF_ASSERT(sk.fetch_stream_status().size() == 1);
+
     // Create a storage file object so we can query from it...
     r_storage_file sf(cfg.record_file_path.value());
 

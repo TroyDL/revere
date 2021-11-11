@@ -18,7 +18,10 @@ r_recording_context::r_recording_context(const r_camera& camera) :
     _sample_write_lock(),
     _last_v_time(system_clock::now()),
     _last_a_time(system_clock::now()),
-    _has_audio(false)
+    _has_audio(false),
+    _stream_start_ts(system_clock::now()),
+    _v_bytes_received(0),
+    _a_bytes_received(0)
 {
     vector<r_arg> arguments;
     add_argument(arguments, "url", _camera.rtsp_url);
@@ -33,6 +36,7 @@ r_recording_context::r_recording_context(const r_camera& camera) :
     _source.set_audio_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
         _has_audio = true;
         _last_a_time = system_clock::now();
+        _a_bytes_received += sz;
         lock_guard<mutex> g(this->_sample_write_lock);
         auto ts = sc.audio_stream_start_ts() + pts;
         this->_storage_file.write_frame(
@@ -48,6 +52,7 @@ r_recording_context::r_recording_context(const r_camera& camera) :
 
     _source.set_video_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
         _last_v_time = system_clock::now();
+        _v_bytes_received += sz;
         lock_guard<mutex> g(this->_sample_write_lock);
         auto ts = sc.video_stream_start_ts() + pts;
         this->_storage_file.write_frame(
@@ -72,7 +77,10 @@ r_recording_context::r_recording_context(r_recording_context&& other) noexcept :
     _sample_write_lock(),
     _last_v_time(move(other._last_v_time)),
     _last_a_time(move(other._last_a_time)),
-    _has_audio(move(other._has_audio))
+    _has_audio(move(other._has_audio)),
+    _stream_start_ts(move(other._stream_start_ts)),
+    _v_bytes_received(move(other._v_bytes_received)),
+    _a_bytes_received(move(other._a_bytes_received))
 {
 }
 
@@ -90,6 +98,9 @@ r_recording_context& r_recording_context::operator=(r_recording_context&& other)
     _last_v_time = move(other._last_v_time);
     _last_a_time = move(other._last_a_time);
     _has_audio = move(other._has_audio);
+    _stream_start_ts = move(other._stream_start_ts);
+    _v_bytes_received = move(other._v_bytes_received);
+    _a_bytes_received = move(other._a_bytes_received);
     return *this;
 }
 
@@ -104,4 +115,9 @@ bool r_recording_context::dead() const
 r_camera r_recording_context::camera() const
 {
     return _camera;
+}
+
+int32_t r_recording_context::bytes_per_second() const
+{
+    return (_v_bytes_received + _a_bytes_received) / duration_cast<seconds>(system_clock::now() - _stream_start_ts).count();
 }

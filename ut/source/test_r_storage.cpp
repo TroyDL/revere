@@ -681,7 +681,8 @@ void test_r_storage::test_r_storage_file_basic()
     std::iota(begin(frame), end(frame), 0);
 
     r_nullable<string> vp = string("vparam"), ap = string("aparam");
-    auto wc = sf.create_write_context("vname", vp, "aname", ap);
+    r_nullable<string> acn = string("aname");
+    auto wc = sf.create_write_context("vname", vp, acn, ap);
 
     int64_t ts = 100, pts = 10;
     for(int i = 0; i < 10000; ++i)

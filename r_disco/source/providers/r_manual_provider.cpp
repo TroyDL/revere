@@ -17,7 +17,11 @@ using json = nlohmann::json;
 r_manual_provider::r_manual_provider(const string& top_dir) :
     _configs()
 {
-    auto manual_config_path = top_dir + r_fs::PATH_SLASH + "config" + r_fs::PATH_SLASH + "manual_config.json";
+    auto config_path = top_dir + r_fs::PATH_SLASH + "config";
+    if(!r_fs::file_exists(config_path))
+        r_fs::mkdir(config_path);
+
+    auto manual_config_path = config_path + r_fs::PATH_SLASH + "manual_config.json";
 
     if(!r_fs::file_exists(manual_config_path))
         return;

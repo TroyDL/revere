@@ -14,7 +14,9 @@ using namespace std;
 r_stream_keeper::r_stream_keeper(r_devices& devices) :
     _devices(devices),
     _th(),
-    _running(false)
+    _running(false),
+    _streams(),
+    _cmd_q()
 {
 }
 
@@ -42,6 +44,11 @@ void r_stream_keeper::stop()
     _th.join();
 }
 
+vector<r_stream_status> r_stream_keeper::fetch_stream_status()
+{
+    return _cmd_q.post(R_SK_FETCH_STREAM_STATUS).get();
+}
+
 void r_stream_keeper::_entry_point()
 {
     while(_running)
@@ -61,7 +68,15 @@ void r_stream_keeper::_entry_point()
         // remove dead recording contexts...
         r_funky::erase_if(_streams, [](const auto& c){return c.second.dead();});
 
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        auto c = _cmd_q.poll(std::chrono::seconds(2));
+
+        if(!c.is_null())
+        {
+            auto cmd = move(c.take());
+
+            if(cmd.first == R_SK_FETCH_STREAM_STATUS)
+                cmd.second.set_value(_fetch_stream_status());
+        }
     }
 }
 
@@ -90,4 +105,24 @@ void r_stream_keeper::_remove_recording_contexts(const std::vector<r_disco::r_ca
         if(_streams.count(camera.id))
             _streams.erase(camera.id);
     }
+}
+
+vector<r_stream_status> r_stream_keeper::_fetch_stream_status() const
+{
+    vector<r_stream_status> statuses;
+    statuses.reserve(_streams.size());
+
+    transform(
+        _streams.begin(),
+        _streams.end(),
+        back_inserter(statuses),
+        [](const auto& c){
+            r_stream_status s;
+            s.camera = c.second.camera();
+            s.bytes_per_second = c.second.bytes_per_second();
+            return s;
+        }
+    );
+
+    return statuses;
 }

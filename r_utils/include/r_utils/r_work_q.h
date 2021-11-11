@@ -9,6 +9,7 @@
 #include <future>
 #include <list>
 #include <map>
+#include <chrono>
 
 namespace r_utils
 {
@@ -31,14 +32,16 @@ public:
         return std::move(waiter);
     }
 
-    r_utils::r_nullable<std::pair<CMD,std::promise<RESULT>>> poll()
+    r_utils::r_nullable<std::pair<CMD,std::promise<RESULT>>> poll(std::chrono::milliseconds d = {})
     {
         std::unique_lock<std::mutex> g(_lock);
 
         if(_queue.empty())
         {
             _asleep = true;
-            _cond.wait(g, [this](){return !this->_queue.empty() || !this->_asleep;});
+            if(d == std::chrono::milliseconds {})
+                _cond.wait(g, [this](){return !this->_queue.empty() || !this->_asleep;});
+            else _cond.wait_for(g, d, [this](){return !this->_queue.empty() || !this->_asleep;});
         }
 
         r_utils::r_nullable<std::pair<CMD,std::promise<RESULT>>> result;

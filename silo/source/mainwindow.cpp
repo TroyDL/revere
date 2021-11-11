@@ -1,43 +1,57 @@
 #include "mainwindow.h"
+#include "utils.h"
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 #include <QCloseEvent>
 
 using namespace std;
 
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent) :
+    QMainWindow(parent),
+    _ui(new Ui::MainWindow),
+    _restoreAction(nullptr),
+    _quitAction(nullptr),
+    _trayIcon(nullptr),
+    _trayIconMenu(nullptr),
+    _topDir(top_dir()),
+    _agent(_topDir),
+    _devices(_topDir)
 {
-    ui->setupUi(this);
+    _ui->setupUi(this);
 
-    restoreAction = new QAction(tr("&Show"), this);
-    connect(restoreAction, &QAction::triggered, this, &QWidget::showNormal);
+    _restoreAction = new QAction(tr("&Show"), this);
+    connect(_restoreAction, &QAction::triggered, this, &QWidget::showNormal);
 
-    quitAction = new QAction(tr("&Quit"), this);
-    connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+    _quitAction = new QAction(tr("&Quit"), this);
+    connect(_quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
 
-    trayIconMenu = new QMenu(this);
-    trayIconMenu->addAction(restoreAction);
-    trayIconMenu->addSeparator();
-    trayIconMenu->addAction(quitAction);
+    _trayIconMenu = new QMenu(this);
+    _trayIconMenu->addAction(_restoreAction);
+    _trayIconMenu->addSeparator();
+    _trayIconMenu->addAction(_quitAction);
 
-    trayIcon = new QSystemTrayIcon(this);
-    trayIcon->setContextMenu(trayIconMenu);
+    _trayIcon = new QSystemTrayIcon(this);
+    _trayIcon->setContextMenu(_trayIconMenu);
     QIcon icon = QIcon(":/images/heart.png");
-    trayIcon->setIcon(icon);
+    _trayIcon->setIcon(icon);
     setWindowIcon(icon);
-    trayIcon->show();
+    _trayIcon->show();
+
+    _devices.start();
+    _agent.start();
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
+    _agent.stop();
+    _devices.stop();
+
+    delete _ui;
 }
 
 void MainWindow::setVisible(bool visible)
 {
-    restoreAction->setEnabled(isMaximized() || !visible);
+    _restoreAction->setEnabled(isMaximized() || !visible);
     QMainWindow::setVisible(visible);
 }
 
@@ -48,7 +62,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         return;
     }
 #endif
-    if (trayIcon->isVisible()) {
+    if (_trayIcon->isVisible()) {
         QMessageBox::information(this, tr("Systray"),
                                  tr("The program will keep running in the "
                                     "system tray. To terminate the program, "

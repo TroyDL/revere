@@ -207,9 +207,9 @@ r_sqlite_conn r_devices::_open_or_create_db(const string& top_dir) const
             "video_codec TEXT NOT NULL, "
             "video_codec_parameters TEXT, "
             "video_timebase INTEGER NOT NULL, "
-            "audio_codec TEXT NOT NULL, "
+            "audio_codec TEXT, "
             "audio_codec_parameters TEXT, "
-            "audio_timebase INTEGER NOT NULL, "
+            "audio_timebase INTEGER, "
             "state TEXT NOT NULL, "
             "record_file_path TEXT, "
             "n_record_file_blocks INTEGER, "
@@ -274,10 +274,12 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
     if(result.empty())
     {
         query = r_string_utils::format(
-            "INSERT INTO cameras (id, ipv4, rtsp_url, video_codec, %svideo_timebase, audio_codec, %saudio_timebase, state, %s%s%sstream_config_hash) "
-            "VALUES('%s', '%s', '%s', '%s', %s%d, '%s', %s%d, 'discovered', %s%s%s'%s');",
+            "INSERT INTO cameras (id, ipv4, rtsp_url, video_codec, %svideo_timebase, %s%s%sstate, %s%s%sstream_config_hash) "
+            "VALUES('%s', '%s', '%s', '%s', %s%d, %s%s%s'discovered', %s%s%s'%s');",
             (!stream_config.video_codec_parameters.is_null())?"video_codec_parameters, ":"",
+            (!stream_config.audio_codec.is_null())?"audio_codec, ":"",
             (!stream_config.audio_codec_parameters.is_null())?"audio_codec_parameters, ":"",
+            (!stream_config.audio_timebase.is_null())?"audio_timebase, ":"",
             (!stream_config.record_file_path.is_null())?"record_file_path, ":"",
             (!stream_config.n_record_file_blocks.is_null())?"n_record_file_blocks, ":"",
             (!stream_config.record_file_block_size.is_null())?"record_file_block_size, ":"",
@@ -287,10 +289,10 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             stream_config.rtsp_url.c_str(),
             stream_config.video_codec.c_str(),
             (!stream_config.video_codec_parameters.is_null())?r_string_utils::format("'%s', ", stream_config.video_codec_parameters.value().c_str()).c_str():"",
-            stream_config.video_timebase,
-            stream_config.audio_codec.c_str(),
+            stream_config.video_timebase,            
+            (!stream_config.audio_codec.is_null())?r_string_utils::format("'%s', ", stream_config.audio_codec.value().c_str()).c_str():"",
             (!stream_config.audio_codec_parameters.is_null())?r_string_utils::format("'%s', ", stream_config.audio_codec_parameters.value().c_str()).c_str():"",
-            stream_config.audio_timebase,
+            (!stream_config.audio_timebase.is_null())?r_string_utils::format("%d, ", stream_config.audio_timebase.value()).c_str():"",
             (!stream_config.record_file_path.is_null())?r_string_utils::format("'%s', ", stream_config.record_file_path.value().c_str()).c_str():"",
             (!stream_config.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", stream_config.n_record_file_blocks.value()).c_str():"",
             (!stream_config.record_file_block_size.is_null())?r_string_utils::format("%d, ", stream_config.record_file_block_size.value()).c_str():"",
@@ -306,9 +308,9 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
                 "video_codec='%s', "
                 "%s"
                 "video_timebase=%d, "
-                "audio_codec='%s', "
                 "%s"
-                "audio_timebase=%d, "
+                "%s"
+                "%s"
                 "%s"
                 "%s"
                 "%s"
@@ -319,9 +321,9 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             stream_config.video_codec.c_str(),
             (!stream_config.video_codec_parameters.is_null())?r_string_utils::format("video_codec_parameters='%s', ", stream_config.video_codec_parameters.value().c_str()).c_str():"",
             stream_config.video_timebase,
-            stream_config.audio_codec.c_str(),
+            (!stream_config.audio_codec.is_null())?r_string_utils::format("audio_codec='%s', ", stream_config.audio_codec.value().c_str()).c_str():"",
             (!stream_config.audio_codec_parameters.is_null())?r_string_utils::format("audio_codec_parameters='%s', ", stream_config.audio_codec_parameters.value().c_str()).c_str():"",
-            stream_config.audio_timebase,
+            (!stream_config.audio_timebase.is_null())?r_string_utils::format("audio_timebase=%d, ", stream_config.audio_timebase.value()).c_str():"",
             (!stream_config.record_file_path.is_null())?r_string_utils::format("record_file_path='%s', ", stream_config.record_file_path.value().c_str()).c_str():"",
             (!stream_config.n_record_file_blocks.is_null())?r_string_utils::format("n_record_file_blocks=%d, ", stream_config.n_record_file_blocks.value()).c_str():"",
             (!stream_config.record_file_block_size.is_null())?r_string_utils::format("record_file_block_size=%d, ", stream_config.record_file_block_size.value()).c_str():"",
@@ -366,7 +368,10 @@ r_devices_cmd_result r_devices::_insert_or_update_devices(const r_db::r_sqlite_c
 {
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
         for(auto& sc : stream_configs)
-            conn.exec(_create_insert_or_update_query(conn, sc.first, sc.second));
+        {
+            auto q = _create_insert_or_update_query(conn, sc.first, sc.second);
+            conn.exec(q);
+        }
     });
 
     return r_devices_cmd_result();
@@ -431,7 +436,7 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
 
     auto query = r_string_utils::format(
             "REPLACE INTO cameras("
-                "id, ipv4, rtsp_url, %s%svideo_codec, %svideo_timebase, audio_codec, %saudio_timebase, state, %s%s%sstream_config_hash) "
+                "id, ipv4, rtsp_url, %s%svideo_codec, %svideo_timebase, %s%s%sstate, %s%s%sstream_config_hash) "
             "VALUES("
                 "'%s', "
                 "'%s', "
@@ -441,9 +446,9 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
                 "'%s', "
                 "%s"
                 "%d, "
-                "'%s', "
                 "%s"
-                "%d, "
+                "%s"
+                "%s"
                 "'%s', "
                 "%s"
                 "%s"
@@ -453,11 +458,12 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             (!camera.rtsp_username.is_null())?"rtsp_username, ":"",
             (!camera.rtsp_password.is_null())?"rtsp_password, ":"",
             (!camera.video_codec_parameters.is_null())?"video_codec_parameters, ":"",
+            (!camera.audio_codec.is_null())?"audio_codec, ":"",
             (!camera.audio_codec_parameters.is_null())?"audio_codec_parameters, ":"",
+            (!camera.audio_timebase.is_null())?"audio_timebase, ":"",
             (!camera.record_file_path.is_null())?"record_file_path, ":"",
             (!camera.n_record_file_blocks.is_null())?"n_record_file_blocks, ":"",
             (!camera.record_file_block_size.is_null())?"record_file_block_size, ":"",
-
 
             camera.id.c_str(),
             camera.ipv4.c_str(),
@@ -467,9 +473,9 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             camera.video_codec.c_str(),
             (!camera.video_codec_parameters.is_null())?r_string_utils::format("'%s', ", camera.video_codec_parameters.value().c_str()).c_str():"",
             camera.video_timebase,
-            camera.audio_codec.c_str(),
+            (!camera.audio_codec.is_null())?r_string_utils::format("'%s', ", camera.audio_codec.value().c_str()).c_str():"",
             (!camera.audio_codec_parameters.is_null())?r_string_utils::format("'%s', ", camera.audio_codec_parameters.value().c_str()).c_str():"",
-            camera.audio_timebase,
+            (!camera.audio_timebase.is_null())?r_string_utils::format("%d, ", camera.audio_timebase.value()).c_str():"",
             camera.state.c_str(),
             (!camera.record_file_path.is_null())?r_string_utils::format("'%s', ", camera.record_file_path.value().c_str()).c_str():"",
             (!camera.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", camera.n_record_file_blocks.value()).c_str():"",

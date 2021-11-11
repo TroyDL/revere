@@ -38,6 +38,7 @@ public:
       TEST(test_r_utils::test_blob_tree_basic);
       TEST(test_r_utils::test_blob_tree_objects_in_array);
       TEST(test_r_utils::test_work_q_basic);
+      TEST(test_r_utils::test_work_q_timeout);
       TEST(test_r_utils::test_timer_basic);
     RTF_FIXTURE_END();
 
@@ -79,5 +80,6 @@ public:
     void test_blob_tree_basic();
     void test_blob_tree_objects_in_array();
     void test_work_q_basic();
+    void test_work_q_timeout();
     void test_timer_basic();
 };

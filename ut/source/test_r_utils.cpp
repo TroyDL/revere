@@ -978,6 +978,26 @@ void test_r_utils::test_work_q_basic()
     consumer_th.join();
 }
 
+void test_r_utils::test_work_q_timeout()
+{
+    r_work_q<int,int> wq;
+
+    int64_t poll_time = 0;
+    auto consumer_th = std::thread([&](){
+        auto time_before_poll = std::chrono::system_clock::now();
+        auto maybe_cmd = wq.poll(seconds(10));
+        auto time_after_poll = std::chrono::system_clock::now();
+        poll_time = duration_cast<milliseconds>(time_after_poll - time_before_poll).count();
+    });
+
+    this_thread::sleep_for(std::chrono::seconds(2));
+    wq.post(42);
+
+    consumer_th.join();
+
+    RTF_ASSERT(abs(poll_time - 2000) < 100);
+}
+
 void test_r_utils::test_timer_basic()
 {
     r_timer t;

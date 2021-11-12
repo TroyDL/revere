@@ -28,6 +28,8 @@
 namespace r_pipeline
 {
 
+void gstreamer_init();
+
 typedef std::function<void()> r_ready_cb;
 typedef std::function<void(const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts)> r_sample_cb;
 typedef std::function<void(const std::map<std::string, r_sdp_media>& sdp_medias)> r_sdp_media_cb;

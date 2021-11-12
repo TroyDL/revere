@@ -14,6 +14,11 @@ using namespace r_utils::r_std_utils;
 using namespace std;
 using namespace std::chrono;
 
+void r_pipeline::gstreamer_init()
+{
+    gst_init(NULL, NULL);
+}
+
 map<string, r_sdp_media> r_pipeline::fetch_sdp_media(
     const string& rtsp_url,
     const r_nullable<string>& username,

@@ -1,8 +1,11 @@
 #include "mainwindow.h"
 #include "utils.h"
 #include "ui_mainwindow.h"
+#include "r_disco/r_stream_config.h"
+#include "r_pipeline/r_gst_source.h"
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <functional>
 
 using namespace std;
 
@@ -15,8 +18,11 @@ MainWindow::MainWindow(QWidget *parent) :
     _trayIconMenu(nullptr),
     _topDir(top_dir()),
     _agent(_topDir),
-    _devices(_topDir)
+    _devices(_topDir),
+    _streamKeeper(_devices)
 {
+    r_pipeline::gstreamer_init();
+
     _ui->setupUi(this);
 
     _restoreAction = new QAction(tr("&Show"), this);
@@ -37,6 +43,14 @@ MainWindow::MainWindow(QWidget *parent) :
     setWindowIcon(icon);
     _trayIcon->show();
 
+    _agent.set_stream_change_cb([this](const vector<pair<r_disco::r_stream_config, string>>& configs){
+        printf("r_agent CB\n");
+        fflush(stdout);
+        _devices.insert_or_update_devices(configs);
+    });
+//    _agent.set_stream_change_cb(bind(&r_disco::r_devices::insert_or_update_devices, &_devices, placeholders::_1));
+
+    _streamKeeper.start();
     _devices.start();
     _agent.start();
 }
@@ -45,6 +59,7 @@ MainWindow::~MainWindow()
 {
     _agent.stop();
     _devices.stop();
+    _streamKeeper.stop();
 
     delete _ui;
 }

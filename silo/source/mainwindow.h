@@ -39,5 +39,6 @@ private:
 
     r_disco::r_agent _agent;
     r_disco::r_devices _devices;
+    r_vss::r_stream_keeper _streamKeeper;
 };
 #endif

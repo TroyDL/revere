@@ -36,7 +36,7 @@ REGISTER_TEST_FIXTURE(test_r_pipeline);
 
 void test_r_pipeline::setup()
 {
-    gst_init(NULL, NULL);
+    r_pipeline::gstreamer_init();
 }
 
 void test_r_pipeline::teardown()
@@ -259,7 +259,7 @@ void test_r_pipeline::test_gst_source_fetch_sdp()
 
 void test_r_pipeline::test_gst_source_pull_real()
 {
-#if 0
+#if 1
     vector<r_arg> arguments;
     add_argument(arguments, "url", "rtsp://192.168.1.20/h265Preview_01_main");
     //add_argument(arguments, "url", "rtsp://192.168.1.20/h264Preview_01_sub");
@@ -279,7 +279,7 @@ void test_r_pipeline::test_gst_source_pull_real()
 
     src.set_video_sample_cb(
         [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
-            printf("bframes ts = %ld, pts = %ld, key = %s, size = %lu\n", ts, pts, (key)?"true":"false",sz);
+            printf("bframes pts = %ld, key = %s, size = %lu\n", pts, (key)?"true":"false", sz);
         }
     );
 

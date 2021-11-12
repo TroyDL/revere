@@ -9,17 +9,13 @@ Project Goals
    
 
 TODO
-   - recording service
-       - we need a name for this (silo, )
-       - run in tray
-       - context menu
+   - Silo TODO
+       - What should streamkeeper do if the storage file doesn't exist?
+       - Update storage code to prepend top_dir to storage file path
        - UI for discovering cameras
            - Add camera wizard
        - UI for monitoring
            - Show camera status (discovered, assigned, current recording bitrate etc)
-       - Phase 1
-           - Load a window layout from a .ui file
-               - Be minimizable to the tray
 
    - Port libonvif
        - Rewrite libonvif to be C++

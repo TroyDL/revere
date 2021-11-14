@@ -52,7 +52,12 @@ class r_gst_source
 {
 public:
     r_gst_source();
+    r_gst_source(const r_gst_source&) = delete;
+    r_gst_source(r_gst_source&&) = delete;
     ~r_gst_source() noexcept;
+
+    r_gst_source& operator=(const r_gst_source&) = delete;
+    r_gst_source& operator=(r_gst_source&&) = delete;
 
     void set_args(const std::vector<r_arg>& args);
     void play();
@@ -86,6 +91,8 @@ private:
     bool _parse_h265(GstH265Parser* parser, const uint8_t* p, size_t size);
 
     void _parse_audio_sink_caps();
+
+    void _clear() noexcept;
 
     r_utils::r_nullable<r_sample_cb> _video_sample_cb;
     r_utils::r_nullable<r_sample_cb> _audio_sample_cb;

@@ -26,6 +26,9 @@ public:
 protected:
     void closeEvent(QCloseEvent *event) override;
 
+private slots:
+    void button_pushed();
+
 private:
     Ui::MainWindow* _ui;
 

@@ -86,6 +86,8 @@ vector<r_stream_config> r_manual_provider::_fetch_configs(const string& top_dir)
             stream_config.id = id;
             stream_config.ipv4 = ipv4_address;
             stream_config.rtsp_url = rtsp_url;
+            stream_config.rtsp_username = username;
+            stream_config.rtsp_password = password;
             stream_config.record_file_path = record_file_path;
             stream_config.n_record_file_blocks = n_record_file_blocks;
             stream_config.record_file_block_size = record_file_block_size;

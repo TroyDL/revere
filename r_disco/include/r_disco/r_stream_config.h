@@ -14,6 +14,9 @@ struct r_stream_config
     std::string ipv4;
     std::string rtsp_url;
 
+    r_utils::r_nullable<std::string> rtsp_username;
+    r_utils::r_nullable<std::string> rtsp_password;
+
     // Streams can be video or audio only (or both) and they may not have any parameters
     std::string video_codec;
     r_utils::r_nullable<std::string> video_codec_parameters;

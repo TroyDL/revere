@@ -3,6 +3,8 @@
 #include "r_utils/r_exception.h"
 #include "r_utils/r_std_utils.h"
 #include "r_utils/r_functional.h"
+#include "r_utils/r_logger.h"
+#include "r_utils/r_file.h"
 #include <algorithm>
 
 using namespace r_vss;
@@ -11,13 +13,18 @@ using namespace r_utils::r_std_utils;
 using namespace r_disco;
 using namespace std;
 
-r_stream_keeper::r_stream_keeper(r_devices& devices) :
+r_stream_keeper::r_stream_keeper(r_devices& devices, const string& top_dir) :
     _devices(devices),
+    _top_dir(top_dir),
     _th(),
     _running(false),
     _streams(),
     _cmd_q()
 {
+    auto video_path = top_dir + r_fs::PATH_SLASH + "video";
+
+    if(!r_fs::file_exists(video_path))
+        r_fs::mkdir(video_path);
 }
 
 r_stream_keeper::~r_stream_keeper() noexcept
@@ -53,29 +60,36 @@ void r_stream_keeper::_entry_point()
 {
     while(_running)
     {
-        if(_streams.empty())
-            _add_recording_contexts(_devices.get_assigned_cameras());
-        else
+        try
         {
-            auto cameras = _get_current_cameras();
+            if(_streams.empty())
+                _add_recording_contexts(_devices.get_assigned_cameras());
+            else
+            {
+                auto cameras = _get_current_cameras();
 
-            _remove_recording_contexts(_devices.get_modified_cameras(cameras));
-            _remove_recording_contexts(_devices.get_assigned_cameras_removed(cameras));
+                _remove_recording_contexts(_devices.get_modified_cameras(cameras));
+                _remove_recording_contexts(_devices.get_assigned_cameras_removed(cameras));
 
-            _add_recording_contexts(_devices.get_assigned_cameras_added(_get_current_cameras()));
+                _add_recording_contexts(_devices.get_assigned_cameras_added(_get_current_cameras()));
+            }
+
+            // remove dead recording contexts...
+            r_funky::erase_if(_streams, [](const auto& c){return c.second->dead();});
+
+            auto c = _cmd_q.poll(std::chrono::seconds(2));
+
+            if(!c.is_null())
+            {
+                auto cmd = move(c.take());
+
+                if(cmd.first == R_SK_FETCH_STREAM_STATUS)
+                    cmd.second.set_value(_fetch_stream_status());
+            }
         }
-
-        // remove dead recording contexts...
-        r_funky::erase_if(_streams, [](const auto& c){return c.second.dead();});
-
-        auto c = _cmd_q.poll(std::chrono::seconds(2));
-
-        if(!c.is_null())
+        catch(const std::exception& e)
         {
-            auto cmd = move(c.take());
-
-            if(cmd.first == R_SK_FETCH_STREAM_STATUS)
-                cmd.second.set_value(_fetch_stream_status());
+            R_LOG_ERROR("Recording Exception: %s", e.what());
         }
     }
 }
@@ -85,7 +99,7 @@ vector<r_camera> r_stream_keeper::_get_current_cameras()
     vector<r_camera> cameras;
     cameras.reserve(_streams.size());
     for(auto& c : _streams)
-        cameras.push_back(c.second.camera());
+        cameras.push_back(c.second->camera());
     return cameras;
 }
 
@@ -94,7 +108,10 @@ void r_stream_keeper::_add_recording_contexts(const vector<r_camera>& cameras)
     for(const auto& camera : cameras)
     {
         if(!_streams.count(camera.id))
-            _streams.emplace(camera.id, camera);
+        {
+            printf("stream keeper add\n");
+            _streams[camera.id] = make_shared<r_recording_context>(camera, _top_dir);
+        }
     }
 }
 
@@ -118,8 +135,8 @@ vector<r_stream_status> r_stream_keeper::_fetch_stream_status() const
         back_inserter(statuses),
         [](const auto& c){
             r_stream_status s;
-            s.camera = c.second.camera();
-            s.bytes_per_second = c.second.bytes_per_second();
+            s.camera = c.second->camera();
+            s.bytes_per_second = c.second->bytes_per_second();
             return s;
         }
     );

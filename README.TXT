@@ -11,6 +11,7 @@ Project Goals
 TODO
    - Silo TODO
        - What should streamkeeper do if the storage file doesn't exist?
+         - If something throws in the constructor of our recording context it will never be cleaned up because its times are invalid.
        - Update storage code to prepend top_dir to storage file path
        - UI for discovering cameras
            - Add camera wizard

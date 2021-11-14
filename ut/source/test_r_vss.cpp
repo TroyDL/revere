@@ -72,7 +72,7 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     r_devices devices("top_dir");
     devices.start();
 
-    r_stream_keeper sk(devices);
+    r_stream_keeper sk(devices, "top_dir");
     sk.start();
 
     // Create an example stream config for a stream our fake camera can stream...

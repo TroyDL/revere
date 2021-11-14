@@ -115,6 +115,7 @@ r_gst_source::r_gst_source() :
     _ready_cb(),
     _sdp_media_cb(),
     _pad_added_cb(),
+    _args(),
     _url(),
     _username(),
     _password(),
@@ -132,16 +133,7 @@ r_gst_source::r_gst_source() :
 
 r_gst_source::~r_gst_source() noexcept
 {
-    if(_h264_nal_parser)
-        gst_h264_nal_parser_free(_h264_nal_parser);
-    if(!_h265_nal_parser)
-        gst_h265_parser_free(_h265_nal_parser);
-
-    if(_pipeline)
-    {
-        gst_element_set_state(_pipeline, GST_STATE_NULL);
-        gst_object_unref(_pipeline);
-    };
+    _clear();
 }
 
 void r_gst_source::set_args(const vector<r_arg>& args)
@@ -190,7 +182,8 @@ void r_gst_source::play()
 
 void r_gst_source::stop()
 {
-    gst_element_set_state(_pipeline, GST_STATE_NULL);
+    if(_pipeline)
+        gst_element_set_state(_pipeline, GST_STATE_NULL);
 }
 
 #if 1
@@ -513,15 +506,20 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
     {
         bool key = (src->_h264_nal_parser)?src->_parse_h264(src->_h264_nal_parser, info.data, info.size):src->_parse_h265(src->_h265_nal_parser, info.data, info.size);
 
-        auto pts = (int64_t)GST_TIME_AS_MSECONDS(GST_BUFFER_PTS(buffer));
+        auto sample_pts = GST_BUFFER_PTS(buffer);
 
-        if(!src->_video_sample_sent)
-            src->_sample_context._video_stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-
-        if(!src->_video_sample_cb.is_null())
+        if(sample_pts != GST_CLOCK_TIME_NONE)
         {
-            src->_video_sample_cb.value()(src->_sample_context, info.data, info.size, key, pts);
-            src->_video_sample_sent = true;
+            auto pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
+
+            if(!src->_video_sample_sent)
+                src->_sample_context._video_stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
+            if(!src->_video_sample_cb.is_null())
+            {
+                src->_video_sample_cb.value()(src->_sample_context, info.data, info.size, key, pts);
+                src->_video_sample_sent = true;
+            }
         }
     }
 
@@ -549,18 +547,23 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
 
     if(result == GST_FLOW_OK)
     {
-        auto pts = (int64_t)GST_TIME_AS_MSECONDS(GST_BUFFER_PTS(buffer));
+        auto sample_pts = GST_BUFFER_PTS(buffer);
 
-        if(!src->_audio_sample_sent)
+        if(sample_pts != GST_CLOCK_TIME_NONE)
         {
-            src->_parse_audio_sink_caps();
-            src->_sample_context._audio_stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-        }
+            auto pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
 
-        if(!src->_audio_sample_cb.is_null())
-        {
-            src->_audio_sample_cb.value()(src->_sample_context, info.data, info.size, true, pts);
-            src->_audio_sample_sent = true;
+            if(!src->_audio_sample_sent)
+            {
+                src->_parse_audio_sink_caps();
+                src->_sample_context._audio_stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+            }
+
+            if(!src->_audio_sample_cb.is_null())
+            {
+                src->_audio_sample_cb.value()(src->_sample_context, info.data, info.size, true, pts);
+                src->_audio_sample_sent = true;
+            }
         }
     }
 
@@ -754,4 +757,18 @@ void r_gst_source::_parse_audio_sink_caps()
     int rate = 0;
     if(gst_structure_get_int(structure, "rate", &rate) == TRUE)
         _sample_context._audio_sample_rate.set_value((uint32_t)rate);
+}
+
+void r_gst_source::_clear() noexcept
+{
+    if(_h264_nal_parser)
+        gst_h264_nal_parser_free(_h264_nal_parser);
+    if(!_h265_nal_parser)
+        gst_h265_parser_free(_h265_nal_parser);
+
+    if(_pipeline)
+    {
+        gst_element_set_state(_pipeline, GST_STATE_NULL);
+        gst_object_unref(_pipeline);
+    };
 }

@@ -10,6 +10,7 @@
 #include <map>
 #include <vector>
 #include <thread>
+#include <memory>
 
 namespace r_vss
 {
@@ -28,7 +29,7 @@ enum r_stream_keeper_commands
 class r_stream_keeper final
 {
 public:
-    r_stream_keeper(r_disco::r_devices& devices);
+    r_stream_keeper(r_disco::r_devices& devices, const std::string& top_dir);
     ~r_stream_keeper() noexcept;
 
     void start();
@@ -43,9 +44,10 @@ private:
     void _remove_recording_contexts(const std::vector<r_disco::r_camera>& cameras);
     std::vector<r_stream_status> _fetch_stream_status() const;
     r_disco::r_devices& _devices;
+    std::string _top_dir;
     std::thread _th;
     bool _running;
-    std::map<std::string, r_recording_context> _streams;
+    std::map<std::string, std::shared_ptr<r_recording_context>> _streams;
     r_utils::r_work_q<int, std::vector<r_stream_status>> _cmd_q;
 };
 

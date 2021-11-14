@@ -3,6 +3,10 @@ project(revere)
 
 # Global Config
 
+if(NOT CMAKE_BUILD_TYPE)
+    set (CMAKE_BUILD_TYPE Debug)
+endif()
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     add_compile_definitions(IS_WINDOWS)
 endif()
@@ -181,8 +185,9 @@ endif()
 add_library(
     r_utils
     r_utils/include/r_utils/r_actor.h
-    r_utils/include/r_utils/r_args.h
     r_utils/include/r_utils/r_macro.h
+    r_utils/include/r_utils/r_args.h
+    r_utils/source/r_args.cpp
     r_utils/include/r_utils/r_file_lock.h
     r_utils/source/r_file_lock.cpp
     r_utils/include/r_utils/r_logger.h
@@ -449,8 +454,8 @@ target_include_directories(
 target_link_libraries(
     r_disco
     r_pipeline
-    r_utils
     r_db
+    r_utils
 )
 
 # r_vss
@@ -473,9 +478,9 @@ target_include_directories(
 
 target_link_libraries(
     r_vss
-    r_utils
     r_disco
     r_storage
+    r_utils
 )
 
 # silo
@@ -494,15 +499,15 @@ add_executable(
 
 target_include_directories(
     silo PUBLIC 
-    r_utils/include
-    r_http/include
-    r_db/include
-    r_pipeline/include
-    r_fakey/include
-    r_mux/include
-    r_storage/include
-    r_disco/include
     r_vss/include
+    r_disco/include
+    r_storage/include
+    r_mux/include
+    r_fakey/include
+    r_pipeline/include
+    r_db/include
+    r_http/include
+    r_utils/include
     ${GSTREAMER_INCLUDE_DIRS}
     ${FFMPEG_INCLUDE_DIRS}
 )
@@ -515,15 +520,15 @@ target_link_directories(
 
 target_link_libraries(
     silo LINK_PUBLIC
-    r_http
-    r_db
-    r_utils
-    r_pipeline
-    r_fakey
-    r_mux
-    r_storage
-    r_disco
     r_vss
+    r_disco
+    r_storage
+    r_mux
+    r_fakey
+    r_pipeline
+    r_db
+    r_http
+    r_utils
     ${GSTREAMER_LIBS}
     ${FFMPEG_LIBS}
     Qt${QT_VERSION_MAJOR}::Widgets
@@ -618,6 +623,6 @@ target_include_directories(
 )
 target_link_libraries(
     fakie
-    r_utils
     r_fakey
+    r_utils
 )

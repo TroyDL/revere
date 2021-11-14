@@ -274,8 +274,10 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
     if(result.empty())
     {
         query = r_string_utils::format(
-            "INSERT INTO cameras (id, ipv4, rtsp_url, video_codec, %svideo_timebase, %s%s%sstate, %s%s%sstream_config_hash) "
-            "VALUES('%s', '%s', '%s', '%s', %s%d, %s%s%s'discovered', %s%s%s'%s');",
+            "INSERT INTO cameras (id, ipv4, rtsp_url, %s%svideo_codec, %svideo_timebase, %s%s%sstate, %s%s%sstream_config_hash) "
+            "VALUES('%s', '%s', '%s', %s%s'%s', %s%d, %s%s%s'discovered', %s%s%s'%s');",
+            (!stream_config.rtsp_username.is_null())?"rtsp_username, ":"",
+            (!stream_config.rtsp_password.is_null())?"rtsp_password, ":"",
             (!stream_config.video_codec_parameters.is_null())?"video_codec_parameters, ":"",
             (!stream_config.audio_codec.is_null())?"audio_codec, ":"",
             (!stream_config.audio_codec_parameters.is_null())?"audio_codec_parameters, ":"",
@@ -287,6 +289,8 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             stream_config.id.c_str(),
             stream_config.ipv4.c_str(),
             stream_config.rtsp_url.c_str(),
+            (!stream_config.rtsp_username.is_null())?r_string_utils::format("'%s', ", stream_config.rtsp_username.value().c_str()).c_str():"",
+            (!stream_config.rtsp_password.is_null())?r_string_utils::format("'%s', ", stream_config.rtsp_password.value().c_str()).c_str():"",
             stream_config.video_codec.c_str(),
             (!stream_config.video_codec_parameters.is_null())?r_string_utils::format("'%s', ", stream_config.video_codec_parameters.value().c_str()).c_str():"",
             stream_config.video_timebase,            
@@ -305,6 +309,8 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             "UPDATE cameras SET "
                 "ipv4='%s', "
                 "rtsp_url='%s', "
+                "%s"
+                "%s"
                 "video_codec='%s', "
                 "%s"
                 "video_timebase=%d, "
@@ -318,6 +324,8 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             "WHERE id='%s';",
             stream_config.ipv4.c_str(),
             stream_config.rtsp_url.c_str(),
+            (!stream_config.rtsp_username.is_null())?r_string_utils::format("rtsp_username='%s', ", stream_config.rtsp_username.value().c_str()).c_str():"",
+            (!stream_config.rtsp_password.is_null())?r_string_utils::format("rtsp_password='%s', ", stream_config.rtsp_password.value().c_str()).c_str():"",
             stream_config.video_codec.c_str(),
             (!stream_config.video_codec_parameters.is_null())?r_string_utils::format("video_codec_parameters='%s', ", stream_config.video_codec_parameters.value().c_str()).c_str():"",
             stream_config.video_timebase,

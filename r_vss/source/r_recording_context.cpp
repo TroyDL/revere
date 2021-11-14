@@ -1,19 +1,23 @@
 
 #include "r_vss/r_recording_context.h"
 #include "r_pipeline/r_arg.h"
+#include "r_utils/r_file.h"
+#include "r_utils/r_logger.h"
 #include <vector>
 
 using namespace r_vss;
 using namespace r_disco;
 using namespace r_pipeline;
 using namespace r_storage;
+using namespace r_utils;
 using namespace std;
 using namespace std::chrono;
 
-r_recording_context::r_recording_context(const r_camera& camera) :
+r_recording_context::r_recording_context(const r_camera& camera, const string& top_dir) :
     _camera(camera),
+    _top_dir(top_dir),
     _source(),
-    _storage_file(camera.record_file_path.value()),
+    _storage_file(top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + camera.record_file_path.value()),
     _storage_write_context(_storage_file.create_write_context(camera.video_codec, camera.video_codec_parameters, camera.audio_codec, camera.audio_codec_parameters)),
     _sample_write_lock(),
     _last_v_time(system_clock::now()),
@@ -66,22 +70,9 @@ r_recording_context::r_recording_context(const r_camera& camera) :
         );
     });
 
-    _source.play();
-}
+    R_LOG_INFO("recording: camera.id=%s, file=%s, rtsp_url=%s", _camera.id.c_str(), _camera.record_file_path.value().c_str(), _camera.rtsp_url.c_str());
 
-r_recording_context::r_recording_context(r_recording_context&& other) noexcept :
-    _camera(move(other._camera)),
-    _source(move(other._source)),
-    _storage_file(move(other._storage_file)),
-    _storage_write_context(move(other._storage_write_context)),
-    _sample_write_lock(),
-    _last_v_time(move(other._last_v_time)),
-    _last_a_time(move(other._last_a_time)),
-    _has_audio(move(other._has_audio)),
-    _stream_start_ts(move(other._stream_start_ts)),
-    _v_bytes_received(move(other._v_bytes_received)),
-    _a_bytes_received(move(other._a_bytes_received))
-{
+    _source.play();
 }
 
 r_recording_context::~r_recording_context() noexcept
@@ -89,26 +80,15 @@ r_recording_context::~r_recording_context() noexcept
     _source.stop();
 }
 
-r_recording_context& r_recording_context::operator=(r_recording_context&& other) noexcept
-{
-    _camera = move(other._camera);
-    _source = move(other._source);
-    _storage_file = move(other._storage_file);
-    _storage_write_context = move(other._storage_write_context);
-    _last_v_time = move(other._last_v_time);
-    _last_a_time = move(other._last_a_time);
-    _has_audio = move(other._has_audio);
-    _stream_start_ts = move(other._stream_start_ts);
-    _v_bytes_received = move(other._v_bytes_received);
-    _a_bytes_received = move(other._a_bytes_received);
-    return *this;
-}
-
 bool r_recording_context::dead() const
 {
     auto now = system_clock::now();
     auto video_dead = ((now - _last_v_time) > seconds(20));
     bool is_dead = (_has_audio)?((now - _last_a_time) > seconds(20))||video_dead:video_dead;
+
+    if(is_dead)
+        R_LOG_INFO("found dead stream: camera.id=%s", _camera.id.c_str());
+
     return is_dead;
 }
 

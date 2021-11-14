@@ -27,12 +27,17 @@ void r_utils::r_logger::write(LOG_LEVEL level,
                               const char* format,
                               va_list& args)
 {
+    auto msg = r_string_utils::format(format, args);
+    auto lines = r_string_utils::split(msg, "\n");
+
 #ifdef IS_WINDOWS
     if(_log_file)
     {
-        auto msg = r_string_utils::format(format, args);
-        fprintf(_log_file, "%s\n", msg.c_str());
-        fflush(_log_file);
+        for(auto line : lines)
+        {
+            fprintf(_log_file, "%s\n", line.c_str());
+            fflush(_log_file);
+        }
     }
 #else
     int priority = LOG_USER;
@@ -49,7 +54,10 @@ void r_utils::r_logger::write(LOG_LEVEL level,
         default: break;
     };
 
-    vsyslog(priority, format, args);
+    for(auto line : lines)
+    {
+        syslog(priority, "%s\n", line.c_str());
+    }
 #endif
 }
 

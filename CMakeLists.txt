@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(revere)
+include(TestBigEndian)
 
 # Global Config
+
+if(IS_BIG_ENDIAN)
+    add_compile_definitions(BYTE_ORDER=BIG_ENDIAN)
+else()
+    add_compile_definitions(BYTE_ORDER=LITTLE_ENDIAN)
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE Debug)
@@ -16,6 +23,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 endif()
 
 find_package(Threads)
+
+find_package(LibXml2)
 
 # Global Qt Config
 
@@ -231,6 +240,10 @@ add_library(
     r_utils/source/r_memory_map.cpp
     r_utils/include/r_utils/r_timer.h
     r_utils/source/r_timer.cpp
+    r_utils/include/r_utils/r_sha1.h
+    r_utils/source/r_sha1.cpp
+    r_utils/include/r_utils/r_udp_socket.h
+    r_utils/source/r_udp_socket.cpp
     r_utils/include/r_utils/r_work_q.h
     r_utils/include/r_utils/r_server_threaded.h
     r_utils/include/r_utils/r_functional.h
@@ -241,6 +254,10 @@ target_include_directories(
     r_utils/include
 )
 if(CMAKE_SYSTEM MATCHES "Linux-")
+    target_link_libraries(
+        r_utils PUBLIC
+        uuid
+    )
 elseif(CMAKE_SYSTEM MATCHES "Windows")
     target_link_libraries(
         r_utils PUBLIC
@@ -427,6 +444,29 @@ target_link_libraries(
     r_utils
 )
 
+# r_onvif
+#
+add_library(
+    r_onvif 
+    r_onvif/include/r_onvif/r_onvif_session.h
+    r_onvif/source/r_onvif_session.cpp
+)
+
+target_include_directories(
+    r_onvif PUBLIC
+    r_onvif/include
+    r_http/include
+    r_utils/include
+    ${LIBXML2_INCLUDE_DIR}
+)
+
+target_link_libraries(
+    r_onvif
+    r_http
+    r_utils
+    ${LIBXML2_LIBRARIES}
+)
+
 # r_disco
 #
 add_library(
@@ -441,6 +481,8 @@ add_library(
     r_disco/source/r_stream_config.cpp
     r_disco/include/r_disco/providers/r_manual_provider.h
     r_disco/source/providers/r_manual_provider.cpp
+    r_disco/include/r_disco/providers/r_onvif_provider.h
+    r_disco/source/providers/r_onvif_provider.cpp
 )
 
 target_include_directories(
@@ -449,12 +491,14 @@ target_include_directories(
     r_pipeline/include
     r_utils/include
     r_db/include
+    r_onvif/include
 )
 
 target_link_libraries(
     r_disco
     r_pipeline
     r_db
+    r_onvif
     r_utils
 )
 
@@ -562,6 +606,8 @@ add_executable(
     ut/source/test_r_disco.cpp
     ut/include/test_r_vss.h
     ut/source/test_r_vss.cpp
+    ut/include/test_r_onvif.h
+    ut/source/test_r_onvif.cpp
 )
 
 target_include_directories(
@@ -576,6 +622,7 @@ target_include_directories(
     r_storage/include
     r_disco/include
     r_vss/include
+    r_onvif/include
     ${GSTREAMER_INCLUDE_DIRS}
     ${FFMPEG_INCLUDE_DIRS}
 )
@@ -595,6 +642,7 @@ target_link_libraries(
     r_storage
     r_disco
     r_vss
+    r_onvif
     ${GSTREAMER_LIBS}
     ${FFMPEG_LIBS}
 )

@@ -18,7 +18,7 @@ r_recording_context::r_recording_context(const r_camera& camera, const string& t
     _top_dir(top_dir),
     _source(),
     _storage_file(top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + camera.record_file_path.value()),
-    _storage_write_context(_storage_file.create_write_context(camera.video_codec, camera.video_codec_parameters, camera.audio_codec, camera.audio_codec_parameters)),
+    _storage_write_context(_storage_file.create_write_context(camera.video_codec.value(), camera.video_codec_parameters.value(), camera.audio_codec.value(), camera.audio_codec_parameters.value())),
     _sample_write_lock(),
     _last_v_time(system_clock::now()),
     _last_a_time(system_clock::now()),
@@ -28,7 +28,7 @@ r_recording_context::r_recording_context(const r_camera& camera, const string& t
     _a_bytes_received(0)
 {
     vector<r_arg> arguments;
-    add_argument(arguments, "url", _camera.rtsp_url);
+    add_argument(arguments, "url", _camera.rtsp_url.value());
 
     if(!_camera.rtsp_username.is_null())
         add_argument(arguments, "username", _camera.rtsp_username.value());
@@ -70,7 +70,7 @@ r_recording_context::r_recording_context(const r_camera& camera, const string& t
         );
     });
 
-    R_LOG_INFO("recording: camera.id=%s, file=%s, rtsp_url=%s", _camera.id.c_str(), _camera.record_file_path.value().c_str(), _camera.rtsp_url.c_str());
+    R_LOG_INFO("recording: camera.id=%s, file=%s, rtsp_url=%s", _camera.id.c_str(), _camera.record_file_path.value().c_str(), _camera.rtsp_url.value().c_str());
 
     _source.play();
 }

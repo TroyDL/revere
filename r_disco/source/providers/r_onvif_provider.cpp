@@ -1,11 +1,9 @@
 
-#include "r_disco/providers/r_manual_provider.h"
+#include "r_disco/providers/r_onvif_provider.h"
 #include "r_disco/r_agent.h"
 #include "r_pipeline/r_gst_source.h"
-#include "r_utils/3rdparty/json/json.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_string_utils.h"
-#include "r_utils/r_file.h"
 #include <string>
 
 using namespace r_disco;
@@ -14,25 +12,37 @@ using namespace r_utils::r_string_utils;
 using namespace r_pipeline;
 using namespace std;
 using namespace std::chrono;
-using json = nlohmann::json;
 
-r_manual_provider::r_manual_provider(const string& top_dir, r_agent* agent) :
+r_onvif_provider::r_onvif_provider(const string& top_dir, r_agent* agent) :
     _top_dir(top_dir),
+    _session(),
     _agent(agent)
 {
 }
 
-r_manual_provider::~r_manual_provider()
+r_onvif_provider::~r_onvif_provider()
 {
 }
 
-vector<r_stream_config> r_manual_provider::poll()
+vector<r_stream_config> r_onvif_provider::poll()
 {
     return _fetch_configs(_top_dir);
 }
 
-vector<r_stream_config> r_manual_provider::_fetch_configs(const string& top_dir)
+vector<r_stream_config> r_onvif_provider::_fetch_configs(const string& top_dir)
 {
+    // run _session.discover()
+    // for each discovered
+    //     gen guid
+    //     lookup credentials w/ guid
+    //     attempt _session.get_rtsp_url()
+    //     connect to its rtsp url and pull stream info
+    //     build r_stream_config, append to result
+    // return result
+    std::vector<r_stream_config> configs;
+    return configs;
+
+#if 0
     std::vector<r_stream_config> configs;
 
     auto config_path = top_dir + r_fs::PATH_SLASH + "config";
@@ -68,7 +78,7 @@ vector<r_stream_config> r_manual_provider::_fetch_configs(const string& top_dir)
             auto sdp_media = fetch_sdp_media(rtsp_url, username, password);
 
             if(sdp_media.find("video") == sdp_media.end())
-                R_THROW(("Unable to fetch video stream information for r_manual_provider."));
+                R_THROW(("Unable to fetch video stream information for r_onvif_provider."));
 
             auto video_media = sdp_media["video"];
             if(video_media.type != VIDEO_MEDIA)
@@ -131,4 +141,5 @@ vector<r_stream_config> r_manual_provider::_fetch_configs(const string& top_dir)
     }
 
     return configs;
+#endif
 }

@@ -154,34 +154,21 @@ void r_client_response::_clean_socket(r_stream_io& socket, char** writer)
 
 void r_client_response::_read_header_line(r_stream_io& socket, char* writer, bool firstLine)
 {
-    bool lineDone = false;
+    char lastTwoChars[2] = {0, 0};
     size_t bytesReadThisLine = 0;
 
-    bool maybeTerminator = true;
-
-    // Get initial header line
-    while(!lineDone && (bytesReadThisLine + 1) < MAX_HEADER_LINE)
+    bool lineDone = false;
+    while(!lineDone)
     {
+        lastTwoChars[0] = lastTwoChars[1];
         socket.recv(writer, 1);
-
         ++bytesReadThisLine;
-
-        auto justRead = *writer;
-        ++writer;
-
-        if(justRead != '\r' && justRead != '\n')
-            maybeTerminator = false;
-
-        if((!maybeTerminator && (justRead == '\n')) || (maybeTerminator && (justRead == '\n')))
+        if(bytesReadThisLine > MAX_HEADER_LINE)
+            R_STHROW(r_http_exception_generic, ("Header line too long."));
+        lastTwoChars[1] = *writer;
+        if(lastTwoChars[0] == '\r' && lastTwoChars[1] == '\n')
             lineDone = true;
-    }
-
-    if(!lineDone)
-    {
-        string msg = firstLine ? "The HTTP initial request line exceeded our max."
-                                : "The HTTP line exceeded our max.";
-
-        R_STHROW(r_http_exception_generic, (msg));
+        else ++writer;
     }
 }
 

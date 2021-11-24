@@ -6,6 +6,7 @@
 #include "r_utils/r_file.h"
 #include "r_utils/r_file_lock.h"
 #include "r_utils/r_md5.h"
+#include "r_utils/r_sha1.h"
 #include "r_utils/r_socket.h"
 #include "r_utils/r_udp_receiver.h"
 #include "r_utils/r_udp_sender.h"
@@ -1025,4 +1026,27 @@ void test_r_utils::test_timer_basic()
 
     t.update(milliseconds(100), current_time + milliseconds(50000));
     RTF_ASSERT(one_hundred_fired == 1 && five_hundred_fired == 100 && four_hundred_fired == 125);
+}
+
+void test_r_utils::test_sha1_basic()
+{
+    {
+        r_sha1 hash;
+        string msg = "Beneath this mask there is an idea, Mr. Creedy, and ideas are bulletproof.";
+        hash.update((uint8_t*)msg.c_str(), msg.length());
+        hash.finalize();
+        auto output = hash.get_as_string();
+        RTF_ASSERT(output == "7a454aa45aa178935997fc89ff609ff374f9fff1");
+    }
+
+    {
+        r_sha1 hash;
+        string msg = "http://123.456.789.000/foo/bar http/1.1";
+        hash.update((uint8_t*)msg.c_str(), msg.length());
+        msg = "AAAAA";
+        hash.update((uint8_t*)msg.c_str(), msg.length());
+        hash.finalize();
+        auto output = hash.get_as_string();
+        RTF_ASSERT(output == "198454083d597888a068fffc06d5423a104df9fe");
+    }
 }

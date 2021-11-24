@@ -6,24 +6,16 @@ Project Goals
    - Software should run on almost anything (desktop, server, raspberry pi, etc...) and scale its capabilities automatically.
    - Pre Allocated Storage
        - Select the number of days of retention you want for a camera and all the disk space is allocated up front (and never exceeded).
-   
 
 TODO
-   - Silo TODO
-       - What should streamkeeper do if the storage file doesn't exist?
-         - If something throws in the constructor of our recording context it will never be cleaned up because its times are invalid.
-       - Update storage code to prepend top_dir to storage file path
+   - r_disco
+       - implement r_onvif_provider
+           - Should get cameras in our db from this (in state "discovered")
+   - Silo
        - UI for discovering cameras
            - Add camera wizard
        - UI for monitoring
            - Show camera status (discovered, assigned, current recording bitrate etc)
-
-   - Port libonvif
-       - Rewrite libonvif to be C++
-           - Use our exceptions
-           - Use RAII
-           - Add libxml2 to windows deps
-       - Use to implement r_disco provider
    - r_vss
        - Add api to stream keeper to query stats information about running streams:
          - number and type of streams (video & audio or just video)

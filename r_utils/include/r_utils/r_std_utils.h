@@ -32,16 +32,14 @@ public:
         obj._thing = nullptr;
     }
 
-    ~raii_ptr()
+    ~raii_ptr() noexcept
     {
-        if(_thing)
-            _dtor(_thing);
+        _clear();
     }
 
     raii_ptr& operator=(T* thing)
     {
-        if(_thing)
-            _dtor(_thing);
+        _clear();
 
         _thing = thing;
 
@@ -50,9 +48,15 @@ public:
 
     raii_ptr& operator=(raii_ptr&& obj) noexcept
     {
-        _thing = std::move(obj._thing);
-        obj._thing = nullptr;
-        _dtor = std::move(obj._dtor);
+        if (this != &obj)
+        {
+            _clear();
+
+            _thing = std::move(obj._thing);
+            obj._thing = nullptr;
+            _dtor = std::move(obj._dtor);
+            obj._dtor = nullptr;
+        }
 
         return *this;
     }    
@@ -63,6 +67,14 @@ public:
     operator bool() const {return _thing != nullptr;}
 
 private:
+    void _clear() noexcept
+    {
+        if(_thing)
+        {
+            _dtor(_thing);
+            _thing = nullptr;
+        }
+    }
     T* _thing;
     std::function<void(T*)> _dtor;
 };

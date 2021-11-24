@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     _trayIcon->show();
 
     _agent.set_stream_change_cb(bind(&r_disco::r_devices::insert_or_update_devices, &_devices, placeholders::_1));
-
+    _agent.set_credential_cb(bind(&r_disco::r_devices::get_credentials, &_devices, placeholders::_1));
 
     // temporary link to function that just prints out stream stats.
     QPushButton* btn = findChild<QPushButton*>("pushButton");

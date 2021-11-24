@@ -1,12 +1,15 @@
 
 #include "r_disco/r_agent.h"
 #include "r_disco/providers/r_manual_provider.h"
+#include "r_disco/providers/r_onvif_provider.h"
+#include "r_utils/r_exception.h"
 #include <algorithm>
 #include <iterator>
 #include <vector>
 #include <functional>
 
 using namespace r_disco;
+using namespace r_utils;
 using namespace std;
 using namespace std::chrono;
 
@@ -17,7 +20,8 @@ r_agent::r_agent(const std::string& top_dir) :
     _changed_streams_cb(),
     _top_dir(top_dir),
     _timer(),
-    _device_config_hashes()
+    _device_config_hashes(),
+    _credential_cb()
 {
 }
 
@@ -29,7 +33,8 @@ r_agent::~r_agent() noexcept
 void r_agent::start()
 {
     // push providers into _providers
-    _providers.push_back(make_shared<r_manual_provider>(_top_dir));
+    _providers.push_back(make_shared<r_manual_provider>(_top_dir, this));
+    _providers.push_back(make_shared<r_onvif_provider>(_top_dir, this));
 
     _running = true;
     _th = std::thread(&r_agent::_entry_point, this);
@@ -42,6 +47,14 @@ void r_agent::stop()
         _running = false;
         _th.join();
     }
+}
+
+pair<r_nullable<string>, r_nullable<string>> r_agent::get_credentials(const std::string& id)
+{
+    if(!_credential_cb)
+        R_THROW(("Please set a credential callback on r_agent before calling start."));
+
+    return _credential_cb(id);
 }
 
 void r_agent::_entry_point()

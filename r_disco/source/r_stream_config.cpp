@@ -11,13 +11,17 @@ string r_disco::hash_stream_config(const r_stream_config& sc)
     r_md5 h;
 
     h.update((uint8_t*)sc.id.c_str(), sc.id.length());
-    h.update((uint8_t*)sc.ipv4.c_str(), sc.ipv4.length());
-    h.update((uint8_t*)sc.rtsp_url.c_str(), sc.rtsp_url.length());
+    if(!sc.ipv4.is_null())
+        h.update((uint8_t*)sc.ipv4.value().c_str(), sc.ipv4.value().length());
+    if(!sc.rtsp_url.is_null())
+        h.update((uint8_t*)sc.rtsp_url.value().c_str(), sc.rtsp_url.value().length());
 
-    h.update((uint8_t*)sc.video_codec.c_str(), sc.video_codec.length());
+    if(!sc.video_codec.is_null())
+        h.update((uint8_t*)sc.video_codec.value().c_str(), sc.video_codec.value().length());
     if(!sc.video_codec_parameters.is_null())
         h.update((uint8_t*)sc.video_codec_parameters.value().c_str(), sc.video_codec_parameters.value().length());
-    h.update((uint8_t*)&sc.video_timebase, sizeof(sc.video_timebase));
+    if(!sc.video_timebase.is_null())
+        h.update((uint8_t*)&sc.video_timebase.value(), sizeof(sc.video_timebase.value()));
 
     if(!sc.audio_codec.is_null())
         h.update((uint8_t*)sc.audio_codec.value().c_str(), sc.audio_codec.value().length());

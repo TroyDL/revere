@@ -4,6 +4,7 @@
 
 #include "r_disco/r_stream_config.h"
 #include "r_utils/r_timer.h"
+#include "r_utils/r_nullable.h"
 #include "r_disco/r_provider.h"
 #include <thread>
 #include <vector>
@@ -26,6 +27,7 @@ namespace r_disco
 //
 
 typedef std::function<void(const std::vector<std::pair<r_stream_config, std::string>>&)> changed_streams_cb;
+typedef std::function<std::pair<r_utils::r_nullable<std::string>, r_utils::r_nullable<std::string>>(const std::string&)> credential_cb;
 
 class r_agent
 {
@@ -34,9 +36,12 @@ public:
     ~r_agent() noexcept;
 
     void set_stream_change_cb(changed_streams_cb cb) {_changed_streams_cb = cb;}
+    void set_credential_cb(credential_cb cb) {_credential_cb = cb;}
 
     void start();
     void stop();
+
+    std::pair<r_utils::r_nullable<std::string>, r_utils::r_nullable<std::string>> get_credentials(const std::string& id);
 
 private:
     void _entry_point();
@@ -50,6 +55,7 @@ private:
     std::string _top_dir;
     r_utils::r_timer _timer;
     std::map<std::string, std::string> _device_config_hashes;
+    credential_cb _credential_cb;
 };
 
 }

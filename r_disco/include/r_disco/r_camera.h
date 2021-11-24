@@ -10,13 +10,13 @@ namespace r_disco
 struct r_camera
 {
     std::string id;
-    std::string ipv4;
-    std::string rtsp_url;
+    r_utils::r_nullable<std::string> ipv4;
+    r_utils::r_nullable<std::string> rtsp_url;
     r_utils::r_nullable<std::string> rtsp_username;
     r_utils::r_nullable<std::string> rtsp_password;
-    std::string video_codec;
+    r_utils::r_nullable<std::string> video_codec;
     r_utils::r_nullable<std::string> video_codec_parameters;
-    int video_timebase;
+    r_utils::r_nullable<int> video_timebase;
     r_utils::r_nullable<std::string> audio_codec;
     r_utils::r_nullable<std::string> audio_codec_parameters;
     r_utils::r_nullable<int> audio_timebase;

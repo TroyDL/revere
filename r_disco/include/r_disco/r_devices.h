@@ -9,6 +9,7 @@
 #include <vector>
 #include <thread>
 #include <string>
+#include <map>
 
 namespace r_disco
 {
@@ -23,7 +24,8 @@ enum r_devices_cmd_type
     REMOVE_CAMERA = 5,
     GET_MODIFIED_CAMERAS = 6,
     GET_ASSIGNED_CAMERAS_ADDED = 7,
-    GET_ASSIGNED_CAMERAS_REMOVED = 8
+    GET_ASSIGNED_CAMERAS_REMOVED = 8,
+    GET_CREDENTIALS_BY_ID = 9
 };
 
 struct r_devices_cmd
@@ -37,6 +39,7 @@ struct r_devices_cmd
 struct r_devices_cmd_result
 {
     std::vector<r_camera> cameras;
+    std::pair<r_utils::r_nullable<std::string>, r_utils::r_nullable<std::string>> credentials;
 };
 
 class r_devices
@@ -60,6 +63,8 @@ public:
     std::vector<r_camera> get_assigned_cameras_added(const std::vector<r_camera>& cameras);
     std::vector<r_camera> get_assigned_cameras_removed(const std::vector<r_camera>& cameras);
 
+    std::pair<r_utils::r_nullable<std::string>, r_utils::r_nullable<std::string>> get_credentials(const std::string& id);
+
 private:
     void _entry_point();
 
@@ -81,6 +86,7 @@ private:
     r_devices_cmd_result _get_modified_cameras(const r_db::r_sqlite_conn& conn, const std::vector<r_camera>& cameras) const;
     r_devices_cmd_result _get_assigned_cameras_added(const r_db::r_sqlite_conn& conn, const std::vector<r_camera>& cameras) const;
     r_devices_cmd_result _get_assigned_cameras_removed(const r_db::r_sqlite_conn& conn, const std::vector<r_camera>& cameras) const;
+    r_devices_cmd_result _get_credentials(const r_db::r_sqlite_conn& conn, const std::string& id);
 
     std::thread _th;
     bool _running;

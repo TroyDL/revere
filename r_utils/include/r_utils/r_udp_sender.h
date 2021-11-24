@@ -18,10 +18,10 @@ public:
     r_udp_sender() = delete;
     r_udp_sender( const r_udp_sender& ) = delete;
     r_udp_sender( r_udp_sender&& ) = delete;
-    r_udp_sender( const std::string& targetIP,
-                  int targetPort,
-                  const std::string& localInterfaceIP = "",
-                  int localPort = 0 );
+    r_udp_sender(const std::string& targetIP,
+                 int targetPort,
+                 const std::string& localInterfaceIP = "",
+                 int localPort = 0);
 
     ~r_udp_sender() noexcept;
 

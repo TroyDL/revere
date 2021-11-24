@@ -127,7 +127,7 @@ void test_r_disco::test_r_disco_r_manual_provider()
 
     r_fs::write_file((uint8_t*)cfg.c_str(), cfg.size(), "top_dir" + r_fs::PATH_SLASH + "config" + r_fs::PATH_SLASH + "manual_config.json");
 
-    r_manual_provider mp("top_dir");
+    r_manual_provider mp("top_dir", nullptr);
 
     auto configs = mp.poll();
 

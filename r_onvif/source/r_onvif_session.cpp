@@ -100,7 +100,6 @@ vector<r_onvif_discovery_info> r_onvif_session::discover()
         } else looping = 0;
     }
 
-
     return discovered;
 }
 
@@ -114,14 +113,6 @@ r_nullable<r_onvif_device_info> r_onvif_session::get_rtsp_url(
 
     try
     {
-        //string discovery_msg(_buf[info.index], _len[info.index]);
-
-//        auto cameraName = _get_camera_name(info.index);
-
-//        auto address = _extract_address(info.index);
-
-//        string xaddrs = _extract_xaddrs(index);
-
         auto service = _extract_onvif_service(info.xaddrs, true);
 
         auto timeOffset = _get_time_offset(service, info.xaddrs);
@@ -702,9 +693,7 @@ xmlDocPtr r_onvif_session::_send_get_device_information(
     xmlNodePtr body = xmlNewTextChild(root, ns_env, (xmlChar*)"Body", NULL);
     xmlNewTextChild(body, ns_tds, (xmlChar*)"GetDeviceInformation", NULL);
 
-    auto cmd = _add_http_header(doc.get(), root, xaddrs, device_service);
-    raii_ptr<xmlDoc> reply(_send_command_to_camera(cmd, xaddrs), xmlFreeDoc);
-    return _send_command_to_camera(cmd, xaddrs);
+    return _send_command_to_camera(_add_http_header(doc.get(), root, xaddrs, device_service), xaddrs);
 }
 
 void r_onvif_session::add_username_digest_header(
@@ -744,23 +733,23 @@ void r_onvif_session::add_username_digest_header(
     tv.tv_sec = delta.count() / 1000;
     tv.tv_usec = (delta.count() % 1000) * 1000;
 
-    int millisec = tv.tv_usec / 1000.0;
+    int millisec = tv.tv_usec / 1000;
 
     char time_buffer[1024];
     size_t time_buffer_length = strftime(time_buffer, 1024, "%Y-%m-%dT%H:%M:%S.", gmtime(&tv.tv_sec+offset));
     time_buffer[time_buffer_length] = '\0';
-    
+
     char milli_buf[16] = {0};
     sprintf(milli_buf, "%03dZ", millisec);
     strcat(time_buffer, milli_buf);
-
-    unsigned char hash[20];
 
     r_sha1 ctx;
     ctx.update(nonce_buffer, nonce_chunk_size);
     ctx.update((const unsigned char*)time_buffer, strlen(time_buffer));
     ctx.update((const unsigned char*)password, strlen(password));
     ctx.finalize();
+
+    unsigned char hash[20];
     ctx.get(&hash[0]);
 
     unsigned int digest_chunk_size = 20;

@@ -22,7 +22,8 @@ enum r_encoding
     H265_ENCODING,
     AAC_LATM_ENCODING,
     AAC_GENERIC_ENCODING,
-    PCMU_ENCODING
+    PCMU_ENCODING,
+    PCMA_ENCODING
 };
 
 r_encoding str_to_encoding(const std::string& encoding_str);

@@ -19,6 +19,7 @@ public:
 
     void get(uint8_t* output);
     std::string get_as_string();
+    std::string get_as_uuid();
 
 private:
     const uint8_t* _body(const uint8_t* data, size_t size);

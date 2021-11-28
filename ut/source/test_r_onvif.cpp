@@ -2,6 +2,7 @@
 #include "test_r_onvif.h"
 #include "r_onvif/r_onvif_session.h"
 #include "r_utils/r_string_utils.h"
+#include "r_utils/r_sha1.h"
 #include <string.h>
 #include <map>
 
@@ -67,11 +68,6 @@ void test_r_onvif::test_r_onvif_session_basic()
     bool foundSomething = false;
     for(auto& di : discovered)
     {
-        printf("camera_name=%s\n",di.camera_name.c_str());
-        printf("address=%s\n",di.address.c_str());
-        printf("xaddrs=%s\n",di.xaddrs.c_str());
-        printf("ipv4=%s\n",di.ipv4.c_str());
-        fflush(stdout);
         auto keys = key_map.at(di.address);
 
         auto rdi = session.get_rtsp_url(di, keys.username, keys.password);
@@ -80,14 +76,8 @@ void test_r_onvif::test_r_onvif_session_basic()
         {
             foundSomething = true;
             RTF_ASSERT(rdi.value().rtsp_url.find("rtsp://") != string::npos);
-            //printf("cameraName=%s\n",rdi.value().camera_name.c_str());
-            //printf("address=%s\n",rdi.value().address.c_str());
-            //printf("serial_number=%s\n",rdi.value().serial_number.c_str());
-            //printf("model_number=%s\n",rdi.value().model_number.c_str());
-            //printf("firmware_version=%s\n",rdi.value().firmware_version.c_str());
-            //printf("manufacturer=%s\n",rdi.value().manufacturer.c_str());
-            //printf("hardware_id=%s\n",rdi.value().hardware_id.c_str());
-            printf("rtsp_url=%s\n",rdi.value().rtsp_url.c_str());
+            printf("camera_name=%s, rtsp_url=%s\n", di.camera_name.c_str(), rdi.value().rtsp_url.c_str());
+            fflush(stdout);
         }
     }
 

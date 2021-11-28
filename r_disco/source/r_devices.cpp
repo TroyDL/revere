@@ -614,11 +614,11 @@ r_devices_cmd_result r_devices::_get_credentials(const r_sqlite_conn& conn, cons
             auto row = qr.front();
 
             auto found = row.find("rtsp_username");
-            if(found != row.end())
+            if(found != row.end() && !found->second.is_null())
                 result.credentials.first = found->second.value();
 
             found = row.find("rtsp_password");
-            if(found != row.end())
+            if(found != row.end() && !found->second.is_null())
                 result.credentials.second = found->second.value();
         }
     });

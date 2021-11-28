@@ -48,7 +48,7 @@ map<string, r_sdp_media> r_pipeline::fetch_sdp_media(
 
     src.play();
 
-    auto res = q.poll();
+    auto res = q.poll(seconds(5));
 
     src.stop();
 
@@ -162,6 +162,8 @@ void r_gst_source::play()
     if(!_password.is_null())
         g_object_set(G_OBJECT(rtspsrc), "user-pw", _password.value().c_str(), NULL);
 
+    g_signal_connect(G_OBJECT(rtspsrc), "select-stream", G_CALLBACK(_select_stream_callbackS), this);
+
     g_signal_connect(G_OBJECT(rtspsrc), "pad-added", G_CALLBACK(_pad_added_callbackS), this);
 
     g_signal_connect(G_OBJECT(rtspsrc), "on-sdp", G_CALLBACK(_on_sdp_callbackS), this);
@@ -218,9 +220,45 @@ static void print_caps (const GstCaps * caps, const gchar * pfx) {
 }
 #endif
 
+gboolean r_gst_source::_select_stream_callbackS(GstElement* src, guint num, GstCaps* caps, r_gst_source* context)
+{
+    try
+    {
+        return context->_select_stream_callback(src, num, caps);
+    }
+    catch(const std::exception& e)
+    {
+        R_LOG_ERROR("%s", e.what());
+        g_set_error(NULL, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED, "pad added callback error");
+    }
+    return FALSE;
+}
+
+gboolean r_gst_source::_select_stream_callback(GstElement* src, guint num, GstCaps* caps)
+{
+    GstStructure* new_pad_struct = gst_caps_get_structure(caps, 0);
+
+    auto media_str = string(gst_structure_get_string(new_pad_struct, "media"));
+
+    if(media_str == "video")
+        return TRUE;
+    else if(media_str == "audio")
+        return TRUE;
+
+    return FALSE;
+}
+
 void r_gst_source::_pad_added_callbackS(GstElement* src, GstPad* new_pad, r_gst_source* context)
 {
-    context->_pad_added_callback(src, new_pad);
+    try
+    {
+        context->_pad_added_callback(src, new_pad);
+    }
+    catch(const std::exception& e)
+    {
+        R_LOG_ERROR("%s", e.what());
+        g_set_error(NULL, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED, "pad added callback error");
+    }
 }
 
 void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
@@ -234,11 +272,14 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
 
     const gchar* new_pad_type = gst_structure_get_name(new_pad_struct);
 
-    if(g_str_has_prefix(new_pad_type, "application/x-rtp"))
+    auto media_str = r_string_utils::to_lower(string(gst_structure_get_string(new_pad_struct, "media")));
+
+    if(g_str_has_prefix(new_pad_type, "application/x-rtp") && (media_str == "video" || media_str == "audio"))
     {
         r_pad_info si;
-        auto media_str = string(gst_structure_get_string(new_pad_struct, "media"));
-        si.media = (media_str=="video")?VIDEO_MEDIA:AUDIO_MEDIA;
+
+        si.media = (media_str == "video")?VIDEO_MEDIA:AUDIO_MEDIA;
+
         si.payload = 0;
         gst_structure_get_int(new_pad_struct, "payload", &si.payload);
         si.clock_rate = 0;
@@ -247,7 +288,18 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
         if(gst_structure_has_field(new_pad_struct, "a-framerate") == TRUE)
             si.framerate.set_value(r_string_utils::s_to_double(gst_structure_get_string(new_pad_struct, "a-framerate")));
 
-        auto encoding = str_to_encoding(string(gst_structure_get_string(new_pad_struct, "encoding-name")));
+        string encoding_name(gst_structure_get_string(new_pad_struct, "encoding-name"));
+
+        r_encoding encoding;
+
+        try
+        {
+            encoding = str_to_encoding(encoding_name);
+        }
+        catch(const std::exception& e)
+        {
+            R_LOG_NOTICE("Encountered unknown encoding: %s", encoding_name.c_str());
+        }
 
         if(si.media == VIDEO_MEDIA)
         {
@@ -320,7 +372,20 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
                 si.encoding = PCMU_ENCODING;
                 si.pcmu.set_value(pcmu_info);
 
-                _attach_g711_audio_pipeline(new_pad);
+                _attach_mulaw_audio_pipeline(new_pad);
+            }
+            else if(encoding == PCMA_ENCODING)
+            {
+                r_pcmu_info pcmu_info;
+
+                int value;
+                if(gst_structure_get_int(new_pad_struct, "clock-rate", &value) == true)
+                    pcmu_info.clock_rate.set_value(value);
+
+                si.encoding = PCMA_ENCODING;
+                si.pcmu.set_value(pcmu_info);
+
+                _attach_mulaw_audio_pipeline(new_pad);
             }
         }
 
@@ -459,9 +524,35 @@ void r_gst_source::_attach_aac_audio_pipeline(GstPad* new_pad, r_encoding encodi
     g_signal_connect(_a_appsink, "new-sample", G_CALLBACK(_new_audio_sample), this);
 }
 
-void r_gst_source::_attach_g711_audio_pipeline(GstPad* new_pad)
+void r_gst_source::_attach_mulaw_audio_pipeline(GstPad* new_pad)
 {
     GstElement* a_depay = gst_element_factory_make("rtppcmudepay", "a_depay");
+    _a_appsink = gst_element_factory_make("appsink", "a_appsink");
+    g_object_set(G_OBJECT(_a_appsink), "emit-signals", TRUE, "sync", FALSE, NULL);
+
+    gst_bin_add_many(GST_BIN(_pipeline), a_depay, _a_appsink, NULL);
+
+    gst_element_sync_state_with_parent(a_depay);
+    gst_element_sync_state_with_parent(_a_appsink);
+
+    auto linked = gst_element_link_many(a_depay, _a_appsink, NULL);
+
+    raii_ptr<GstPad> a_depay_sink_pad(
+        gst_element_get_static_pad(a_depay, "sink"),
+        [](GstPad* pad){gst_object_unref(pad);}
+    );
+
+    GstPadLinkReturn ret = gst_pad_link(new_pad, a_depay_sink_pad.get());
+
+    if(GST_PAD_LINK_FAILED(ret))
+        R_LOG_ERROR("AUDIO PAD LINK FAILED");
+
+    g_signal_connect(_a_appsink, "new-sample", G_CALLBACK(_new_audio_sample), this);
+}
+
+void r_gst_source::_attach_alaw_audio_pipeline(GstPad* new_pad)
+{
+    GstElement* a_depay = gst_element_factory_make("rtppcadepay", "a_depay");
     _a_appsink = gst_element_factory_make("appsink", "a_appsink");
     g_object_set(G_OBJECT(_a_appsink), "emit-signals", TRUE, "sync", FALSE, NULL);
 
@@ -574,7 +665,17 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
 
 gboolean r_gst_source::_bus_callbackS(GstBus* bus, GstMessage* message, gpointer data)
 {
-    return ((r_gst_source*)data)->_bus_callback(bus, message);
+    try
+    {
+        return ((r_gst_source*)data)->_bus_callback(bus, message);
+    }
+    catch(const std::exception& e)
+    {
+        R_LOG_ERROR("%s", e.what());
+        g_set_error(NULL, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED, "bus callback error");
+    }
+
+    return FALSE;
 }
 
 static bool _is_pipeline_msg(GstElement* pipeline, GstMessage* msg)
@@ -606,7 +707,15 @@ gboolean r_gst_source::_bus_callback(GstBus* bus, GstMessage* message)
 
 void r_gst_source::_on_sdp_callbackS(GstElement* src, GstSDPMessage* sdp, gpointer data)
 {
-    ((r_gst_source*)data)->_on_sdp_callback(src, sdp);
+    try
+    {
+        ((r_gst_source*)data)->_on_sdp_callback(src, sdp);
+    }
+    catch(const std::exception& e)
+    {
+        R_LOG_ERROR("%s", e.what());
+        g_set_error(NULL, GST_STREAM_ERROR, GST_STREAM_ERROR_FAILED, "sdp callback error");
+    }
 }
 
 void r_gst_source::_on_sdp_callback(GstElement* src, GstSDPMessage* sdp)
@@ -626,7 +735,13 @@ void r_gst_source::_on_sdp_callback(GstElement* src, GstSDPMessage* sdp)
 
         r_sdp_media media;
 
-        media.type = (string(m->media)=="video")?VIDEO_MEDIA:AUDIO_MEDIA;
+        auto media_str = r_string_utils::to_lower(string(m->media));
+
+        if(media_str == "video")
+            media.type = VIDEO_MEDIA;
+        else if(media_str == "audio")
+            media.type = AUDIO_MEDIA;
+        else continue;
 
         // Note: If its a GArray of object pointers you use & in front of g_array_index
 

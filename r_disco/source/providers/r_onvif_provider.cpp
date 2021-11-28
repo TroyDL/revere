@@ -4,6 +4,7 @@
 #include "r_pipeline/r_gst_source.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_string_utils.h"
+#include "r_utils/r_md5.h"
 #include <string>
 
 using namespace r_disco;
@@ -39,107 +40,100 @@ vector<r_stream_config> r_onvif_provider::_fetch_configs(const string& top_dir)
     //     connect to its rtsp url and pull stream info
     //     build r_stream_config, append to result
     // return result
-    std::vector<r_stream_config> configs;
-    return configs;
 
-#if 0
     std::vector<r_stream_config> configs;
 
-    auto config_path = top_dir + r_fs::PATH_SLASH + "config";
-    if(!r_fs::file_exists(config_path))
-        r_fs::mkdir(config_path);
+    auto discovered = _session.discover();
 
-    auto manual_config_path = config_path + r_fs::PATH_SLASH + "manual_config.json";
-
-    if(r_fs::file_exists(manual_config_path))
+    for(auto& d : discovered)
     {
-        auto config_buffer = r_fs::read_file(manual_config_path);
+        r_stream_config config;
 
-        auto config = string((char*)&config_buffer[0], config_buffer.size());
-
-        auto doc = json::parse(config);
-
-        for(auto device : doc["manual_provider_config"]["devices"])
+        try
         {
-            auto id = device["id"];
-            auto ipv4_address = device["ipv4_address"];
-            auto rtsp_url = device["rtsp_url"];
-            auto record_file_path = device["record_file_path"];
-            int n_record_file_blocks = device["n_record_file_blocks"];
-            int record_file_block_size = device["record_file_block_size"];
+            r_md5 hash;
+            hash.update((uint8_t*)d.address.c_str(), d.address.size());
+            hash.finalize();
 
-            r_nullable<string> username, password;
-            if(device.contains("username"))
+            config.id = hash.get_as_uuid();
+            config.ipv4 = d.ipv4;
+
+            auto credentials = _agent->get_credentials(config.id);
+
+            config.rtsp_username = credentials.first;
+            config.rtsp_password = credentials.second;
+
+            auto di = _session.get_rtsp_url(d, config.rtsp_username, config.rtsp_password);
+
+            if(!di.is_null())
             {
-                username.set_value(device["username"]);
-                password.set_value(device["password"]);
-            }
+                config.rtsp_url = di.value().rtsp_url;
 
-            auto sdp_media = fetch_sdp_media(rtsp_url, username, password);
+                auto sdp_media = fetch_sdp_media(di.value().rtsp_url, config.rtsp_username, config.rtsp_password);
 
-            if(sdp_media.find("video") == sdp_media.end())
-                R_THROW(("Unable to fetch video stream information for r_onvif_provider."));
+                if(sdp_media.find("video") == sdp_media.end())
+                    R_THROW(("Unable to fetch video stream information for r_onvif_provider."));
 
-            auto video_media = sdp_media["video"];
-            if(video_media.type != VIDEO_MEDIA)
-                R_THROW(("Unknown media type."));
-            
-            if(video_media.formats.size() == 0)
-                R_THROW(("video media format not found."));
-
-            auto fmt = video_media.formats.front();
-
-            auto rtp_map = video_media.rtpmaps.find(fmt);
-            if(rtp_map == video_media.rtpmaps.end())
-                R_THROW(("Unable to find rtp map."));
-            
-            r_stream_config stream_config;
-
-            stream_config.id = id;
-            stream_config.ipv4 = ipv4_address;
-            stream_config.rtsp_url = rtsp_url;
-            stream_config.rtsp_username = username;
-            stream_config.rtsp_password = password;
-            stream_config.record_file_path = record_file_path;
-            stream_config.n_record_file_blocks = n_record_file_blocks;
-            stream_config.record_file_block_size = record_file_block_size;
-            
-            stream_config.video_codec = encoding_to_str(rtp_map->second.encoding);
-            stream_config.video_timebase = rtp_map->second.time_base;
-
-            string video_attributes;
-            for(auto b = begin(video_media.attributes), e = end(video_media.attributes); b != e; ++b)
-                video_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
-            stream_config.video_codec_parameters.set_value(video_attributes);
-
-            if(sdp_media.find("audio") != sdp_media.end())
-            {
-                auto audio_media = sdp_media["audio"];
-                if(audio_media.type != AUDIO_MEDIA)
+                auto video_media = sdp_media["video"];
+                if(video_media.type != VIDEO_MEDIA)
                     R_THROW(("Unknown media type."));
                 
-                if(audio_media.formats.size() == 0)
-                    R_THROW(("audio media format not found."));
+                if(video_media.formats.size() == 0)
+                    R_THROW(("video media format not found."));
 
-                auto fmt = audio_media.formats.front();
+                auto fmt = video_media.formats.front();
 
-                auto rtp_map = audio_media.rtpmaps.find(fmt);
-                if(rtp_map == audio_media.rtpmaps.end())
-                    R_THROW(("Unable to find audio rtp map."));
+                auto rtp_map = video_media.rtpmaps.find(fmt);
+                if(rtp_map == video_media.rtpmaps.end())
+                    R_THROW(("Unable to find rtp map."));
 
-                stream_config.audio_codec = encoding_to_str(rtp_map->second.encoding);
-                stream_config.audio_timebase = rtp_map->second.time_base;
+                //stream_config.record_file_path = record_file_path;
+                //stream_config.n_record_file_blocks = n_record_file_blocks;
+                //stream_config.record_file_block_size = record_file_block_size;
+            
+                config.video_codec = encoding_to_str(rtp_map->second.encoding);
+                config.video_timebase = rtp_map->second.time_base;
 
-                string audio_attributes;
-                for(auto b = begin(audio_media.attributes), e = end(audio_media.attributes); b != e; ++b)
-                    audio_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
-                stream_config.audio_codec_parameters.set_value(audio_attributes);
+                string video_attributes;
+                for(auto b = begin(video_media.attributes), e = end(video_media.attributes); b != e; ++b)
+                    video_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
+                config.video_codec_parameters.set_value(video_attributes);
+
+                if(sdp_media.find("audio") != sdp_media.end())
+                {
+                    auto audio_media = sdp_media["audio"];
+                    if(audio_media.type != AUDIO_MEDIA)
+                        R_THROW(("Unknown media type."));
+                    
+                    if(audio_media.formats.size() == 0)
+                        R_THROW(("audio media format not found."));
+
+                    auto fmt = audio_media.formats.front();
+
+                    auto rtp_map = audio_media.rtpmaps.find(fmt);
+                    if(rtp_map == audio_media.rtpmaps.end())
+                        R_THROW(("Unable to find audio rtp map."));
+
+                    config.audio_codec = encoding_to_str(rtp_map->second.encoding);
+                    config.audio_timebase = rtp_map->second.time_base;
+
+                    string audio_attributes;
+                    for(auto b = begin(audio_media.attributes), e = end(audio_media.attributes); b != e; ++b)
+                        audio_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
+                    config.audio_codec_parameters.set_value(audio_attributes);
+                }
             }
-
-            configs.push_back(stream_config);
         }
+        catch(exception& ex)
+        {
+            R_LOG_ERROR("%s", ex.what());
+        }
+
+        printf("ADDING CONFIG: %s, %s\n",config.id.c_str(), config.ipv4.value().c_str());
+        fflush(stdout);
+
+        configs.push_back(config);
     }
 
     return configs;
-#endif
 }

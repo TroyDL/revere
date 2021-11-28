@@ -73,13 +73,17 @@ private:
     static GstFlowReturn _new_video_sample(GstElement* elt, r_gst_source* src);
     static GstFlowReturn _new_audio_sample(GstElement* elt, r_gst_source* src);
 
+    static gboolean _select_stream_callbackS(GstElement* src, guint num, GstCaps* caps, r_gst_source* context);
+    gboolean _select_stream_callback(GstElement* src, guint num, GstCaps* caps);
+
     static void _pad_added_callbackS(GstElement* src, GstPad* new_pad, r_gst_source* context);
     void _pad_added_callback(GstElement* src, GstPad* new_pad);
 
     void _attach_h264_video_pipeline(GstPad* new_pad);
     void _attach_h265_video_pipeline(GstPad* new_pad);
     void _attach_aac_audio_pipeline(GstPad* new_pad, r_encoding encoding);
-    void _attach_g711_audio_pipeline(GstPad* new_pad);
+    void _attach_mulaw_audio_pipeline(GstPad* new_pad);
+    void _attach_alaw_audio_pipeline(GstPad* new_pad);
 
     static gboolean _bus_callbackS(GstBus* bus, GstMessage* message, gpointer data);
     gboolean _bus_callback(GstBus* bus, GstMessage* message);

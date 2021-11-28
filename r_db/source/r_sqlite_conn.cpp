@@ -120,10 +120,12 @@ vector<map<string, r_nullable<string>>> r_sqlite_conn::exec(const string& query)
                         default:
                         {
                             const char* tp = (const char*)sqlite3_column_text(stmt, i);
-                            val = (tp)?string(tp):string();
+                            if(tp && (*tp != '\0'))
+                                val = string(tp);
                         }
+                        break;
                     }
-    
+
                     row[sqlite3_column_name(stmt, i)] = val;
                 }
 

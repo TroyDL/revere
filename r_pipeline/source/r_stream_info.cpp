@@ -25,8 +25,10 @@ r_encoding r_pipeline::str_to_encoding(const std::string& encoding_str)
         return AAC_GENERIC_ENCODING;
     else if(lower_encoding == "pcmu")
         return PCMU_ENCODING;
+    else if(lower_encoding == "pcma")
+        return PCMA_ENCODING;
 
-    R_THROW(("Unknown encoding!"));
+    R_THROW(("Unknown encoding: %s",encoding_str.c_str()));
 }
 
 string r_pipeline::encoding_to_str(r_encoding encoding)
@@ -41,8 +43,10 @@ string r_pipeline::encoding_to_str(r_encoding encoding)
         return "mpeg4-generic";
     else if(encoding == PCMU_ENCODING)
         return "pcmu";
+    else if(encoding == PCMA_ENCODING)
+        return "pcma";
 
-    R_THROW(("Unknown encoding!"));
+    R_THROW(("Unknown encoding: %d",encoding));
 }
 
 pair<string, string> r_pipeline::sdp_media_to_s(r_media m, const map<string, r_sdp_media>& sdp_media)

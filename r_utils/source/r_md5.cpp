@@ -143,6 +143,18 @@ string r_md5::get_as_string()
                                   _result[12], _result[13], _result[14], _result[15]);
 }
 
+string r_md5::get_as_uuid()
+{
+    if(!_finalized)
+        R_THROW(( "Please Finalize() your r_md5 before calling a Get() method." ));
+
+    return r_string_utils::format("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                                  _result[0], _result[1],_result[2], _result[3],
+                                  _result[4], _result[5], _result[6], _result[7],
+                                  _result[8], _result[9], _result[10], _result[11],
+                                  _result[12], _result[13], _result[14], _result[15]);
+}
+
 const uint8_t* r_md5::_body( const uint8_t* data, size_t size )
 {
     const uint8_t* ptr;

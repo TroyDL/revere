@@ -194,7 +194,7 @@ void test_r_disco::test_r_disco_r_agent_start_stop()
     });
     agent.start();
 
-    this_thread::sleep_for(chrono::milliseconds(1000));
+    this_thread::sleep_for(chrono::milliseconds(5000));
 
     RTF_ASSERT(num_found_configs > 0);
 

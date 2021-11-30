@@ -23,18 +23,24 @@ REGISTER_TEST_FIXTURE(test_r_vss);
 
 static void _whack_files()
 {
-    if(r_fs::file_exists("ten_mb_file"))
-        r_fs::remove_file("ten_mb_file");
+    if(r_fs::file_exists("top_dir/video/ten_mb_file"))
+        r_fs::remove_file("top_dir/video/ten_mb_file");
+    if(r_fs::file_exists("top_dir/video"))
+        r_fs::rmdir("top_dir/video");
+
     if(r_fs::file_exists("top_dir/db/cameras.db"))
         r_fs::remove_file("top_dir/db/cameras.db");
     if(r_fs::file_exists("top_dir/db"))
         r_fs::rmdir("top_dir/db");
+
     if(r_fs::file_exists("top_dir/config"))
         r_fs::rmdir("top_dir/config");
+
     if(r_fs::file_exists("top_dir"))
         r_fs::rmdir("top_dir");
-    if(r_fs::file_exists("output_true_north.mp4"))
-        r_fs::remove_file("output_true_north.mp4");
+
+//    if(r_fs::file_exists("output_true_north.mp4"))
+//        r_fs::remove_file("output_true_north.mp4");
 }
 
 void test_r_vss::setup()
@@ -45,6 +51,7 @@ void test_r_vss::setup()
     r_fs::mkdir("top_dir");
     r_fs::mkdir("top_dir" + r_fs::PATH_SLASH + "config");
     r_fs::mkdir("top_dir" + r_fs::PATH_SLASH + "db");
+    r_fs::mkdir("top_dir" + r_fs::PATH_SLASH + "video");
 }
 
 void test_r_vss::teardown()
@@ -57,7 +64,7 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     // First create a storage file for holding our video...
     string storage_file_path = "ten_mb_file";
 
-    r_storage_file::allocate(storage_file_path, 65536, 160);
+    r_storage_file::allocate("top_dir" + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + storage_file_path, 65536, 160);
 
     // Then startup a fake camera...
     int port = RTF_NEXT_PORT();
@@ -107,8 +114,10 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
 
     RTF_ASSERT(sk.fetch_stream_status().size() == 1);
 
+    sk.stop();
+
     // Create a storage file object so we can query from it...
-    r_storage_file sf(cfg.record_file_path.value());
+    r_storage_file sf("top_dir" + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + cfg.record_file_path.value());
 
     auto kfst = sf.key_frame_start_times(R_STORAGE_MEDIA_TYPE_ALL);
 
@@ -154,19 +163,25 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     int64_t dts = 0;
     for(size_t fi = 0; fi < n_frames; ++fi)
     {
+        auto sid = bt["frames"][fi]["stream_id"].get_string();
         auto stream_id = r_string_utils::s_to_int(bt["frames"][fi]["stream_id"].get_string());
         auto key = (bt["frames"][fi]["key"].get_string() == "true");
         auto frame = bt["frames"][fi]["data"].get();
         auto pts = r_string_utils::s_to_int64(bt["frames"][fi]["pts"].get_string());
 
         if(stream_id == R_STORAGE_MEDIA_TYPE_VIDEO)
+        {
             muxer.write_video_frame(frame.data(), frame.size(), pts, dts, {1, 1000}, key);
-        else muxer.write_audio_frame(frame.data(), frame.size(), pts, {1, 1000});
+        }
+        else
+        {
+            muxer.write_audio_frame(frame.data(), frame.size(), pts, {1, 1000});
+        }
     }
 
     muxer.finalize();
 
-    sk.stop();
+//    sk.stop();
 
     // Finally, use a demuxer to verify our output file...
 

@@ -129,9 +129,6 @@ vector<r_stream_config> r_onvif_provider::_fetch_configs(const string& top_dir)
             R_LOG_ERROR("%s", ex.what());
         }
 
-        printf("ADDING CONFIG: %s, %s\n",config.id.c_str(), config.ipv4.value().c_str());
-        fflush(stdout);
-
         configs.push_back(config);
     }
 

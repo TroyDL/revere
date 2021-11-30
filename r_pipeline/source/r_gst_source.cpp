@@ -127,7 +127,9 @@ r_gst_source::r_gst_source() :
     _h265_nal_parser(nullptr),
     _sample_context(),
     _video_sample_sent(false),
-    _audio_sample_sent(false)
+    _audio_sample_sent(false),
+    _buffered_ts(false),
+    _buffered_ts_value(0)
 {
 }
 
@@ -188,7 +190,9 @@ void r_gst_source::stop()
         gst_element_set_state(_pipeline, GST_STATE_NULL);
 }
 
-#if 1
+#if 0
+// Here are some functions that I sometimes use for debugging. I'm leaving them here so I can easily
+// use them in the future.
 static gboolean print_field (GQuark field, const GValue * value, gpointer pfx) {
   gchar *str = gst_value_serialize (value);
 
@@ -217,6 +221,51 @@ static void print_caps (const GstCaps * caps, const gchar * pfx) {
     g_print ("%s%s\n", pfx, gst_structure_get_name (structure));
     gst_structure_foreach (structure, print_field, (gpointer) pfx);
   }
+}
+
+static string nal_type(int type)
+{
+  if(type == GST_H264_NAL_UNKNOWN)
+    return "GST_H264_NAL_UNKNOWN";
+  else if(type == GST_H264_NAL_SLICE)
+    return "GST_H264_NAL_SLICE";
+  else if(type == GST_H264_NAL_SLICE_DPA)
+      return "GST_H264_NAL_SLICE_DPA";
+  else if(type == GST_H264_NAL_SLICE_DPB)
+      return "GST_H264_NAL_SLICE_DPB";
+  else if(type == GST_H264_NAL_SLICE_DPC)
+      return "GST_H264_NAL_SLICE_DPC";
+  else if(type == GST_H264_NAL_SLICE_IDR)
+      return "GST_H264_NAL_SLICE_IDR";
+  else if(type == GST_H264_NAL_SEI)
+      return "GST_H264_NAL_SEI";
+  else if(type == GST_H264_NAL_SPS)
+      return "GST_H264_NAL_SPS";
+  else if(type == GST_H264_NAL_PPS)
+      return "GST_H264_NAL_PPS";
+  else if(type == GST_H264_NAL_AU_DELIMITER)
+      return "GST_H264_NAL_AU_DELIMITER";
+  else if(type == GST_H264_NAL_SEQ_END)
+      return "GST_H264_NAL_SEQ_END";
+  else if(type == GST_H264_NAL_STREAM_END)
+      return "GST_H264_NAL_STREAM_END";
+  else if(type == GST_H264_NAL_FILLER_DATA)
+      return "GST_H264_NAL_FILLER_DATA";
+  else if(type == GST_H264_NAL_SPS_EXT)
+      return "GST_H264_NAL_SPS_EXT";
+  else if(type == GST_H264_NAL_PREFIX_UNIT)
+      return "GST_H264_NAL_PREFIX_UNIT";
+  else if(type == GST_H264_NAL_SUBSET_SPS)
+      return "GST_H264_NAL_SUBSET_SPS";
+  else if(type == GST_H264_NAL_DEPTH_SPS)
+      return "GST_H264_NAL_DEPTH_SPS";
+  else if(type == GST_H264_NAL_SLICE_AUX)
+      return "GST_H264_NAL_SLICE_AUX";
+  else if(type == GST_H264_NAL_SLICE_EXT)
+      return "";
+  else if(type == GST_H264_NAL_SLICE_DEPTH)
+      return "GST_H264_NAL_SLICE_DEPTH";
+    R_THROW(("UNKNOWN NAL"));
 }
 #endif
 
@@ -595,11 +644,21 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
 
     if(result == GST_FLOW_OK)
     {
-        bool key = (src->_h264_nal_parser)?src->_parse_h264(src->_h264_nal_parser, info.data, info.size):src->_parse_h265(src->_h265_nal_parser, info.data, info.size);
+        bool key = !GST_BUFFER_FLAG_IS_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT);
+        bool is_picture = (src->_h264_nal_parser)?src->_is_h264_picture(src->_h264_nal_parser, info.data, info.size):src->_is_h265_picture(src->_h265_nal_parser, info.data, info.size);
 
         auto sample_pts = GST_BUFFER_PTS(buffer);
+        bool has_pts = (sample_pts != GST_CLOCK_TIME_NONE);
 
-        if(sample_pts != GST_CLOCK_TIME_NONE)
+        // OK, this is kind of a workaround for a specific axis camera. Basically, we see an
+        // access unit containing an SEI but with a valid timestamp and then immediately after
+        // we see an access unit with an IDR but with an invalid timestamp. So, we're detecting
+        // that here and buffering the SEI timestamp... which we will re-use for the IDR. Its clear
+        // to me that the intention of the camera was to have the SEI be in the same access unit as
+        // the IDR, but gstreamer is not doing that.
+        src->_sei_ts_hack(buffer, has_pts, is_picture, sample_pts);
+
+        if(has_pts && is_picture)
         {
             auto pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
 
@@ -797,9 +856,8 @@ void r_gst_source::_on_sdp_callback(GstElement* src, GstSDPMessage* sdp)
         _sdp_media_cb.value()(_sample_context._sdp_medias);
 }
 
-bool r_gst_source::_parse_h264(GstH264NalParser* parser, const uint8_t* p, size_t size)
+bool r_gst_source::_is_h264_picture(GstH264NalParser* parser, const uint8_t* p, size_t size)
 {
-    bool key = false;
     size_t pos = 0;
 
     GstH264NalUnit nal_unit;
@@ -807,25 +865,27 @@ bool r_gst_source::_parse_h264(GstH264NalParser* parser, const uint8_t* p, size_
     {
         gst_h264_parser_identify_nalu(parser, p, (guint)pos, (guint)size, &nal_unit);
 
+        if(nal_unit.type == GST_H264_NAL_SEI)
+            return false;
+
         if(nal_unit.type >= GST_H264_NAL_SLICE && nal_unit.type <= GST_H264_NAL_SLICE_IDR)
         {
             GstH264SliceHdr slice_hdr;
             auto pr = gst_h264_parser_parse_slice_hdr(parser, &nal_unit, &slice_hdr, false, false);
 
-            if(pr == GST_H264_PARSER_OK && GST_H264_IS_I_SLICE(&slice_hdr))
-                key = true;
+            if(pr != GST_H264_PARSER_OK)
+                R_THROW(("Unable to parse h264 nal unit."));
         }
         else gst_h264_parser_parse_nal(parser, &nal_unit);
 
         pos = nal_unit.offset + nal_unit.size;
     }
 
-    return key;
+    return true;
 }
 
-bool r_gst_source::_parse_h265(GstH265Parser* parser, const uint8_t* p, size_t size)
+bool r_gst_source::_is_h265_picture(GstH265Parser* parser, const uint8_t* p, size_t size)
 {
-    bool key = false;
     size_t pos = 0;
 
     GstH265NalUnit nal_unit;
@@ -833,20 +893,23 @@ bool r_gst_source::_parse_h265(GstH265Parser* parser, const uint8_t* p, size_t s
     {
         gst_h265_parser_identify_nalu(parser, p, (guint)pos, (guint)size, &nal_unit);
 
+        if(nal_unit.type == GST_H264_NAL_SEI)
+            return false;
+
         if(nal_unit.type <= GST_H265_NAL_SLICE_CRA_NUT)
         {
             GstH265SliceHdr slice_hdr;
             auto pr = gst_h265_parser_parse_slice_hdr(parser, &nal_unit, &slice_hdr);
 
-            if(pr == GST_H265_PARSER_OK && GST_H265_IS_I_SLICE(&slice_hdr))
-                key = true;
+            if(pr != GST_H265_PARSER_OK)
+                R_THROW(("Unable to parse h265 nal unit."));
         }
         else gst_h265_parser_parse_nal(parser, &nal_unit);
 
         pos = nal_unit.offset + nal_unit.size;
     }
 
-    return key;
+    return true;
 }
 
 void r_gst_source::_parse_audio_sink_caps()
@@ -872,6 +935,42 @@ void r_gst_source::_parse_audio_sink_caps()
     int rate = 0;
     if(gst_structure_get_int(structure, "rate", &rate) == TRUE)
         _sample_context._audio_sample_rate.set_value((uint32_t)rate);
+}
+
+void r_gst_source::_sei_ts_hack(GstBuffer* buffer, bool& has_pts, bool is_picture, uint64_t& sample_pts)
+{
+    // OK, this is kind of a workaround for a specific axis camera. Basically, we see an
+    // access unit containing an SEI but with a valid timestamp and then immediately after
+    // we see an access unit with an IDR but with an invalid timestamp. So, we're detecting
+    // that here and buffering the SEI timestamp... which we will re-use for the IDR.
+
+    // Note: This is caused by using alignment="au" on our parsers. "au" seems to mostly be what
+    // we want but if we had used alignment="nal" WE would be determining where the frame boundaries are.
+    // We could have then just included the SEI NAL in subsequent IDR.
+
+    // First, we only want to use the buffered timestamp on the frame immediately after so if
+    // we have a PTS but we still have one buffered clear our flag so we never use it.
+    if(has_pts && _buffered_ts)
+        _buffered_ts = false;
+
+    // If it's not a picture but it has a PTS then grab the PTS and set the flag.
+    if(!is_picture && has_pts)
+    {
+        _buffered_ts = true;
+        _buffered_ts_value = GST_BUFFER_PTS(buffer);
+    }
+
+    // If it is a picture and it doesn't have a pts AND we have one buffered use it and
+    // then clear the flag.
+    if(is_picture && !has_pts && _buffered_ts)
+    {
+        _buffered_ts = false;
+
+        GST_BUFFER_PTS(buffer) = _buffered_ts_value;
+
+        has_pts = true;
+        sample_pts = GST_BUFFER_PTS(buffer);
+    }
 }
 
 void r_gst_source::_clear() noexcept

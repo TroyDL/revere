@@ -99,7 +99,6 @@ private:
     _header _h;
     r_utils::r_memory_map _dumbdex_map;
     r_dumbdex _block_index;
-    //std::map<uint8_t, std::pair<std::vector<uint8_t>, int64_t>> _gop_buffer;
     std::deque<_gop> _gop_buffer;
     
     r_utils::r_memory_map _ind_map;

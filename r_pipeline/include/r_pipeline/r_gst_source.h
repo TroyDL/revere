@@ -91,10 +91,12 @@ private:
     static void _on_sdp_callbackS(GstElement* src, GstSDPMessage* sdp, gpointer data);
     void _on_sdp_callback(GstElement* src, GstSDPMessage* sdp);
 
-    bool _parse_h264(GstH264NalParser* parser, const uint8_t* p, size_t size);
-    bool _parse_h265(GstH265Parser* parser, const uint8_t* p, size_t size);
+    bool _is_h264_picture(GstH264NalParser* parser, const uint8_t* p, size_t size);
+    bool _is_h265_picture(GstH265Parser* parser, const uint8_t* p, size_t size);
 
     void _parse_audio_sink_caps();
+
+    void _sei_ts_hack(GstBuffer* buffer, bool& has_pts, bool is_picture, uint64_t& sample_pts);
 
     void _clear() noexcept;
 
@@ -122,6 +124,9 @@ private:
     sample_context _sample_context;
     bool _video_sample_sent;
     bool _audio_sample_sent;
+
+    bool _buffered_ts;
+    uint64_t _buffered_ts_value;
 };
 
 }

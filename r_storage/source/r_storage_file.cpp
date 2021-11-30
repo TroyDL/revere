@@ -102,11 +102,11 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
         g.data.resize(size + r_rel_block::PER_FRAME_OVERHEAD);
         g.media_type = media_type;
         r_rel_block::append(g.data.data(), p, size, pts, 1);
-        _gop_buffer.push_back(g);
+        _gop_buffer.insert(lower_bound(_gop_buffer.begin(), _gop_buffer.end(), g, [](const _gop& a, const _gop& b) { return a.ts < b.ts; }), g);
     }
     else
     {
-        // find out incomplete gop of this media_type and append this frame to it.
+        // find our incomplete gop of this media_type and append this frame to it.
 
         auto found = find_if(
             begin(_gop_buffer), 
@@ -145,7 +145,7 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
 vector<uint8_t> _s_to_buffer(const string& s)
 {
     vector<uint8_t> buffer(s.length());
-    memcpy(buffer.data(), s.c_str(), s.length());
+    ::memcpy(buffer.data(), s.c_str(), s.length());
     return buffer;
 }
 
@@ -174,7 +174,7 @@ vector<uint8_t> r_storage_file::query(r_storage_media_type media_type, int64_t s
                 auto frame_info = *rbi;
 
                 vector<uint8_t> frame_buffer(frame_info.size);
-                memcpy(frame_buffer.data(), frame_info.data, frame_info.size);
+                ::memcpy(frame_buffer.data(), frame_info.data, frame_info.size);
 
                 bt["frames"][fi]["ind_block_ts"] = r_string_utils::int64_to_s(ibii.ts);
                 bt["frames"][fi]["data"] = frame_buffer;
@@ -274,7 +274,7 @@ void r_storage_file::allocate(const std::string& file_name, size_t block_size, s
         );
 
         uint8_t* p = (uint8_t*)mm.map();
-        memset(p, 0, R_STORAGE_FILE_HEADER_SIZE);
+        ::memset(p, 0, R_STORAGE_FILE_HEADER_SIZE);
 
         *(uint32_t*)p = (uint32_t)(num_blocks-1);
         *(uint32_t*)(p+4) = (uint32_t)block_size;
@@ -334,8 +334,11 @@ void r_storage_file::_visit_ind_blocks(r_storage_media_type media_type, int64_t 
 
             current_ts = ibii.ts;
 
-            if((current_ts < end_ts) && ((ibii.stream_id == media_type) || (media_type == R_STORAGE_MEDIA_TYPE_ALL)))
-                cb(ibii);
+            if(current_ts < end_ts)
+            {
+                if(ibii.stream_id == media_type || media_type == R_STORAGE_MEDIA_TYPE_ALL)
+                    cb(ibii);
+            }
 
             ibi.next();
         }

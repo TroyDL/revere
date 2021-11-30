@@ -100,19 +100,19 @@ void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, ui
 
 void r_ind_block::initialize_block(uint8_t* p, size_t size, uint32_t n_entries, int64_t base_time, const std::string& video_codec_name, const std::string& video_codec_parameters, const std::string& audio_codec_name, const std::string& audio_codec_parameters)
 {
-    if(size < 4096)
+    if(size < 8192)
         R_THROW(("Block size too small."));
     
     if(video_codec_name.length() >= 16)
         R_THROW(("Video codec name too long."));
 
-    if(video_codec_parameters.length() >= 256)
+    if(video_codec_parameters.length() >= 2048)
         R_THROW(("Video codec parameters too long."));
 
     if(audio_codec_name.length() >= 16)
         R_THROW(("Audio codec name too long."));
     
-    if(audio_codec_parameters.length() >= 256)
+    if(audio_codec_parameters.length() >= 2048)
         R_THROW(("Audio codec parameters too long."));
 
     // header
@@ -120,21 +120,21 @@ void r_ind_block::initialize_block(uint8_t* p, size_t size, uint32_t n_entries, 
     //   uint32_t n_entries,
     //   int64_t base_time,
     //   char[16] video_codec_name,
-    //   char[256] video_codec_parameters,
+    //   char[2048] video_codec_parameters,
     //   char[16] audio_codec_name,
-    //   char[256] audio_codec_parameters
+    //   char[2048] audio_codec_parameters
 
     *(uint32_t*)p = 0;
     *(uint32_t*)(p+4) = n_entries;
     *(int64_t*)(p+8) = base_time;
     memset(p+16, 0, 16);
     memcpy(p+16, video_codec_name.c_str(), video_codec_name.length());
-    memset(p+32, 0, 256);
+    memset(p+32, 0, 2048);
     memcpy(p+32, video_codec_parameters.c_str(), video_codec_parameters.length());
-    memset(p+288, 0, 16);
-    memcpy(p+288, audio_codec_name.c_str(), audio_codec_name.length());
-    memset(p+304, 0, 256);
-    memcpy(p+304, audio_codec_parameters.c_str(), audio_codec_parameters.length());
+    memset(p+2080, 0, 16);
+    memcpy(p+2080, audio_codec_name.c_str(), audio_codec_name.length());
+    memset(p+2096, 0, 2048);
+    memcpy(p+2096, audio_codec_parameters.c_str(), audio_codec_parameters.length());
 }
 
 uint32_t r_ind_block::_read_n_valid_entries() const
@@ -187,41 +187,41 @@ string r_ind_block::_read_video_codec_parameters() const
 
 void r_ind_block::_write_video_codec_parameters(const string& video_codec_parameters)
 {
-    if(video_codec_parameters.length() >= 256)
+    if(video_codec_parameters.length() >= 2048)
         R_THROW(("Video codec parameters too long"));
-    memset(_start + 32, 0, 256);
+    memset(_start + 32, 0, 2048);
     memcpy(_start + 32, video_codec_parameters.c_str(), video_codec_parameters.length());
 }
 
 string r_ind_block::_read_audio_codec_name() const
 {
-    return string((char*)(_start + 288));
+    return string((char*)(_start + 2080));
 }
 
 void r_ind_block::_write_audio_codec_name(const string& audio_codec_name)
 {
     if(audio_codec_name.length() >= 16)
         R_THROW(("Audio codec name too long"));
-    memset(_start + 288, 0, 16);
-    memcpy(_start + 288, audio_codec_name.c_str(), audio_codec_name.length());
+    memset(_start + 2080, 0, 16);
+    memcpy(_start + 2080, audio_codec_name.c_str(), audio_codec_name.length());
 }
 
 string r_ind_block::_read_audio_codec_parameters() const
 {
-    return string((char*)(_start + 304));
+    return string((char*)(_start + 2096));
 }
 
 void r_ind_block::_write_audio_codec_parameters(const string& audio_codec_parameters)
 {
-    if(audio_codec_parameters.length() >= 256)
+    if(audio_codec_parameters.length() >= 2048)
         R_THROW(("Video codec parameters too long"));
-    memset(_start + 304, 0, 256);
-    memcpy(_start + 304, audio_codec_parameters.c_str(), audio_codec_parameters.length());
+    memset(_start + 2096, 0, 2048);
+    memcpy(_start + 2096, audio_codec_parameters.c_str(), audio_codec_parameters.length());
 }
 
 uint8_t* r_ind_block::_index_start() const
 {
-    return _start + 560;
+    return _start + 4160;
 }
 
 uint8_t* r_ind_block::_blocks_start() const

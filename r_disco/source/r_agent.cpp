@@ -57,6 +57,14 @@ pair<r_nullable<string>, r_nullable<string>> r_agent::get_credentials(const std:
     return _credential_cb(id);
 }
 
+bool r_agent::is_recording(const std::string& id)
+{
+    if(!_is_recording_cb)
+        R_THROW(("Please set a is_recording callback on r_agent before calling start."));
+    
+    return _is_recording_cb(id);
+}
+
 void r_agent::_entry_point()
 {
     _timer.add_timed_event(

@@ -57,7 +57,6 @@ void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, ui
         memcpy(block + 5, data, size);
 
         // write index...
-        _write_base_time(ts);
         uint8_t* index = _index_start();
         *(uint32_t*)index = 0;
         *(uint32_t*)(index + 4) = (uint32_t)(block - _start);
@@ -72,7 +71,13 @@ void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, ui
         int64_t big_offset_time = ts - base_time;
         if(big_offset_time > 86400000)
             R_THROW(("Too much time in block!"));
-        
+        if(big_offset_time < 0)
+        {
+            printf("ts=%ld\n",ts);
+            printf("base_time=%ld\n",base_time);
+            R_THROW(("Negative time in block!"));
+        }
+
         uint32_t offset_time = static_cast<uint32_t>(big_offset_time);
 
         uint8_t* last_index = _index_start() + ((n_valid_entries-1)*INDEX_ENTRY_SIZE);

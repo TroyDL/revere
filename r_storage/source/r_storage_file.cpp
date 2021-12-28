@@ -130,7 +130,7 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
         r_rel_block::append(&found->data[current_size], p, size, pts, 0);
     }
 
-    while(_gop_buffer.front().complete)
+    while(_buffer_full())
     {
         _gop g = _gop_buffer.front();
         _gop_buffer.pop_front();
@@ -392,4 +392,12 @@ r_ind_block r_storage_file::_get_index_block(const r_storage_write_context& ctx,
     );
 
     return r_ind_block(p, _h.block_size);
+}
+
+bool r_storage_file::_buffer_full() const
+{
+    auto now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+    auto next = _gop_buffer.front().ts;
+
+    return (now > next)?(now-next)>4000:false;
 }

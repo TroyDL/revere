@@ -23,7 +23,20 @@ struct r_stream_status
 
 enum r_stream_keeper_commands
 {
-    R_SK_FETCH_STREAM_STATUS
+    R_SK_FETCH_STREAM_STATUS,
+    R_SK_IS_RECORDING
+};
+
+struct r_stream_keeper_cmd
+{
+    r_stream_keeper_commands cmd;
+    std::string id;
+};
+
+struct r_stream_keeper_result
+{
+    bool is_recording;
+    std::vector<r_stream_status> stream_infos;
 };
 
 class r_stream_keeper final
@@ -37,6 +50,8 @@ public:
 
     std::vector<r_stream_status> fetch_stream_status();
 
+    bool is_recording(const std::string& id);
+
 private:
     void _entry_point();
     std::vector<r_disco::r_camera> _get_current_cameras();
@@ -48,7 +63,7 @@ private:
     std::thread _th;
     bool _running;
     std::map<std::string, std::shared_ptr<r_recording_context>> _streams;
-    r_utils::r_work_q<int, std::vector<r_stream_status>> _cmd_q;
+    r_utils::r_work_q<r_stream_keeper_cmd, r_stream_keeper_result> _cmd_q;
 };
 
 }

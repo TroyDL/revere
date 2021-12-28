@@ -53,7 +53,19 @@ void r_stream_keeper::stop()
 
 vector<r_stream_status> r_stream_keeper::fetch_stream_status()
 {
-    return _cmd_q.post(R_SK_FETCH_STREAM_STATUS).get();
+    r_stream_keeper_cmd cmd;
+    cmd.cmd = R_SK_FETCH_STREAM_STATUS;
+
+    return _cmd_q.post(cmd).get().stream_infos;
+}
+
+bool r_stream_keeper::is_recording(const string& id)
+{
+    r_stream_keeper_cmd cmd;
+    cmd.cmd = R_SK_IS_RECORDING;
+    cmd.id = id;
+
+    return _cmd_q.post(cmd).get().is_recording;
 }
 
 void r_stream_keeper::_entry_point()
@@ -83,8 +95,20 @@ void r_stream_keeper::_entry_point()
             {
                 auto cmd = move(c.take());
 
-                if(cmd.first == R_SK_FETCH_STREAM_STATUS)
-                    cmd.second.set_value(_fetch_stream_status());
+                if(cmd.first.cmd == R_SK_FETCH_STREAM_STATUS)
+                {
+                    r_stream_keeper_result result;
+                    result.stream_infos = _fetch_stream_status();
+                    cmd.second.set_value(result);
+                }
+                else if(cmd.first.cmd == R_SK_IS_RECORDING)
+                {
+                    r_stream_keeper_result result;
+                    result.is_recording = _streams.find(cmd.first.id) != _streams.end();
+                    printf("%s.is_recording=%s\n", cmd.first.id.c_str(), result.is_recording ? "true" : "false");
+                    cmd.second.set_value(result);
+                }
+                else R_THROW(("Unknown command sent to stream keeper!"));
             }
         }
         catch(const std::exception& e)

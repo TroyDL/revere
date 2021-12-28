@@ -14,6 +14,8 @@ using namespace r_utils::r_std_utils;
 using namespace std;
 using namespace std::chrono;
 
+static const int MSECS_IN_TEN_MINUTES = 600000;
+
 void r_pipeline::gstreamer_init()
 {
     gst_init(NULL, NULL);
@@ -48,7 +50,7 @@ map<string, r_sdp_media> r_pipeline::fetch_sdp_media(
 
     src.play();
 
-    auto res = q.poll(seconds(5));
+    auto res = q.poll(seconds(10));
 
     src.stop();
 
@@ -110,6 +112,7 @@ int64_t r_pipeline::fetch_bytes_per_second(
 }
 
 r_gst_source::r_gst_source() :
+    _sample_cb_lock(),
     _video_sample_cb(),
     _audio_sample_cb(),
     _ready_cb(),
@@ -123,13 +126,17 @@ r_gst_source::r_gst_source() :
     _bus_watch_id(0),
     _v_appsink(nullptr),
     _a_appsink(nullptr),
+    _running(false),
     _h264_nal_parser(nullptr),
     _h265_nal_parser(nullptr),
     _sample_context(),
-    _video_sample_sent(false),
-    _audio_sample_sent(false),
+    _sample_sent(false),
     _buffered_ts(false),
-    _buffered_ts_value(0)
+    _buffered_ts_value(0),
+    _last_v_pts_valid(false),
+    _last_v_pts(0),
+    _last_a_pts_valid(false),
+    _last_a_pts(0)
 {
 }
 
@@ -156,8 +163,8 @@ void r_gst_source::play()
 {
     GstElement* rtspsrc = gst_element_factory_make("rtspsrc", "src");
 
+    g_object_set(G_OBJECT(rtspsrc), "do-rtsp-keep-alive", true, NULL);
     g_object_set(G_OBJECT(rtspsrc), "location", _url.value().c_str(), NULL);
-    g_object_set(G_OBJECT(rtspsrc), "latency", 50, NULL);
 
     if(!_username.is_null())
         g_object_set(G_OBJECT(rtspsrc), "user-id", _username.value().c_str(), NULL);
@@ -182,12 +189,28 @@ void r_gst_source::play()
     _bus_watch_id = gst_bus_add_watch(bus.get(), _bus_callbackS, this);
 
     gst_element_set_state(_pipeline, GST_STATE_PLAYING);
+
+    _running = true;
 }
 
 void r_gst_source::stop()
 {
-    if(_pipeline)
-        gst_element_set_state(_pipeline, GST_STATE_NULL);
+    if(_pipeline && _running)
+    {
+        auto result = gst_element_set_state(_pipeline, GST_STATE_NULL);
+
+        auto done = false;
+        while(!done)
+        {
+            if(result == GST_STATE_CHANGE_FAILURE)
+                R_THROW(("Unable to stop the pipeline."));
+            else if(result == GST_STATE_CHANGE_SUCCESS || result == GST_STATE_CHANGE_NO_PREROLL)
+                done = true;
+            else result = gst_element_get_state(_pipeline, NULL, NULL, GST_CLOCK_TIME_NONE);
+        }
+
+        _running = false;
+    }
 }
 
 #if 0
@@ -627,6 +650,8 @@ void r_gst_source::_attach_alaw_audio_pipeline(GstPad* new_pad)
 
 GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src)
 {
+    lock_guard<mutex> g(src->_sample_cb_lock);
+
     raii_ptr<GstSample> sample(
         gst_app_sink_pull_sample(GST_APP_SINK(elt)),
         [](GstSample* sample){gst_sample_unref(sample);}
@@ -662,13 +687,18 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
         {
             auto pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
 
-            if(!src->_video_sample_sent)
-                src->_sample_context._video_stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+            if(!src->_sample_sent)
+                src->_sample_context._stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 
-            if(!src->_video_sample_cb.is_null())
+            int64_t last_pts = (src->_last_v_pts_valid)?src->_last_v_pts:0;
+
+            if(!src->_video_sample_cb.is_null() && std::llabs(pts - last_pts) < MSECS_IN_TEN_MINUTES) // 10 minutes
             {
                 src->_video_sample_cb.value()(src->_sample_context, info.data, info.size, key, pts);
-                src->_video_sample_sent = true;
+                src->_sample_sent = true;
+
+                src->_last_v_pts = pts;
+                src->_last_v_pts_valid = true;
             }
         }
     }
@@ -680,6 +710,8 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
 
 GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src)
 {
+    lock_guard<mutex> g(src->_sample_cb_lock);
+
     raii_ptr<GstSample> sample(
         gst_app_sink_pull_sample(GST_APP_SINK(elt)),
         [](GstSample* sample){gst_sample_unref(sample);}
@@ -703,16 +735,21 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
         {
             auto pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
 
-            if(!src->_audio_sample_sent)
+            if(!src->_sample_sent)
             {
                 src->_parse_audio_sink_caps();
-                src->_sample_context._audio_stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+                src->_sample_context._stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
             }
 
-            if(!src->_audio_sample_cb.is_null())
+            int64_t last_pts = (src->_last_a_pts_valid)?src->_last_a_pts:0;
+
+            if(!src->_audio_sample_cb.is_null() && std::llabs(pts - last_pts) < MSECS_IN_TEN_MINUTES)
             {
                 src->_audio_sample_cb.value()(src->_sample_context, info.data, info.size, true, pts);
-                src->_audio_sample_sent = true;
+                src->_sample_sent = true;
+
+                src->_last_a_pts = pts;
+                src->_last_a_pts_valid = true;
             }
         }
     }
@@ -865,23 +902,14 @@ bool r_gst_source::_is_h264_picture(GstH264NalParser* parser, const uint8_t* p, 
     {
         gst_h264_parser_identify_nalu(parser, p, (guint)pos, (guint)size, &nal_unit);
 
-        if(nal_unit.type == GST_H264_NAL_SEI)
-            return false;
-
         if(nal_unit.type >= GST_H264_NAL_SLICE && nal_unit.type <= GST_H264_NAL_SLICE_IDR)
-        {
-            GstH264SliceHdr slice_hdr;
-            auto pr = gst_h264_parser_parse_slice_hdr(parser, &nal_unit, &slice_hdr, false, false);
-
-            if(pr != GST_H264_PARSER_OK)
-                R_THROW(("Unable to parse h264 nal unit."));
-        }
+            return true;
         else gst_h264_parser_parse_nal(parser, &nal_unit);
 
         pos = nal_unit.offset + nal_unit.size;
     }
 
-    return true;
+    return false;
 }
 
 bool r_gst_source::_is_h265_picture(GstH265Parser* parser, const uint8_t* p, size_t size)
@@ -893,23 +921,14 @@ bool r_gst_source::_is_h265_picture(GstH265Parser* parser, const uint8_t* p, siz
     {
         gst_h265_parser_identify_nalu(parser, p, (guint)pos, (guint)size, &nal_unit);
 
-        if(nal_unit.type == GST_H264_NAL_SEI)
-            return false;
-
-        if(nal_unit.type <= GST_H265_NAL_SLICE_CRA_NUT)
-        {
-            GstH265SliceHdr slice_hdr;
-            auto pr = gst_h265_parser_parse_slice_hdr(parser, &nal_unit, &slice_hdr);
-
-            if(pr != GST_H265_PARSER_OK)
-                R_THROW(("Unable to parse h265 nal unit."));
-        }
+        if(nal_unit.type >= GST_H265_NAL_SLICE_TRAIL_N && nal_unit.type <= GST_H265_NAL_SLICE_CRA_NUT)
+            return true;
         else gst_h265_parser_parse_nal(parser, &nal_unit);
 
         pos = nal_unit.offset + nal_unit.size;
     }
 
-    return true;
+    return false;
 }
 
 void r_gst_source::_parse_audio_sink_caps()
@@ -942,7 +961,9 @@ void r_gst_source::_sei_ts_hack(GstBuffer* buffer, bool& has_pts, bool is_pictur
     // OK, this is kind of a workaround for a specific axis camera. Basically, we see an
     // access unit containing an SEI but with a valid timestamp and then immediately after
     // we see an access unit with an IDR but with an invalid timestamp. So, we're detecting
-    // that here and buffering the SEI timestamp... which we will re-use for the IDR.
+    // that here and buffering the SEI timestamp... which we will re-use for the IDR. Seems
+    // clear to me that the intent of the camera was for the SEI to precede the IDR and be
+    // included with it... but they are never the less putting it in a separate access unit!
 
     // Note: This is caused by using alignment="au" on our parsers. "au" seems to mostly be what
     // we want but if we had used alignment="nal" WE would be determining where the frame boundaries are.
@@ -976,13 +997,27 @@ void r_gst_source::_sei_ts_hack(GstBuffer* buffer, bool& has_pts, bool is_pictur
 void r_gst_source::_clear() noexcept
 {
     if(_h264_nal_parser)
+    {
         gst_h264_nal_parser_free(_h264_nal_parser);
+        _h264_nal_parser = nullptr;
+    }
     if(!_h265_nal_parser)
+    {
         gst_h265_parser_free(_h265_nal_parser);
+        _h265_nal_parser = nullptr;
+    }
 
     if(_pipeline)
-    {
-        gst_element_set_state(_pipeline, GST_STATE_NULL);
+    { 
+        g_source_remove(_bus_watch_id);
+        _bus_watch_id = 0;
+
+        stop();
+
+        printf("pipeline stopped. about to unref pipeline.\n");
+        fflush(stdout);
+
         gst_object_unref(_pipeline);
+        _pipeline = nullptr;
     };
 }

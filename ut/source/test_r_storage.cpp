@@ -761,7 +761,7 @@ void test_r_storage::test_r_storage_file_fake_camera()
                 p,
                 sz,
                 key,
-                sc.video_stream_start_ts() + pts,
+                sc.stream_start_ts() + pts,
                 pts
             );
         }

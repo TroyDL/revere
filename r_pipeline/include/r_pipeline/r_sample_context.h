@@ -32,8 +32,7 @@ public:
     r_utils::r_nullable<double> framerate() const;
     r_utils::r_nullable<uint8_t> audio_channels() const;
     r_utils::r_nullable<uint32_t> audio_sample_rate() const;
-    int64_t video_stream_start_ts() const;
-    int64_t audio_stream_start_ts() const;
+    int64_t stream_start_ts() const;
     std::string sdp() const;
     r_sdp_media sdp_media(r_media type) const;
 
@@ -41,8 +40,7 @@ private:
     r_utils::r_nullable<uint8_t> _audio_channels {0};
     r_utils::r_nullable<uint32_t> _audio_sample_rate {0};
 
-    int64_t _video_stream_start_time {0};
-    int64_t _audio_stream_start_time {0};
+    int64_t _stream_start_time {0};
 
     std::map<r_media, r_pad_info> _src_pad_info {};
     std::string _sdp_text {};

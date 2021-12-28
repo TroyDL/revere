@@ -28,6 +28,7 @@ namespace r_disco
 
 typedef std::function<void(const std::vector<std::pair<r_stream_config, std::string>>&)> changed_streams_cb;
 typedef std::function<std::pair<r_utils::r_nullable<std::string>, r_utils::r_nullable<std::string>>(const std::string&)> credential_cb;
+typedef std::function<bool(const std::string&)> is_recording_cb;
 
 class r_agent
 {
@@ -37,11 +38,13 @@ public:
 
     void set_stream_change_cb(changed_streams_cb cb) {_changed_streams_cb = cb;}
     void set_credential_cb(credential_cb cb) {_credential_cb = cb;}
+    void set_is_recording_cb(is_recording_cb cb) {_is_recording_cb = cb;}
 
     void start();
     void stop();
 
     std::pair<r_utils::r_nullable<std::string>, r_utils::r_nullable<std::string>> get_credentials(const std::string& id);
+    bool is_recording(const std::string& id);
 
 private:
     void _entry_point();
@@ -56,6 +59,7 @@ private:
     r_utils::r_timer _timer;
     std::map<std::string, std::string> _device_config_hashes;
     credential_cb _credential_cb;
+    is_recording_cb _is_recording_cb;
 };
 
 }

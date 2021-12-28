@@ -24,6 +24,7 @@
 #include <string>
 #include <functional>
 #include <map>
+#include <mutex>
 
 namespace r_pipeline
 {
@@ -100,6 +101,7 @@ private:
 
     void _clear() noexcept;
 
+    std::mutex _sample_cb_lock;
     r_utils::r_nullable<r_sample_cb> _video_sample_cb;
     r_utils::r_nullable<r_sample_cb> _audio_sample_cb;
     r_utils::r_nullable<r_ready_cb> _ready_cb;
@@ -118,15 +120,21 @@ private:
     GstElement* _v_appsink;
     GstElement* _a_appsink;
 
+    bool _running;
+
     GstH264NalParser* _h264_nal_parser;
     GstH265Parser* _h265_nal_parser;
 
     sample_context _sample_context;
-    bool _video_sample_sent;
-    bool _audio_sample_sent;
+    bool _sample_sent;
 
     bool _buffered_ts;
     uint64_t _buffered_ts_value;
+
+    bool _last_v_pts_valid;
+    int64_t _last_v_pts;
+    bool _last_a_pts_valid;
+    int64_t _last_a_pts;
 };
 
 }

@@ -20,14 +20,9 @@ r_nullable<uint32_t> sample_context::audio_sample_rate() const
     return _audio_sample_rate;
 }
 
-int64_t sample_context::video_stream_start_ts() const
+int64_t sample_context::stream_start_ts() const
 {
-    return _video_stream_start_time;
-}
-
-int64_t sample_context::audio_stream_start_ts() const
-{
-    return _audio_stream_start_time;
+    return _stream_start_time;
 }
 
 string sample_context::sdp() const

@@ -9,8 +9,11 @@ Project Goals
 
 TODO
    - r_disco
-       - implement r_onvif_provider
-           - Should get cameras in our db from this (in state "discovered")
+       - Add camera assignment backend
+           - Assign with existing file
+           - Assign with Create file
+               - desired retention
+               - implement slider api to set retention
    - Silo
        - UI for discovering cameras
            - Add camera wizard

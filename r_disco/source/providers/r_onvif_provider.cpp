@@ -27,7 +27,20 @@ r_onvif_provider::~r_onvif_provider()
 
 vector<r_stream_config> r_onvif_provider::poll()
 {
-    return _fetch_configs(_top_dir);
+    vector<r_stream_config> configs;
+
+    try
+    {
+        configs = _fetch_configs(_top_dir);
+    }
+    catch(exception& ex)
+    {
+        printf("r_manual_provider::poll() failed: %s\n", ex.what());
+        fflush(stdout);
+        R_LOG_NOTICE("r_manual_provider::poll() failed: %s", ex.what());
+    }
+
+    return configs;
 }
 
 vector<r_stream_config> r_onvif_provider::_fetch_configs(const string& top_dir)
@@ -56,71 +69,77 @@ vector<r_stream_config> r_onvif_provider::_fetch_configs(const string& top_dir)
             hash.finalize();
 
             config.id = hash.get_as_uuid();
-            config.ipv4 = d.ipv4;
 
-            auto credentials = _agent->get_credentials(config.id);
-
-            config.rtsp_username = credentials.first;
-            config.rtsp_password = credentials.second;
-
-            auto di = _session.get_rtsp_url(d, config.rtsp_username, config.rtsp_password);
-
-            if(!di.is_null())
+            if(!_agent->is_recording(config.id))
             {
-                config.rtsp_url = di.value().rtsp_url;
+                config.ipv4 = d.ipv4;
 
-                auto sdp_media = fetch_sdp_media(di.value().rtsp_url, config.rtsp_username, config.rtsp_password);
+                auto credentials = _agent->get_credentials(config.id);
 
-                if(sdp_media.find("video") == sdp_media.end())
-                    R_THROW(("Unable to fetch video stream information for r_onvif_provider."));
+                config.rtsp_username = credentials.first;
+                config.rtsp_password = credentials.second;
 
-                auto video_media = sdp_media["video"];
-                if(video_media.type != VIDEO_MEDIA)
-                    R_THROW(("Unknown media type."));
-                
-                if(video_media.formats.size() == 0)
-                    R_THROW(("video media format not found."));
+                auto di = _session.get_rtsp_url(d, config.rtsp_username, config.rtsp_password);
 
-                auto fmt = video_media.formats.front();
-
-                auto rtp_map = video_media.rtpmaps.find(fmt);
-                if(rtp_map == video_media.rtpmaps.end())
-                    R_THROW(("Unable to find rtp map."));
-
-                //stream_config.record_file_path = record_file_path;
-                //stream_config.n_record_file_blocks = n_record_file_blocks;
-                //stream_config.record_file_block_size = record_file_block_size;
-            
-                config.video_codec = encoding_to_str(rtp_map->second.encoding);
-                config.video_timebase = rtp_map->second.time_base;
-
-                string video_attributes;
-                for(auto b = begin(video_media.attributes), e = end(video_media.attributes); b != e; ++b)
-                    video_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
-                config.video_codec_parameters.set_value(video_attributes);
-
-                if(sdp_media.find("audio") != sdp_media.end())
+                if(!di.is_null())
                 {
-                    auto audio_media = sdp_media["audio"];
-                    if(audio_media.type != AUDIO_MEDIA)
+                    config.rtsp_url = di.value().rtsp_url;
+
+                    auto sdp_media = fetch_sdp_media(di.value().rtsp_url, config.rtsp_username, config.rtsp_password);
+
+                    if(sdp_media.find("video") == sdp_media.end())
+                        R_THROW(("Unable to fetch video stream information for r_onvif_provider."));
+
+                    auto video_media = sdp_media["video"];
+                    if(video_media.type != VIDEO_MEDIA)
                         R_THROW(("Unknown media type."));
                     
-                    if(audio_media.formats.size() == 0)
-                        R_THROW(("audio media format not found."));
+                    if(video_media.formats.size() == 0)
+                        R_THROW(("video media format not found."));
 
-                    auto fmt = audio_media.formats.front();
+                    auto fmt = video_media.formats.front();
 
-                    auto rtp_map = audio_media.rtpmaps.find(fmt);
-                    if(rtp_map == audio_media.rtpmaps.end())
-                        R_THROW(("Unable to find audio rtp map."));
+                    auto rtp_map = video_media.rtpmaps.find(fmt);
+                    if(rtp_map == video_media.rtpmaps.end())
+                        R_THROW(("Unable to find rtp map."));
 
-                    config.audio_codec = encoding_to_str(rtp_map->second.encoding);
-                    config.audio_timebase = rtp_map->second.time_base;
+                    //stream_config.record_file_path = record_file_path;
+                    //stream_config.n_record_file_blocks = n_record_file_blocks;
+                    //stream_config.record_file_block_size = record_file_block_size;
+                
+                    config.video_codec = encoding_to_str(rtp_map->second.encoding);
+                    config.video_timebase = rtp_map->second.time_base;
 
-                    string audio_attributes;
-                    for(auto b = begin(audio_media.attributes), e = end(audio_media.attributes); b != e; ++b)
-                        audio_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
-                    config.audio_codec_parameters.set_value(audio_attributes);
+                    string video_attributes;
+                    for(auto b = begin(video_media.attributes), e = end(video_media.attributes); b != e; ++b)
+                        video_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
+                    config.video_codec_parameters.set_value(video_attributes);
+
+                    if(sdp_media.find("audio") != sdp_media.end())
+                    {
+                        auto audio_media = sdp_media["audio"];
+                        if(audio_media.type != AUDIO_MEDIA)
+                            R_THROW(("Unknown media type."));
+                        
+                        if(audio_media.formats.size() == 0)
+                            R_THROW(("audio media format not found."));
+
+                        auto fmt = audio_media.formats.front();
+
+                        auto rtp_map = audio_media.rtpmaps.find(fmt);
+                        if(rtp_map == audio_media.rtpmaps.end())
+                            R_THROW(("Unable to find audio rtp map."));
+
+                        config.audio_codec = encoding_to_str(rtp_map->second.encoding);
+                        config.audio_timebase = rtp_map->second.time_base;
+
+                        string audio_attributes;
+                        for(auto b = begin(audio_media.attributes), e = end(audio_media.attributes); b != e; ++b)
+                            audio_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
+                        config.audio_codec_parameters.set_value(audio_attributes);
+                    }
+
+                    configs.push_back(config);
                 }
             }
         }
@@ -128,8 +147,6 @@ vector<r_stream_config> r_onvif_provider::_fetch_configs(const string& top_dir)
         {
             R_LOG_ERROR("%s", ex.what());
         }
-
-        configs.push_back(config);
     }
 
     return configs;

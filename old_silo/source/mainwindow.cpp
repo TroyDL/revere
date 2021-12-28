@@ -48,11 +48,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     _agent.set_stream_change_cb(bind(&r_disco::r_devices::insert_or_update_devices, &_devices, placeholders::_1));
     _agent.set_credential_cb(bind(&r_disco::r_devices::get_credentials, &_devices, placeholders::_1));
+    _agent.set_is_recording_cb(bind(&r_vss::r_stream_keeper::is_recording, &_streamKeeper, placeholders::_1));
 
     // temporary link to function that just prints out stream stats.
     QPushButton* btn = findChild<QPushButton*>("pushButton");
     QObject::connect(btn, SIGNAL(clicked()), this, SLOT(button_pushed()));
-
 
     _streamKeeper.start();
     _devices.start();
@@ -92,10 +92,26 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
 }
 
-vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t> times, int64_t threshold)
+vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t>& times)
 {
     vector<pair<int64_t, int64_t>> segments;
 
+    int64_t threshold = 0;
+    if(times.size() > 1)
+    {
+        vector<int64_t> deltas;
+        adjacent_difference(begin(times), end(times), back_inserter(deltas));
+        threshold = (deltas.size() > 2)?(int64_t)((accumulate(begin(deltas)+1, end(deltas), .0) / deltas.size()) * 1.5):0;
+    }
+
+    deque<int64_t> timesd;
+    for (auto t : times) {
+        timesd.push_back(t);
+    }
+
+    printf("threshold: %ld\n", threshold);
+
+#if 1
     size_t n_times = times.size();
 
     if(n_times == 1)
@@ -124,29 +140,77 @@ vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t> ti
             segments.push_back(make_pair(times[start_index], times[end_index]));
         }
     }
+#else
+    int64_t start_ts = -1;
+    int64_t last_ts = -1;
+
+    while(!timesd.empty())
+    {
+        auto ts = timesd.front();
+
+        auto n_remaining = timesd.size();
+
+        if(start_ts == -1)
+        {
+            start_ts = ts;
+            last_ts = -1;
+
+            timesd.pop_front();
+
+            if(n_remaining == 1)
+                segments.push_back(make_pair(start_ts, ts));
+        }
+        else
+        {
+            if(last_ts != -1)
+            {
+                if(ts - last_ts > threshold)
+                {
+                    segments.push_back(make_pair(start_ts, last_ts));
+                    start_ts = -1;
+                    last_ts = -1;
+                    continue;
+                }
+                else
+                {
+                    timesd.pop_front();
+
+                    if(n_remaining == 1)
+                        segments.push_back(make_pair(start_ts, ts));
+                }
+            }
+        }
+
+        last_ts = ts;
+    }
+#endif
 
     return segments;
 }
 
 void MainWindow::button_pushed()
 {
-    auto stream_status = _streamKeeper.fetch_stream_status();
-
-    for(auto& s : stream_status)
+    try
     {
-        r_storage::r_storage_file sf("/home/td/Documents/revere/silo/video/" + s.camera.record_file_path.value());
-        auto kfst = sf.key_frame_start_times(r_storage::R_STORAGE_MEDIA_TYPE_VIDEO);
+        auto stream_status = _streamKeeper.fetch_stream_status();
 
-        auto segments = find_contiguous_segments(kfst, 3000);
-
-        string seg_str;
-        for(auto s : segments)
+        for(auto& s : stream_status)
         {
-            auto sstp = r_time_utils::epoch_millis_to_tp(s.first);
-            auto setp = r_time_utils::epoch_millis_to_tp(s.second);
-            seg_str += "[" + r_time_utils::tp_to_iso_8601(sstp, false) + " -> " + r_time_utils::tp_to_iso_8601(setp, false) + "], ";
-        }
+            r_storage::r_storage_file sf("/home/td/Documents/revere/silo/video/" + s.camera.record_file_path.value());
+            auto kfst = sf.key_frame_start_times(r_storage::R_STORAGE_MEDIA_TYPE_VIDEO);
 
-        printf("camera: id=%s, bytes_per_second=%u, %s\n", s.camera.id.c_str(), s.bytes_per_second, seg_str.c_str());
+            auto segments = find_contiguous_segments(kfst);
+
+            string seg_str;
+            for(auto s : segments)
+                seg_str += "[" + r_string_utils::int64_to_s((s.second-s.first)/1000) + "], ";
+
+            printf("camera: id=%s, bytes_per_second=%u, %s\n", s.camera.id.c_str(), s.bytes_per_second, seg_str.c_str());
+        }
+    }
+    catch(exception& ex)
+    {
+        R_LOG_ERROR("exception: %s", ex.what());
+        printf("exception: %s\n", ex.what());
     }
 }

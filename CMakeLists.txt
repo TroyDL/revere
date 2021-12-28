@@ -34,7 +34,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(QT NAMES Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Qml Quick REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR}Multimedia REQUIRED)
 
 # 3rd Party Deps
@@ -533,16 +533,14 @@ target_link_libraries(
 add_executable(
     silo
     silo/source/main.cpp
-    silo/source/mainwindow.h
-    silo/source/mainwindow.cpp
-    silo/source/mainwindow.ui
-    silo/source/utils.h
-    silo/source/utils.cpp
-    silo/source/silo.qrc
+    silo/source/main.qml
+    silo/source/Cameras.qml
+    silo/source/qml.qrc
 )
 
 target_include_directories(
     silo PUBLIC 
+    silo/source
     r_vss/include
     r_disco/include
     r_storage/include
@@ -564,6 +562,62 @@ target_link_directories(
 
 target_link_libraries(
     silo LINK_PUBLIC
+    r_vss
+    r_disco
+    r_storage
+    r_mux
+    r_fakey
+    r_pipeline
+    r_db
+    r_http
+    r_utils
+    ${GSTREAMER_LIBS}
+    ${FFMPEG_LIBS}
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Multimedia
+    Qt${QT_VERSION_MAJOR}::Qml
+    Qt${QT_VERSION_MAJOR}::Quick
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${CMAKE_DL_LIBS}
+)
+
+# old_silo
+#
+
+add_executable(
+    old_silo
+    old_silo/source/main.cpp
+    old_silo/source/mainwindow.h
+    old_silo/source/mainwindow.cpp
+    old_silo/source/mainwindow.ui
+    old_silo/source/utils.h
+    old_silo/source/utils.cpp
+    old_silo/source/silo.qrc
+)
+
+target_include_directories(
+    old_silo PUBLIC 
+    r_vss/include
+    r_disco/include
+    r_storage/include
+    r_mux/include
+    r_fakey/include
+    r_pipeline/include
+    r_db/include
+    r_http/include
+    r_utils/include
+    ${GSTREAMER_INCLUDE_DIRS}
+    ${FFMPEG_INCLUDE_DIRS}
+)
+
+target_link_directories(
+    old_silo PUBLIC
+    ${GSTREAMER_LIB_DIRS}
+    ${FFMPEG_LIB_DIRS}
+)
+
+target_link_libraries(
+    old_silo LINK_PUBLIC
     r_vss
     r_disco
     r_storage

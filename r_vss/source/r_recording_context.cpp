@@ -3,6 +3,7 @@
 #include "r_pipeline/r_arg.h"
 #include "r_utils/r_file.h"
 #include "r_utils/r_logger.h"
+#include "r_utils/r_time_utils.h"
 #include <vector>
 
 using namespace r_vss;
@@ -42,7 +43,7 @@ r_recording_context::r_recording_context(const r_camera& camera, const string& t
         _last_a_time = system_clock::now();
         _a_bytes_received += sz;
         lock_guard<mutex> g(this->_sample_write_lock);
-        auto ts = sc.audio_stream_start_ts() + pts;
+        auto ts = sc.stream_start_ts() + pts;
         this->_storage_file.write_frame(
             this->_storage_write_context,
             R_STORAGE_MEDIA_TYPE_AUDIO,
@@ -58,7 +59,7 @@ r_recording_context::r_recording_context(const r_camera& camera, const string& t
         _last_v_time = system_clock::now();
         _v_bytes_received += sz;
         lock_guard<mutex> g(this->_sample_write_lock);
-        auto ts = sc.video_stream_start_ts() + pts;
+        auto ts = sc.stream_start_ts() + pts;
         this->_storage_file.write_frame(
             this->_storage_write_context,
             R_STORAGE_MEDIA_TYPE_VIDEO,
@@ -87,7 +88,14 @@ bool r_recording_context::dead() const
     bool is_dead = (_has_audio)?((now - _last_a_time) > seconds(20))||video_dead:video_dead;
 
     if(is_dead)
+    {
         R_LOG_INFO("found dead stream: camera.id=%s", _camera.id.c_str());
+        printf("found dead stream: camera.id=%s\n", _camera.id.c_str());
+
+        printf("SECONDS SINCE LAST VIDEO: %ld\n",duration_cast<seconds>(now - _last_v_time).count());
+        printf("SECONDS SINCE LAST AUDIO: %ld\n",duration_cast<seconds>(now - _last_a_time).count());
+        fflush(stdout);
+    }
 
     return is_dead;
 }

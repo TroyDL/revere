@@ -16,6 +16,7 @@
 #include "r_utils/r_blob_tree.h"
 #include "r_utils/r_work_q.h"
 #include "r_utils/r_timer.h"
+#include "r_utils/r_avg.h"
 #include <chrono>
 #include <thread>
 #include <climits>
@@ -1049,4 +1050,25 @@ void test_r_utils::test_sha1_basic()
         auto output = hash.get_as_string();
         RTF_ASSERT(output == "198454083d597888a068fffc06d5423a104df9fe");
     }
+}
+
+void test_r_utils::test_exp_avg()
+{
+    r_exp_avg<uint64_t> avg(1000000, 5);
+    avg.update(1000000);
+    avg.update(999990);
+    avg.update(1000010);
+    avg.update(1000000);
+    avg.update(1000011);
+    auto fstddev = avg.standard_deviation();
+
+    r_exp_avg<uint64_t> avg2(1000000, 5);
+    avg2.update(900000);
+    avg2.update(1000000);
+    avg2.update(1100000);
+    avg2.update(1000000);
+    avg2.update(800000);
+    auto sstddev = avg2.standard_deviation();
+
+    RTF_ASSERT(fstddev < sstddev);
 }

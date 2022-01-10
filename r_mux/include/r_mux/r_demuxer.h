@@ -53,6 +53,7 @@ struct r_frame_info
 class r_demuxer final
 {
 public:
+    r_demuxer() {}
     r_demuxer(const std::string& fileName, bool annexBFilter = true);
     r_demuxer(const r_demuxer&) = delete;
     r_demuxer(r_demuxer&& obj);

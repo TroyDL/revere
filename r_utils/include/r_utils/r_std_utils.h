@@ -13,6 +13,11 @@ template<typename T>
 class raii_ptr
 {
 public:
+    raii_ptr() :
+        _thing(nullptr),
+        _dtor()
+    {
+    }
     raii_ptr(std::function<void(T*)> dtor) :
        _thing(nullptr),
        _dtor(dtor)

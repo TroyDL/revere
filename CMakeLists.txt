@@ -186,6 +186,13 @@ set(
 
 endif()
 
+#glfw3
+find_package(PkgConfig REQUIRED)
+pkg_search_module(GLFW REQUIRED glfw3)
+
+#opengl
+find_package(OpenGL REQUIRED)
+
 # Libraries
 #
 
@@ -248,6 +255,7 @@ add_library(
     r_utils/include/r_utils/r_server_threaded.h
     r_utils/include/r_utils/r_functional.h
     r_utils/include/r_utils/r_pool.h
+    r_utils/include/r_utils/r_avg.h
 )
 target_include_directories(
     r_utils PUBLIC
@@ -355,6 +363,32 @@ target_link_directories(
 
 target_link_libraries(
     r_mux
+    r_utils
+    ${FFMPEG_LIBS}
+)
+
+# r_codec
+#
+add_library(
+    r_codec
+    r_codec/include/r_codec/r_video_decoder.h
+    r_codec/source/r_video_decoder.cpp
+)
+
+target_include_directories(
+    r_codec PUBLIC
+    r_codec/include
+    r_utils/include
+    ${FFMPEG_INCLUDE_DIRS}
+)
+
+target_link_directories(
+    r_codec PUBLIC
+    ${FFMPEG_LIB_DIRS}
+)
+
+target_link_libraries(
+    r_codec
     r_utils
     ${FFMPEG_LIBS}
 )
@@ -502,6 +536,27 @@ target_link_libraries(
     r_utils
 )
 
+# r_motion
+#
+add_library(
+    r_motion
+    r_motion/include/r_motion/utils.h
+    r_motion/source/utils.cpp
+    r_motion/include/r_motion/r_motion_state.h
+    r_motion/source/r_motion_state.cpp
+)
+
+target_include_directories(
+    r_motion PUBLIC
+    r_motion/include
+    r_utils/include
+)
+
+target_link_libraries(
+    r_motion
+    r_utils
+)
+
 # r_vss
 #
 add_library(
@@ -635,6 +690,66 @@ target_link_libraries(
     ${CMAKE_DL_LIBS}
 )
 
+# motion_test
+#
+add_executable(
+    motion_test
+    motion_test/source/main.cpp
+)
+
+target_include_directories(
+    motion_test PUBLIC 
+    r_utils/include
+    r_http/include
+    r_db/include
+    r_pipeline/include
+    r_fakey/include
+    r_mux/include
+    r_storage/include
+    r_disco/include
+    r_vss/include
+    r_onvif/include
+    r_codec/include
+    r_motion/include
+    ${GSTREAMER_INCLUDE_DIRS}
+    ${FFMPEG_INCLUDE_DIRS}
+    ${GLFW_INCLUDE_DIRS}
+)
+target_link_directories(
+    motion_test PUBLIC
+    ${GSTREAMER_LIB_DIRS}
+    ${FFMPEG_LIB_DIRS}
+    ${GLFW_LIB_DIRS}
+)
+target_link_libraries(
+    motion_test LINK_PUBLIC 
+    r_http
+    r_db
+    r_utils
+    r_pipeline
+    r_fakey
+    r_mux
+    r_storage
+    r_disco
+    r_vss
+    r_onvif
+    r_codec
+    r_motion
+    ${GSTREAMER_LIBS}
+    ${FFMPEG_LIBS}
+    ${GLFW_LIBRARIES}
+    ${OPENGL_LIBRARIES}
+)
+if(CMAKE_SYSTEM MATCHES "Linux-")
+    target_link_libraries(
+        motion_test PUBLIC
+        pthread
+        dl
+        uuid
+    )
+elseif(CMAKE_SYSTEM MATCHES "Windows")
+endif(CMAKE_SYSTEM MATCHES "Linux-")
+
 # Unit Tests
 #
 add_executable(
@@ -662,6 +777,10 @@ add_executable(
     ut/source/test_r_vss.cpp
     ut/include/test_r_onvif.h
     ut/source/test_r_onvif.cpp
+    ut/include/test_r_codec.h
+    ut/source/test_r_codec.cpp
+    ut/include/test_r_motion.h
+    ut/source/test_r_motion.cpp
 )
 
 target_include_directories(
@@ -677,6 +796,8 @@ target_include_directories(
     r_disco/include
     r_vss/include
     r_onvif/include
+    r_codec/include
+    r_motion/include
     ${GSTREAMER_INCLUDE_DIRS}
     ${FFMPEG_INCLUDE_DIRS}
 )
@@ -697,6 +818,9 @@ target_link_libraries(
     r_disco
     r_vss
     r_onvif
+    r_codec
+    r_motion
+    ${GLFW3_LIBRARY}
     ${GSTREAMER_LIBS}
     ${FFMPEG_LIBS}
 )

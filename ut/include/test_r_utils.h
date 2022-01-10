@@ -41,6 +41,7 @@ public:
       TEST(test_r_utils::test_work_q_timeout);
       TEST(test_r_utils::test_timer_basic);
       TEST(test_r_utils::test_sha1_basic);
+      TEST(test_r_utils::test_exp_avg);
     RTF_FIXTURE_END();
 
     virtual ~test_r_utils() throw() {}
@@ -84,4 +85,5 @@ public:
     void test_work_q_timeout();
     void test_timer_basic();
     void test_sha1_basic();
+    void test_exp_avg();
 };

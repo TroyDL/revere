@@ -1,7 +1,0 @@
-<RCC>
-    <qresource prefix="/">
-        <file>main.qml</file>
-        <file>Cameras.qml</file>
-        <file>heart.png</file>
-    </qresource>
-</RCC>

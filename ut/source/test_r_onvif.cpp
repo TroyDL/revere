@@ -62,6 +62,14 @@ void test_r_onvif::test_r_onvif_session_basic()
         key_map.insert(make_pair("urn:uuid:5a4d5857-3656-3452-3330-3032304d4100",k));
     }
 
+    {
+        // Evolution12 EVO-12NxD
+        keys k;
+        k.username = "dicroce";
+        k.password = "emperor1";
+        key_map.insert(make_pair("urn:uuid:1419d68a-1dd2-11b2-a105-00113503015F",k));
+    }
+
     r_onvif_session session;
     auto discovered = session.discover();
 

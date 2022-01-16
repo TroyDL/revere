@@ -396,8 +396,8 @@ r_ind_block r_storage_file::_get_index_block(const r_storage_write_context& ctx,
 
 bool r_storage_file::_buffer_full() const
 {
-    auto now = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
-    auto next = _gop_buffer.front().ts;
+    if(_gop_buffer.size() < 2)
+        return false;
 
-    return (now > next)?(now-next)>4000:false;
+    return (_gop_buffer.back().ts - _gop_buffer.front().ts) > 6000;
 }

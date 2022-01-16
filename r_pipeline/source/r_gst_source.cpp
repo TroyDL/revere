@@ -1014,9 +1014,6 @@ void r_gst_source::_clear() noexcept
 
         stop();
 
-        printf("pipeline stopped. about to unref pipeline.\n");
-        fflush(stdout);
-
         gst_object_unref(_pipeline);
         _pipeline = nullptr;
     };

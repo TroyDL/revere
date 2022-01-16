@@ -3,6 +3,9 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
+#include <QTableWidget>
+#include <QTimer>
+#include <QTabWidget>
 #include "r_disco/r_agent.h"
 #include "r_disco/r_devices.h"
 #include "r_vss/r_stream_keeper.h"
@@ -28,6 +31,8 @@ protected:
 
 private slots:
     void button_pushed();
+    void on_discovered_timer_timeout();
+    void on_tab_changed(int index);
 
 private:
     Ui::MainWindow* _ui;
@@ -43,5 +48,9 @@ private:
     r_disco::r_agent _agent;
     r_disco::r_devices _devices;
     r_vss::r_stream_keeper _streamKeeper;
+
+    QTableWidget* _discoveredTable;
+    QTimer* _discoveredTimer;
+    QTabWidget* _mainTabWidget;
 };
 #endif

@@ -210,6 +210,7 @@ r_sqlite_conn r_devices::_open_or_create_db(const string& top_dir) const
     conn.exec(
         "CREATE TABLE IF NOT EXISTS cameras ("
             "id TEXT PRIMARY KEY NOT NULL UNIQUE, "
+            "camera_name TEXT, "
             "ipv4 TEXT, "
             "rtsp_url TEXT, "
             "rtsp_username TEXT, "
@@ -284,9 +285,10 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
     if(result.empty())
     {
         query = r_string_utils::format(
-            "INSERT INTO cameras (id, %s%s%s%s%s%s%s%s%s%sstate, %s%s%sstream_config_hash) "
-            "VALUES('%s', %s%s%s%s%s%s%s%s%s%s'discovered', %s%s%s'%s');",
+            "INSERT INTO cameras (id, %s%s%s%s%s%s%s%s%s%s%sstate, %s%s%sstream_config_hash) "
+            "VALUES('%s', %s%s%s%s%s%s%s%s%s%s%s'discovered', %s%s%s'%s');",
 
+            (!stream_config.camera_name.is_null())?"camera_name, ":"",
             (!stream_config.ipv4.is_null())?"ipv4, ":"",
             (!stream_config.rtsp_url.is_null())?"rtsp_url, ":"",
             (!stream_config.rtsp_username.is_null())?"rtsp_username, ":"",
@@ -302,6 +304,7 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             (!stream_config.record_file_block_size.is_null())?"record_file_block_size, ":"",
 
             stream_config.id.c_str(),
+            (!stream_config.camera_name.is_null())?r_string_utils::format("'%s', ", stream_config.camera_name.value().c_str()).c_str():"",
             (!stream_config.ipv4.is_null())?r_string_utils::format("'%s', ", stream_config.ipv4.value().c_str()).c_str():"",
             (!stream_config.rtsp_url.is_null())?r_string_utils::format("'%s', ", stream_config.rtsp_url.value().c_str()).c_str():"",
             (!stream_config.rtsp_username.is_null())?r_string_utils::format("'%s', ", stream_config.rtsp_username.value().c_str()).c_str():"",
@@ -311,7 +314,7 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             (!stream_config.video_timebase.is_null())?r_string_utils::format("'%d', ", stream_config.video_timebase.value()).c_str():"",
             (!stream_config.audio_codec.is_null())?r_string_utils::format("'%s', ", stream_config.audio_codec.value().c_str()).c_str():"",
             (!stream_config.audio_codec_parameters.is_null())?r_string_utils::format("'%s', ", stream_config.audio_codec_parameters.value().c_str()).c_str():"",
-            (!stream_config.audio_timebase.is_null())?r_string_utils::format("%d, ", stream_config.audio_timebase.value()).c_str():"",
+            (!stream_config.audio_timebase.is_null())?r_string_utils::format("'%d', ", stream_config.audio_timebase.value()).c_str():"",
             (!stream_config.record_file_path.is_null())?r_string_utils::format("'%s', ", stream_config.record_file_path.value().c_str()).c_str():"",
             (!stream_config.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", stream_config.n_record_file_blocks.value()).c_str():"",
             (!stream_config.record_file_block_size.is_null())?r_string_utils::format("%d, ", stream_config.record_file_block_size.value()).c_str():"",
@@ -335,8 +338,10 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
                 "%s"
                 "%s"
                 "%s"
+                "%s"
                 "stream_config_hash='%s' "
             "WHERE id='%s';",
+            (!stream_config.camera_name.is_null())?r_string_utils::format("camera_name='%s', ", stream_config.camera_name.value().c_str()).c_str():"",
             (!stream_config.ipv4.is_null())?r_string_utils::format("ipv4='%s', ", stream_config.ipv4.value().c_str()).c_str():"",
             (!stream_config.rtsp_url.is_null())?r_string_utils::format("rtsp_url='%s', ", stream_config.rtsp_url.value().c_str()).c_str():"",
             (!stream_config.rtsp_username.is_null())?r_string_utils::format("rtsp_username='%s', ", stream_config.rtsp_username.value().c_str()).c_str():"",
@@ -346,7 +351,7 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
             (!stream_config.video_timebase.is_null())?r_string_utils::format("video_timebase='%d', ", stream_config.video_timebase.value()).c_str():"",
             (!stream_config.audio_codec.is_null())?r_string_utils::format("audio_codec='%s', ", stream_config.audio_codec.value().c_str()).c_str():"",
             (!stream_config.audio_codec_parameters.is_null())?r_string_utils::format("audio_codec_parameters='%s', ", stream_config.audio_codec_parameters.value().c_str()).c_str():"",
-            (!stream_config.audio_timebase.is_null())?r_string_utils::format("audio_timebase=%d, ", stream_config.audio_timebase.value()).c_str():"",
+            (!stream_config.audio_timebase.is_null())?r_string_utils::format("audio_timebase='%d', ", stream_config.audio_timebase.value()).c_str():"",
             (!stream_config.record_file_path.is_null())?r_string_utils::format("record_file_path='%s', ", stream_config.record_file_path.value().c_str()).c_str():"",
             (!stream_config.n_record_file_blocks.is_null())?r_string_utils::format("n_record_file_blocks=%d, ", stream_config.n_record_file_blocks.value()).c_str():"",
             (!stream_config.record_file_block_size.is_null())?r_string_utils::format("record_file_block_size=%d, ", stream_config.record_file_block_size.value()).c_str():"",
@@ -362,6 +367,8 @@ r_camera r_devices::_create_camera(const map<string, r_nullable<string>>& row) c
 {
     r_camera camera;
     camera.id = row.at("id").value();
+    if(!row.at("camera_name").is_null())
+        camera.camera_name = row.at("camera_name").value();
     if(!row.at("ipv4").is_null())
         camera.ipv4 = row.at("ipv4").value();
     if(!row.at("rtsp_url").is_null())
@@ -446,6 +453,7 @@ r_devices_cmd_result r_devices::_get_assigned_cameras(const r_sqlite_conn& conn)
 r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_camera& camera) const
 {
     r_stream_config sc;
+    sc.camera_name = camera.camera_name;
     sc.id = camera.id;
     sc.ipv4 = camera.ipv4;
     sc.rtsp_url = camera.rtsp_url;
@@ -465,9 +473,8 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
 
     auto query = r_string_utils::format(
             "REPLACE INTO cameras("
-                "id, %s%s%s%s%s%s%s%s%s%sstate, %s%s%sstream_config_hash) "
+                "id, %s%s%s%s%s%s%s%s%s%s%sstate, %s%s%sstream_config_hash) "
             "VALUES("
-                "'%s', "
                 "%s"
                 "%s"
                 "%s"
@@ -478,12 +485,15 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
                 "%s"
                 "%s"
                 "%s"
-                "'%s', "
                 "%s"
                 "%s"
                 "%s"
-                "'%s'"
+                "%s"
+                "%s"
+                "%s"
+                "%s"
             ");",
+            (!camera.camera_name.is_null())?"camera_name, ":"",
             (!camera.ipv4.is_null())?"ipv4, ":"",
             (!camera.rtsp_url.is_null())?"rtsp_url, ":"",
             (!camera.rtsp_username.is_null())?"rtsp_username, ":"",
@@ -498,22 +508,23 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             (!camera.n_record_file_blocks.is_null())?"n_record_file_blocks, ":"",
             (!camera.record_file_block_size.is_null())?"record_file_block_size, ":"",
 
-            camera.id.c_str(),
+            r_string_utils::format("'%s', ", camera.id.c_str()).c_str(),
+            (!camera.camera_name.is_null())?r_string_utils::format("'%s', ", camera.camera_name.value().c_str()).c_str():"",
             (!camera.ipv4.is_null())?r_string_utils::format("'%s', ", camera.ipv4.value().c_str()).c_str():"",
             (!camera.rtsp_url.is_null())?r_string_utils::format("'%s', ", camera.rtsp_url.value().c_str()).c_str():"",
             (!camera.rtsp_username.is_null())?r_string_utils::format("'%s', ", camera.rtsp_username.value().c_str()).c_str():"",
             (!camera.rtsp_password.is_null())?r_string_utils::format("'%s', ", camera.rtsp_password.value().c_str()).c_str():"",
             (!camera.video_codec.is_null())?r_string_utils::format("'%s', ", camera.video_codec.value().c_str()).c_str():"",
             (!camera.video_codec_parameters.is_null())?r_string_utils::format("'%s', ", camera.video_codec_parameters.value().c_str()).c_str():"",
-            (!camera.video_timebase.is_null())?r_string_utils::format("'%d', ", camera.video_timebase.value()).c_str():"",
+            (!camera.video_timebase.is_null())?r_string_utils::format("%d, ", camera.video_timebase.value()).c_str():"",
             (!camera.audio_codec.is_null())?r_string_utils::format("'%s', ", camera.audio_codec.value().c_str()).c_str():"",
             (!camera.audio_codec_parameters.is_null())?r_string_utils::format("'%s', ", camera.audio_codec_parameters.value().c_str()).c_str():"",
             (!camera.audio_timebase.is_null())?r_string_utils::format("%d, ", camera.audio_timebase.value()).c_str():"",
-            camera.state.c_str(),
+            r_string_utils::format("'%s', ", camera.state.c_str()).c_str(),
             (!camera.record_file_path.is_null())?r_string_utils::format("'%s', ", camera.record_file_path.value().c_str()).c_str():"",
             (!camera.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", camera.n_record_file_blocks.value()).c_str():"",
             (!camera.record_file_block_size.is_null())?r_string_utils::format("%d, ", camera.record_file_block_size.value()).c_str():"",
-            hash.c_str()
+            r_string_utils::format("'%s'", camera.stream_config_hash.c_str()).c_str()
         );
 
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){

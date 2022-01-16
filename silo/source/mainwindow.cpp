@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "utils.h"
 #include "ui_mainwindow.h"
+#include <QLabel>
 #include "r_disco/r_stream_config.h"
 #include "r_pipeline/r_gst_source.h"
 #include "r_storage/r_storage_file.h"
@@ -22,7 +23,9 @@ MainWindow::MainWindow(QWidget *parent) :
     _topDir(top_dir()),
     _agent(_topDir),
     _devices(_topDir),
-    _streamKeeper(_devices, _topDir)
+    _streamKeeper(_devices, _topDir),
+    _discoveredTable(nullptr),
+    _discoveredTimer(nullptr)
 {
     r_pipeline::gstreamer_init();
 
@@ -54,6 +57,17 @@ MainWindow::MainWindow(QWidget *parent) :
     QPushButton* btn = findChild<QPushButton*>("pushButton");
     QObject::connect(btn, SIGNAL(clicked()), this, SLOT(button_pushed()));
 
+    _discoveredTable = findChild<QTableWidget*>("discoveredTable");
+    _discoveredTable->setColumnCount(1);
+
+    _discoveredTimer = new QTimer(this);
+    connect(_discoveredTimer, &QTimer::timeout, this, QOverload<>::of(&MainWindow::on_discovered_timer_timeout));
+
+    _mainTabWidget = findChild<QTabWidget*>("mainTabWidget");
+    connect(_mainTabWidget, &QTabWidget::currentChanged, this, &MainWindow::on_tab_changed);
+
+    _mainTabWidget->setCurrentIndex(0);
+
     _streamKeeper.start();
     _devices.start();
     _agent.start();
@@ -61,6 +75,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    _discoveredTimer->stop();
+    delete _discoveredTimer;
+
     _agent.stop();
     _devices.stop();
     _streamKeeper.stop();
@@ -212,5 +229,51 @@ void MainWindow::button_pushed()
     {
         R_LOG_ERROR("exception: %s", ex.what());
         printf("exception: %s\n", ex.what());
+    }
+}
+
+void MainWindow::on_discovered_timer_timeout()
+{
+    printf("on discovered timer timeout\n");
+    auto cameras = _devices.get_all_cameras();
+    printf("cameras: %lu\n", cameras.size());
+
+    while(_discoveredTable->rowCount() > 0)
+        _discoveredTable->removeRow(0);
+
+    for(int i = 0; i < cameras.size(); ++i)
+    {
+        auto c = cameras[i];
+
+        printf("c.ipv4: %s\n",c.ipv4.value().c_str());
+        _discoveredTable->insertRow(_discoveredTable->rowCount());
+#if 0
+        QWidget* w = new QWidget();
+        QLabel* l = new QLabel(QString::fromStdString(c.ipv4.value()));
+        QHBoxLayout* layout = new QHBoxLayout(w);
+        layout->addWidget(l);
+        layout->setAlignment(Qt::AlignCenter);
+        layout->setContentsMargins(0, 0, 0, 0);
+        w->setLayout(layout);
+        _discoveredTable->setCellWidget(i, 0, w);
+#endif
+        _discoveredTable->setItem(
+            _discoveredTable->rowCount()-1, 
+            0,
+            new QTableWidgetItem(QString::fromStdString(c.ipv4.value()))
+        );
+    }
+}
+
+void MainWindow::on_tab_changed(int index)
+{
+    printf("on tab changed: %d\n", index);
+    if(index == 1)
+    {
+        _discoveredTimer->start(5000);
+    }
+    else if(index == 0)
+    {
+        _discoveredTimer->stop();
     }
 }

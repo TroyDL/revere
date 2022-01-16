@@ -684,7 +684,7 @@ void test_r_storage::test_r_storage_file_basic()
     r_nullable<string> acn = string("aname");
     auto wc = sf.create_write_context("vname", vp, acn, ap);
 
-    int64_t ts = 100, pts = 10;
+    int64_t ts = 100, pts = 100;
     for(int i = 0; i < 10000; ++i)
     {
         sf.write_frame(
@@ -692,12 +692,12 @@ void test_r_storage::test_r_storage_file_basic()
             R_STORAGE_MEDIA_TYPE_VIDEO,
             frame.data(),
             frame.size() - (_random() % 32),
-            (ts % 50) == 0,
+            (pts % 100) == 0,
             ts,
             pts
         );
 
-        ts += 10;
+        ts += 33;
         pts += 10;
     }
 

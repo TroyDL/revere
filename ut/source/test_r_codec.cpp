@@ -55,7 +55,7 @@ void test_r_codec::test_basic_decode()
                 if(decode_state == R_VIDEO_DECODER_STATE_HAS_OUTPUT)
                 {
                     auto frame = decoder.get(AV_PIX_FMT_ARGB, 640, 480);
-                    printf("frame.size()=%lu\n",frame.size());
+                    RTF_ASSERT(frame.size() > 0);
                 }
             }
         }

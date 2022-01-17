@@ -181,8 +181,6 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
 
     muxer.finalize();
 
-//    sk.stop();
-
     // Finally, use a demuxer to verify our output file...
 
     r_demuxer demuxer("output_true_north.mp4");

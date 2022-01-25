@@ -102,18 +102,17 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
         g.data.resize(size + r_rel_block::PER_FRAME_OVERHEAD);
         g.media_type = media_type;
         r_rel_block::append(g.data.data(), p, size, pts, 1);
-        _gop_buffer.insert(lower_bound(_gop_buffer.begin(), _gop_buffer.end(), g, [](const _gop& a, const _gop& b) { return a.ts < b.ts; }), g);
+        _gop_buffer.insert(lower_bound(_gop_buffer.begin(), _gop_buffer.end(), g, [](const _gop& a, const _gop& b){return a.ts < b.ts;}), g);
     }
     else
     {
         // find our incomplete gop of this media_type and append this frame to it.
-
         auto found = find_if(
-            begin(_gop_buffer), 
-            end(_gop_buffer), 
-            [&](const _gop& g) {return g.media_type == media_type && g.complete == false;}
+            rbegin(_gop_buffer),
+            rend(_gop_buffer), 
+            [media_type](const _gop& g) {return g.media_type == media_type && g.complete == false;}
         );
-        if(found == end(_gop_buffer))
+        if(found == rend(_gop_buffer))
             R_THROW(("No incomplete GOP found for media type."));
 
         auto current_size = found->data.size();
@@ -130,10 +129,12 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
         r_rel_block::append(&found->data[current_size], p, size, pts, 0);
     }
 
-    while(_buffer_full())
+    while(_buffer_full() && _gop_buffer.front().complete)
     {
         _gop g = _gop_buffer.front();
         _gop_buffer.pop_front();
+
+        printf("_gop_buffer.size()=%lu\n", _gop_buffer.size());
 
         if(_current_block.is_null() || !_current_block.value().fits(g.data.size()))
             _current_block.assign(_get_index_block(ctx, _block_index.insert(g.ts), g.ts, _h.block_size / g.data.size()));
@@ -399,5 +400,5 @@ bool r_storage_file::_buffer_full() const
     if(_gop_buffer.size() < 2)
         return false;
 
-    return (_gop_buffer.back().ts - _gop_buffer.front().ts) > 6000;
+    return (_gop_buffer.back().ts - _gop_buffer.front().ts) > 10000;
 }

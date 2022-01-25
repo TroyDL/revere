@@ -7,6 +7,7 @@
 #include "r_utils/r_nullable.h"
 #include "r_onvif/r_onvif_session.h"
 #include <chrono>
+#include <map>
 
 namespace r_disco
 {
@@ -23,9 +24,18 @@ public:
 
 private:
     std::vector<r_stream_config> _fetch_configs(const std::string& top_dir);
+    void _cache_check_expiration(const std::string& id);
     std::string _top_dir;
     r_onvif::r_onvif_session _session;
     r_agent* _agent;
+
+    struct _r_onvif_provider_cache_entry
+    {
+        std::chrono::steady_clock::time_point created;
+        r_stream_config config;
+    };
+
+    std::map<std::string, _r_onvif_provider_cache_entry> _cache;
 };
 
 }

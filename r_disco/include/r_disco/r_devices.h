@@ -68,6 +68,8 @@ public:
 private:
     void _entry_point();
 
+    void _create_db(const std::string& top_dir) const;
+    r_db::r_sqlite_conn _open_db(const std::string& top_dir, bool rw = true) const;
     r_db::r_sqlite_conn _open_or_create_db(const std::string& top_dir) const;
     void _upgrade_db(const r_db::r_sqlite_conn& conn) const;
 

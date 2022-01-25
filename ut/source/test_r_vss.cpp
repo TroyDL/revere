@@ -94,9 +94,6 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     cfg.video_timebase = 90000;
     cfg.audio_codec = "mpeg4-generic";
     cfg.audio_timebase = 48000;
-    cfg.record_file_path = storage_file_path;
-    cfg.record_file_block_size = 65536;
-    cfg.n_record_file_blocks = 160;
 
     configs.push_back(make_pair(cfg, hash_stream_config(cfg)));
 
@@ -106,6 +103,10 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
 
     // Setting our fake stream to "assigned" makes stream_keeper start recording...
     auto c = devices.get_camera_by_id("9d807570-3d0e-4f87-9773-ae8d6471eab6").value();
+
+    c.record_file_path = storage_file_path;
+    c.record_file_block_size = 65536;
+    c.n_record_file_blocks = 160;
 
     devices.assign_camera(c);
 
@@ -117,7 +118,7 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     sk.stop();
 
     // Create a storage file object so we can query from it...
-    r_storage_file sf("top_dir" + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + cfg.record_file_path.value());
+    r_storage_file sf("top_dir" + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + storage_file_path);
 
     auto kfst = sf.key_frame_start_times(R_STORAGE_MEDIA_TYPE_ALL);
 

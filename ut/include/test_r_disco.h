@@ -5,7 +5,6 @@ class test_r_disco : public test_fixture
 {
 public:
     RTF_FIXTURE(test_r_disco);
-      TEST(test_r_disco::test_r_disco_r_manual_provider);
       TEST(test_r_disco::test_r_disco_r_agent_start_stop);
       TEST(test_r_disco::test_r_disco_r_devices_basic);
       TEST(test_r_disco::test_r_disco_r_devices_modified);
@@ -18,7 +17,6 @@ public:
     virtual void setup();
     virtual void teardown();
 
-    void test_r_disco_r_manual_provider();
     void test_r_disco_r_agent_start_stop();
     void test_r_disco_r_devices_basic();
     void test_r_disco_r_devices_modified();

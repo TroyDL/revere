@@ -1,6 +1,5 @@
 
 #include "r_disco/r_agent.h"
-#include "r_disco/providers/r_manual_provider.h"
 #include "r_disco/providers/r_onvif_provider.h"
 #include "r_utils/r_exception.h"
 #include <algorithm>
@@ -33,7 +32,6 @@ r_agent::~r_agent() noexcept
 void r_agent::start()
 {
     // push providers into _providers
-    _providers.push_back(make_shared<r_manual_provider>(_top_dir, this));
     _providers.push_back(make_shared<r_onvif_provider>(_top_dir, this));
 
     _running = true;

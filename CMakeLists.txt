@@ -50,7 +50,7 @@ add_subdirectory(r_vss)
 
 # Applications
 #
-add_subdirectory(silo)
+add_subdirectory(revere)
 
 # Unit Tests
 #

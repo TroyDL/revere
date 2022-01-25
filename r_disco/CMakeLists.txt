@@ -9,8 +9,6 @@ add_library(
     include/r_disco/r_stream_config.h
     include/r_disco/r_camera.h
     source/r_stream_config.cpp
-    include/r_disco/providers/r_manual_provider.h
-    source/providers/r_manual_provider.cpp
     include/r_disco/providers/r_onvif_provider.h
     source/providers/r_onvif_provider.cpp
 )

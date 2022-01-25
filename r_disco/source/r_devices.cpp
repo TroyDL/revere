@@ -141,6 +141,9 @@ vector<r_camera> r_devices::get_assigned_cameras_removed(const vector<r_camera>&
 
 void r_devices::_entry_point()
 {
+    // XXX Maybe do the table creation and setup here... ONCE.
+    _create_db(_top_dir);
+
     while(_running)
     {
         auto maybe_cmd = _db_work_q.poll();
@@ -150,36 +153,63 @@ void r_devices::_entry_point()
 
             try
             {
-                auto conn = _open_or_create_db(_top_dir);
+                // XXX how about open for readon only for the read only operations?
+                //auto conn = _open_or_create_db(_top_dir);
 
                 if(cmd.first.type == INSERT_OR_UPDATE_DEVICES)
+                {
+                    auto conn = _open_db(_top_dir);
                     cmd.second.set_value(_insert_or_update_devices(conn, cmd.first.configs));
+                }
                 else if(cmd.first.type == GET_CAMERA_BY_ID)
+                {
+                    auto conn = _open_db(_top_dir);
                     cmd.second.set_value(_get_camera_by_id(conn, cmd.first.id));
+                }
                 else if(cmd.first.type == GET_ALL_CAMERAS)
+                {
+                    auto conn = _open_db(_top_dir);
                     cmd.second.set_value(_get_all_cameras(conn));
+                }
                 else if(cmd.first.type == GET_ASSIGNED_CAMERAS)
+                {
+                    auto conn = _open_db(_top_dir);
                     cmd.second.set_value(_get_assigned_cameras(conn));
+                }
                 else if(cmd.first.type == SAVE_CAMERA)
                 {
+                    auto conn = _open_db(_top_dir);
                     if(cmd.first.cameras.empty())
                         R_THROW(("No cameras passed to SAVE_CAMERA."));
                     cmd.second.set_value(_save_camera(conn, cmd.first.cameras.front()));
                 }
                 else if(cmd.first.type == REMOVE_CAMERA)
                 {
+                    auto conn = _open_db(_top_dir);
                     if(cmd.first.cameras.empty())
                         R_THROW(("No cameras passed to REMOVE_CAMERA."));
                     cmd.second.set_value(_remove_camera(conn, cmd.first.cameras.front()));
                 }
                 else if(cmd.first.type == GET_MODIFIED_CAMERAS)
+                {
+                    auto conn = _open_db(_top_dir);
                     cmd.second.set_value(_get_modified_cameras(conn, cmd.first.cameras));
+                }
                 else if(cmd.first.type == GET_ASSIGNED_CAMERAS_ADDED)
+                {
+                    auto conn = _open_db(_top_dir);
                     cmd.second.set_value(_get_assigned_cameras_added(conn, cmd.first.cameras));
+                }
                 else if(cmd.first.type == GET_ASSIGNED_CAMERAS_REMOVED)
+                {
+                    auto conn = _open_db(_top_dir);
                     cmd.second.set_value(_get_assigned_cameras_removed(conn, cmd.first.cameras));
+                }
                 else if(cmd.first.type == GET_CREDENTIALS_BY_ID)
+                {
+                    auto conn = _open_db(_top_dir);
                     cmd.second.set_value(_get_credentials(conn, cmd.first.id));
+                }
                 else R_THROW(("Unknown work q command."));
             }
             catch(...)
@@ -197,6 +227,45 @@ void r_devices::_entry_point()
             }
         }
     }
+}
+
+void r_devices::_create_db(const std::string& top_dir) const
+{
+    auto db_dir = top_dir + r_fs::PATH_SLASH + "db";
+    if(!r_fs::file_exists(db_dir))
+        r_fs::mkdir(db_dir);
+
+    auto conn = r_sqlite_conn(db_dir + r_fs::PATH_SLASH + "cameras.db");
+
+    conn.exec(
+        "CREATE TABLE IF NOT EXISTS cameras ("
+            "id TEXT PRIMARY KEY NOT NULL UNIQUE, "
+            "camera_name TEXT, "
+            "ipv4 TEXT, "
+            "rtsp_url TEXT, "
+            "rtsp_username TEXT, "
+            "rtsp_password TEXT, "
+            "video_codec TEXT, "
+            "video_codec_parameters TEXT, "
+            "video_timebase INTEGER, "
+            "audio_codec TEXT, "
+            "audio_codec_parameters TEXT, "
+            "audio_timebase INTEGER, "
+            "state TEXT, "
+            "record_file_path TEXT, "
+            "n_record_file_blocks INTEGER, "
+            "record_file_block_size INTEGER, "
+            "stream_config_hash TEXT"
+        ");"
+    );
+
+    _upgrade_db(conn);
+}
+
+r_sqlite_conn r_devices::_open_db(const std::string& top_dir, bool rw) const
+{
+    auto db_dir = top_dir + r_fs::PATH_SLASH + "db";
+    return r_sqlite_conn(db_dir + r_fs::PATH_SLASH + "cameras.db", rw);
 }
 
 r_sqlite_conn r_devices::_open_or_create_db(const string& top_dir) const
@@ -228,9 +297,7 @@ r_sqlite_conn r_devices::_open_or_create_db(const string& top_dir) const
             "stream_config_hash TEXT"
         ");"
     );
-    string record_file_path;
-    int n_record_file_blocks {0};
-    int record_file_block_size {0};
+
     _upgrade_db(conn);
 
     return conn;
@@ -285,39 +352,29 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
     if(result.empty())
     {
         query = r_string_utils::format(
-            "INSERT INTO cameras (id, %s%s%s%s%s%s%s%s%s%s%sstate, %s%s%sstream_config_hash) "
-            "VALUES('%s', %s%s%s%s%s%s%s%s%s%s%s'discovered', %s%s%s'%s');",
+            "INSERT INTO cameras (id, %s%s%s%s%s%s%s%s%sstate, stream_config_hash) "
+            "VALUES('%s', %s%s%s%s%s%s%s%s%s'discovered', '%s');",
 
             (!stream_config.camera_name.is_null())?"camera_name, ":"",
             (!stream_config.ipv4.is_null())?"ipv4, ":"",
             (!stream_config.rtsp_url.is_null())?"rtsp_url, ":"",
-            (!stream_config.rtsp_username.is_null())?"rtsp_username, ":"",
-            (!stream_config.rtsp_password.is_null())?"rtsp_password, ":"",
             (!stream_config.video_codec.is_null())?"video_codec, ":"",
             (!stream_config.video_codec_parameters.is_null())?"video_codec_parameters, ":"",
             (!stream_config.video_timebase.is_null())?"video_timebase, ":"",
             (!stream_config.audio_codec.is_null())?"audio_codec, ":"",
             (!stream_config.audio_codec_parameters.is_null())?"audio_codec_parameters, ":"",
             (!stream_config.audio_timebase.is_null())?"audio_timebase, ":"",
-            (!stream_config.record_file_path.is_null())?"record_file_path, ":"",
-            (!stream_config.n_record_file_blocks.is_null())?"n_record_file_blocks, ":"",
-            (!stream_config.record_file_block_size.is_null())?"record_file_block_size, ":"",
 
             stream_config.id.c_str(),
             (!stream_config.camera_name.is_null())?r_string_utils::format("'%s', ", stream_config.camera_name.value().c_str()).c_str():"",
             (!stream_config.ipv4.is_null())?r_string_utils::format("'%s', ", stream_config.ipv4.value().c_str()).c_str():"",
             (!stream_config.rtsp_url.is_null())?r_string_utils::format("'%s', ", stream_config.rtsp_url.value().c_str()).c_str():"",
-            (!stream_config.rtsp_username.is_null())?r_string_utils::format("'%s', ", stream_config.rtsp_username.value().c_str()).c_str():"",
-            (!stream_config.rtsp_password.is_null())?r_string_utils::format("'%s', ", stream_config.rtsp_password.value().c_str()).c_str():"",
             (!stream_config.video_codec.is_null())?r_string_utils::format("'%s', ", stream_config.video_codec.value().c_str()).c_str():"",
             (!stream_config.video_codec_parameters.is_null())?r_string_utils::format("'%s', ", stream_config.video_codec_parameters.value().c_str()).c_str():"",
             (!stream_config.video_timebase.is_null())?r_string_utils::format("'%d', ", stream_config.video_timebase.value()).c_str():"",
             (!stream_config.audio_codec.is_null())?r_string_utils::format("'%s', ", stream_config.audio_codec.value().c_str()).c_str():"",
             (!stream_config.audio_codec_parameters.is_null())?r_string_utils::format("'%s', ", stream_config.audio_codec_parameters.value().c_str()).c_str():"",
             (!stream_config.audio_timebase.is_null())?r_string_utils::format("'%d', ", stream_config.audio_timebase.value()).c_str():"",
-            (!stream_config.record_file_path.is_null())?r_string_utils::format("'%s', ", stream_config.record_file_path.value().c_str()).c_str():"",
-            (!stream_config.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", stream_config.n_record_file_blocks.value()).c_str():"",
-            (!stream_config.record_file_block_size.is_null())?r_string_utils::format("%d, ", stream_config.record_file_block_size.value()).c_str():"",
             hash.c_str()
         );
     }
@@ -334,27 +391,17 @@ string r_devices::_create_insert_or_update_query(const r_db::r_sqlite_conn& conn
                 "%s"
                 "%s"
                 "%s"
-                "%s"
-                "%s"
-                "%s"
-                "%s"
-                "%s"
                 "stream_config_hash='%s' "
             "WHERE id='%s';",
             (!stream_config.camera_name.is_null())?r_string_utils::format("camera_name='%s', ", stream_config.camera_name.value().c_str()).c_str():"",
             (!stream_config.ipv4.is_null())?r_string_utils::format("ipv4='%s', ", stream_config.ipv4.value().c_str()).c_str():"",
             (!stream_config.rtsp_url.is_null())?r_string_utils::format("rtsp_url='%s', ", stream_config.rtsp_url.value().c_str()).c_str():"",
-            (!stream_config.rtsp_username.is_null())?r_string_utils::format("rtsp_username='%s', ", stream_config.rtsp_username.value().c_str()).c_str():"",
-            (!stream_config.rtsp_password.is_null())?r_string_utils::format("rtsp_password='%s', ", stream_config.rtsp_password.value().c_str()).c_str():"",
             (!stream_config.video_codec.is_null())?r_string_utils::format("video_codec='%s', ", stream_config.video_codec.value().c_str()).c_str():"",
             (!stream_config.video_codec_parameters.is_null())?r_string_utils::format("video_codec_parameters='%s', ", stream_config.video_codec_parameters.value().c_str()).c_str():"",
             (!stream_config.video_timebase.is_null())?r_string_utils::format("video_timebase='%d', ", stream_config.video_timebase.value()).c_str():"",
             (!stream_config.audio_codec.is_null())?r_string_utils::format("audio_codec='%s', ", stream_config.audio_codec.value().c_str()).c_str():"",
             (!stream_config.audio_codec_parameters.is_null())?r_string_utils::format("audio_codec_parameters='%s', ", stream_config.audio_codec_parameters.value().c_str()).c_str():"",
             (!stream_config.audio_timebase.is_null())?r_string_utils::format("audio_timebase='%d', ", stream_config.audio_timebase.value()).c_str():"",
-            (!stream_config.record_file_path.is_null())?r_string_utils::format("record_file_path='%s', ", stream_config.record_file_path.value().c_str()).c_str():"",
-            (!stream_config.n_record_file_blocks.is_null())?r_string_utils::format("n_record_file_blocks=%d, ", stream_config.n_record_file_blocks.value()).c_str():"",
-            (!stream_config.record_file_block_size.is_null())?r_string_utils::format("record_file_block_size=%d, ", stream_config.record_file_block_size.value()).c_str():"",
             hash.c_str(),
             stream_config.id.c_str()
         );
@@ -453,8 +500,8 @@ r_devices_cmd_result r_devices::_get_assigned_cameras(const r_sqlite_conn& conn)
 r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_camera& camera) const
 {
     r_stream_config sc;
-    sc.camera_name = camera.camera_name;
     sc.id = camera.id;
+    sc.camera_name = camera.camera_name;
     sc.ipv4 = camera.ipv4;
     sc.rtsp_url = camera.rtsp_url;
     sc.video_codec = camera.video_codec;
@@ -463,9 +510,6 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
     sc.audio_codec = camera.audio_codec;
     sc.audio_codec_parameters = camera.audio_codec_parameters;
     sc.audio_timebase = camera.audio_timebase;
-    sc.record_file_path = camera.record_file_path;
-    sc.n_record_file_blocks = camera.n_record_file_blocks;
-    sc.record_file_block_size = camera.record_file_block_size;
 
     auto hash = hash_stream_config(sc);
 
@@ -524,7 +568,7 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             (!camera.record_file_path.is_null())?r_string_utils::format("'%s', ", camera.record_file_path.value().c_str()).c_str():"",
             (!camera.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", camera.n_record_file_blocks.value()).c_str():"",
             (!camera.record_file_block_size.is_null())?r_string_utils::format("%d, ", camera.record_file_block_size.value()).c_str():"",
-            r_string_utils::format("'%s'", camera.stream_config_hash.c_str()).c_str()
+            r_string_utils::format("'%s'", hash.c_str()).c_str()
         );
 
     r_sqlite_transaction(conn, [&](const r_sqlite_conn& conn){
@@ -550,7 +594,7 @@ r_devices_cmd_result r_devices::_get_modified_cameras(const r_sqlite_conn& conn,
         for(auto& c : cameras)
         {
             auto query = r_string_utils::format(
-                "SELECT * FROM cameras WHERE id=\"%s\" AND stream_config_hash!=\"%s\";",
+                "SELECT * FROM cameras WHERE id=\"%s\" AND stream_config_hash != \"%s\";",
                 c.id.c_str(),
                 c.stream_config_hash.c_str()
             );

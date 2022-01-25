@@ -111,7 +111,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t>& times)
 {
-    vector<pair<int64_t, int64_t>> segments;
+    // Since our input times are key frames and different cameras may have different GOP sizes we need to discover for
+    // each camera what the normal space between key frames is. We then multiply this value by 1.5 to find our segment
+    // threshold.
 
     int64_t threshold = 0;
     if(times.size() > 1)
@@ -121,88 +123,48 @@ vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t>& t
         threshold = (deltas.size() > 2)?(int64_t)((accumulate(begin(deltas)+1, end(deltas), .0) / deltas.size()) * 1.5):0;
     }
 
+    printf("threshold: %ld\n", threshold);
+
     deque<int64_t> timesd;
     for (auto t : times) {
         timesd.push_back(t);
     }
 
-    printf("threshold: %ld\n", threshold);
+    vector<vector<int64_t>> segments;
+    vector<int64_t> current;
 
-#if 1
-    size_t n_times = times.size();
-
-    if(n_times == 1)
-        segments.push_back(make_pair(times[0], times[0]));
-    else if(n_times > 1)
-    {
-        vector<int64_t> deltas;
-        for (size_t i = 1; i < n_times; i++) {
-            deltas.push_back(times[i] - times[i - 1]);
-        }
-
-        deque<int64_t> segment_start_indexes = {0};
-        for(size_t di = 0; di < deltas.size(); di++)
-        {
-            if(deltas[di] > threshold)
-                segment_start_indexes.push_back(di + 1);
-        }
-
-        while(!segment_start_indexes.empty())
-        {
-            int64_t start_index = segment_start_indexes.front();
-            segment_start_indexes.pop_front();
-
-            int64_t end_index = (segment_start_indexes.empty())?n_times-1:segment_start_indexes.front() - 1;
-
-            segments.push_back(make_pair(times[start_index], times[end_index]));
-        }
-    }
-#else
-    int64_t start_ts = -1;
-    int64_t last_ts = -1;
+    // Walk the times front to back appending new times to current as long as they are within the threshold.
+    // If a new time is outside the threshold then we have a new segment so push current onto segments and
+    // start a new current.
 
     while(!timesd.empty())
     {
-        auto ts = timesd.front();
+        auto t = timesd.front();
+        timesd.pop_front();
 
-        auto n_remaining = timesd.size();
-
-        if(start_ts == -1)
-        {
-            start_ts = ts;
-            last_ts = -1;
-
-            timesd.pop_front();
-
-            if(n_remaining == 1)
-                segments.push_back(make_pair(start_ts, ts));
-        }
+        if(current.empty())
+            current.push_back(t);
         else
         {
-            if(last_ts != -1)
+            auto delta = t - current.back();
+            if(delta > threshold && !current.empty())
             {
-                if(ts - last_ts > threshold)
-                {
-                    segments.push_back(make_pair(start_ts, last_ts));
-                    start_ts = -1;
-                    last_ts = -1;
-                    continue;
-                }
-                else
-                {
-                    timesd.pop_front();
-
-                    if(n_remaining == 1)
-                        segments.push_back(make_pair(start_ts, ts));
-                }
+                segments.push_back(current);
+                current = {t};
             }
+            else current.push_back(t);
         }
-
-        last_ts = ts;
     }
-#endif
 
-    return segments;
+    // since we push current when we find a gap bigger than threshold we need to push the last current segment.
+    if(!current.empty())
+        segments.push_back(current);
+
+    vector<pair<int64_t, int64_t>> output;
+    for(auto& s : segments)
+        output.push_back(make_pair(s.front(), s.back()));
+
+    return output;
 }
 
 void MainWindow::button_pushed()
@@ -216,11 +178,24 @@ void MainWindow::button_pushed()
             r_storage::r_storage_file sf("/home/td/Documents/revere/silo/video/" + s.camera.record_file_path.value());
             auto kfst = sf.key_frame_start_times(r_storage::R_STORAGE_MEDIA_TYPE_VIDEO);
 
+//            for(auto b = kfst.begin()+1, e = kfst.end(); b != e; ++b)
+//            {
+//                auto ts = *b;
+//                auto ts_prev = *(b-1);
+
+//                auto ts_diff = ts - ts_prev;
+
+//                printf("%ld, ", ts_diff);
+//            }
+//            printf("\n");
+
             auto segments = find_contiguous_segments(kfst);
 
             string seg_str;
             for(auto s : segments)
                 seg_str += "[" + r_string_utils::int64_to_s((s.second-s.first)/1000) + "], ";
+                //seg_str += "[" + to_string(s.first) + ", " + to_string(s.second) + "], ";
+                
 
             printf("camera: id=%s, bytes_per_second=%u, %s\n", s.camera.id.c_str(), s.bytes_per_second, seg_str.c_str());
         }

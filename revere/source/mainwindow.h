@@ -13,6 +13,7 @@
 #include "r_disco/r_agent.h"
 #include "r_disco/r_devices.h"
 #include "r_vss/r_stream_keeper.h"
+#include "r_utils/r_nullable.h"
 #include <memory>
 #include <string>
 
@@ -20,6 +21,10 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+struct assignment_state
+{
+    std::string camera_id;
+};
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -35,6 +40,14 @@ protected:
 
 private slots:
     void on_camera_ui_update_timer();
+
+    // assignment
+    void on_record_button_clicked();
+    void on_rtsp_credentials_ok_clicked();
+    void on_friendly_name_ok_clicked();
+    void on_new_storage_clicked();
+    void on_existing_storage_clicked();
+    void on_retention_ok_clicked();
 
 private:
     Ui::MainWindow* _ui;
@@ -58,5 +71,8 @@ private:
     FriendlyName* _friendlyName;
     Retention* _retention;
     NewOrExisting* _newOrExisting;
+
+    r_utils::r_nullable<assignment_state> _assignmentState;
+
 };
 #endif

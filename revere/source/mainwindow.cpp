@@ -33,7 +33,8 @@ MainWindow::MainWindow(QWidget *parent) :
     _rtspCredentials(new RTSPCredentials(this)),
     _friendlyName(new FriendlyName(this)),
     _retention(new Retention(this)),
-    _newOrExisting(new NewOrExisting(this))
+    _newOrExisting(new NewOrExisting(this)),
+    _assignmentState()
 {
     r_pipeline::gstreamer_init();
 
@@ -77,17 +78,44 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
 
-    auto button_box = _rtspCredentials->findChild<QDialogButtonBox*>("button_box");
+    auto button_box = _rtspCredentials->findChild<QDialogButtonBox*>("credentialsButtonBox");
     if(!button_box)
         R_THROW(("Unable to find button_box."));
-
     auto ok_button = button_box->button(QDialogButtonBox::Ok);
     if(!ok_button)
         R_THROW(("Unable to find ok_button."));
+    connect(ok_button, SIGNAL(clicked()), this, SLOT(on_rtsp_credentials_ok_clicked()));
 
-    auto cancel_button = button_box->button(QDialogButtonBox::Cancel);
-    if(!cancel_button)
-        R_THROW(("Unable to find cancel_button."));
+    auto friendly_name_button_box = _friendlyName->findChild<QDialogButtonBox*>("friendlyNameButtonBox");
+    if(!friendly_name_button_box)
+        R_THROW(("Unable to find friendly_name_button_box."));
+    ok_button = friendly_name_button_box->button(QDialogButtonBox::Ok);
+    if(!ok_button)
+        R_THROW(("Unable to find ok_button."));
+    connect(ok_button, SIGNAL(clicked()), this, SLOT(on_friendly_name_ok_clicked()));
+
+    auto new_storage_button = _newOrExisting->findChild<QPushButton*>("newStorageButton");
+    if(!new_storage_button)
+        R_THROW(("Unable to find new_storage_button."));
+    connect(new_storage_button, SIGNAL(clicked()), this, SLOT(on_new_storage_clicked()));
+
+    auto existing_storage_button = _newOrExisting->findChild<QPushButton*>("existingStorageButton");
+    if(!existing_storage_button)
+        R_THROW(("Unable to find existing_storage_button."));
+    connect(existing_storage_button, SIGNAL(clicked()), this, SLOT(on_existing_storage_clicked()));
+
+    auto retention_button_box = _retention->findChild<QDialogButtonBox*>("retentionButtonBox");
+    if(!retention_button_box)
+        R_THROW(("Unable to find retention_button_box."));
+    ok_button = retention_button_box->button(QDialogButtonBox::Ok);
+    connect(ok_button, SIGNAL(clicked()), this, SLOT(on_retention_ok_clicked()));
+
+    // hookup _retention slider
+    // _retention->findChild<QSlider*>("retentionSlider")
+    // _retention->findChild<QLineEdit*>("maxDaysRetention")
+    // _retention->findChild<QLabel*>("numDaysLabel")
+    // _retention->findChild<QLabel*>("fileSizeLabel")
+
 
     // Assignment Process
     //   1. Popup _rtspCredentials dialog
@@ -114,7 +142,17 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    _rtspCredentials->hide();
     delete _rtspCredentials;
+
+    _friendlyName->hide();
+    delete _friendlyName;
+
+    _newOrExisting->hide();
+    delete _newOrExisting;
+
+    _retention->hide();
+    delete _retention;
 
     _cameraUIUpdateTimer->stop();
     delete _cameraUIUpdateTimer;
@@ -177,7 +215,9 @@ void MainWindow::on_camera_ui_update_timer()
         QWidget* w = new QWidget(_discoveredListWidget);
         QLabel* l = new QLabel(QString::fromStdString(c.camera_name.value()), w);
         QPushButton* b = new QPushButton(w);
-        b->setText("Assign");
+        b->setText("Record");
+        b->setProperty("camera_id", QString::fromStdString(c.id));
+        connect(b, SIGNAL(clicked()), this, SLOT(on_record_button_clicked()));
         QHBoxLayout* layout = new QHBoxLayout(w);
         layout->addWidget(b);
         layout->addWidget(l);
@@ -188,4 +228,77 @@ void MainWindow::on_camera_ui_update_timer()
         _discoveredListWidget->insertItem(i, item);
         _discoveredListWidget->setItemWidget(item, w);
     }
+}
+
+void MainWindow::on_record_button_clicked()
+{
+    QPushButton* sender = qobject_cast<QPushButton*>(QObject::sender());
+
+    if(!sender)
+        R_THROW(("Unable to cast sender to QPushButton."));
+
+    auto camera_id = sender->property("camera_id").toString().toStdString();
+
+    assignment_state as;
+    as.camera_id = camera_id;
+    _assignmentState.set_value(as);
+
+    _rtspCredentials->show();
+}
+
+void MainWindow::on_rtsp_credentials_ok_clicked()
+{
+    printf("on_rtsp_credentials_clicked()\n");
+
+    _rtspCredentials->hide();
+
+    // _rtspCredentials->findChild<QLabel*>("ipAddressLabel")
+    // _rtspCredentials->findChild<QLineEdit*>("usernameLineEdit")
+    // _rtspCredentials->findChild<QLineEdit*>("passwordLineEdit")
+
+    // add new method to r_pipeline that does 3 things (and takes credentials)
+    //     1) fetch the sdp media info
+    //     2) play the stream briefly and fetch the bitrate
+    //     3) grab the first key frame
+    //     4) return the media info, bitrate and key frame
+    // populate _assignmentState with credentials, camera_name, codec, bitrate and key frame
+    // populate _friendlyName with camera info: camera_name, codec, bitrate and key frame
+
+    _friendlyName->show();
+}
+
+void MainWindow::on_friendly_name_ok_clicked()
+{
+    printf("on_friendly_name_ok_clicked()\n");
+    _friendlyName->hide();
+    // _friendlyName->findChild<QLabel*>("cameraNameLabel")
+    // _friendlyName->findChild<QWidget*>("imageContainer")
+    // _friendlyName->findChild<QLineEdit*>("friendlyNameLineEdit")
+    // populate _assignmentState with friendly_name
+    _newOrExisting->show();
+}
+
+void MainWindow::on_new_storage_clicked()
+{
+    printf("on_new_storage_clicked()\n");
+    _newOrExisting->hide();
+
+
+    _retention->show();
+}
+
+void MainWindow::on_existing_storage_clicked()
+{
+    printf("on_existing_storage_clicked()\n");
+    // pop load file dialog
+}
+
+void MainWindow::on_retention_ok_clicked()
+{
+    // _retention->findChild<QSlider*>("retentionSlider")
+    // _retention->findChild<QLineEdit*>("maxDaysRetention")
+    // _retention->findChild<QLabel*>("numDaysLabel")
+    // _retention->findChild<QLabel*>("fileSizeLabel")
+
+    printf("on_retention_ok_clicked()\n");
 }

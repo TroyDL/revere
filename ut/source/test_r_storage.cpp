@@ -775,6 +775,8 @@ void test_r_storage::test_r_storage_file_fake_camera()
 
     fc->quit();
 
+    sf.flush(ctx);
+
     auto kfst = sf.key_frame_start_times(R_STORAGE_MEDIA_TYPE_ALL);
     auto result = sf.query(R_STORAGE_MEDIA_TYPE_ALL, kfst.front(), kfst.back());
 

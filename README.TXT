@@ -38,16 +38,15 @@ TODO
 
 Compiling on Linux
 
-   To prepare a fresh Ubuntu 21.10 VM for compilation:
+   To prepare a fresh Linux Mint 20.3 VM for compilation:
       sudo apt update
       sudo apt install -y build-essential linux-headers-$(uname -r)
       <install virtualbox guest additions> Note: Configure your VM to have a decent amount of vram.
+      sudo apt install git cmake
       sudo apt install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavfilter-dev libavdevice-dev
       sudo apt install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio libgstrtspserver-1.0-* libxml2-dev
-      sudo apt install libopencv-dev libopencv-contrib-dev
-      sudo apt install qttools5-dev
-
-      git clone git@github.com:dicroce/revere.git
+      sudo apt install qtbase5-dev qtmultimedia5-dev qttools5-dev
+      git clone https://github.com/dicroce/revere
       cd revere
       mkdir build && cd build && cmake .. && make
 

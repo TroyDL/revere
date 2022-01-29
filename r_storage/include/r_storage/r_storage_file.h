@@ -57,6 +57,8 @@ public:
 
     void write_frame(const r_storage_write_context& ctx, r_storage_media_type media_type, const uint8_t* p, size_t size, bool key, int64_t ts, int64_t pts);
 
+    void flush(const r_storage_write_context& ctx);
+
     // query() returns an r_blob_tree populated with the query results (see unit tests).
     std::vector<uint8_t> query(r_storage_media_type media_type, int64_t start_ts, int64_t end_ts);
 

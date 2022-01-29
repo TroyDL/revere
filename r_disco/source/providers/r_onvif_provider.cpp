@@ -140,9 +140,9 @@ vector<r_stream_config> r_onvif_provider::_fetch_configs(const string& top_dir)
                     cache_entry.created = steady_clock::now();
                     cache_entry.config = config;
                     _cache[id] = cache_entry;
-
-                    configs.push_back(config);
                 }
+
+                configs.push_back(config);
             }
             else
             {

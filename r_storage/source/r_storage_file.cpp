@@ -143,6 +143,20 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
     }
 }
 
+void r_storage_file::flush(const r_storage_write_context& ctx)
+{
+    while(!_gop_buffer.empty())
+    {
+        _gop g = _gop_buffer.front();
+        _gop_buffer.pop_front();
+
+        if(_current_block.is_null() || !_current_block.value().fits(g.data.size()))
+            _current_block.assign(_get_index_block(ctx, _block_index.insert(g.ts), g.ts, _h.block_size / g.data.size()));
+    
+        _current_block.raw().append(g.data.data(), g.data.size(), g.media_type, 0, g.ts);
+    }
+}
+
 vector<uint8_t> _s_to_buffer(const string& s)
 {
     vector<uint8_t> buffer(s.length());

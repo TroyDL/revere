@@ -57,7 +57,7 @@ public:
 
     void write_frame(const r_storage_write_context& ctx, r_storage_media_type media_type, const uint8_t* p, size_t size, bool key, int64_t ts, int64_t pts);
 
-    void flush(const r_storage_write_context& ctx);
+    void finalize(const r_storage_write_context& ctx);
 
     // query() returns an r_blob_tree populated with the query results (see unit tests).
     std::vector<uint8_t> query(r_storage_media_type media_type, int64_t start_ts, int64_t end_ts);
@@ -67,7 +67,7 @@ public:
 
     static void allocate(const std::string& file_name, size_t block_size, size_t num_blocks);
 
-    static int64_t required_file_size_for_retention_hours(int64_t retention_hours, int64_t byte_rate);
+    static std::pair<int64_t, int64_t> required_file_size_for_retention_hours(int64_t retention_hours, int64_t byte_rate);
 
 private:
     struct _header

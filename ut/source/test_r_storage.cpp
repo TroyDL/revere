@@ -775,7 +775,7 @@ void test_r_storage::test_r_storage_file_fake_camera()
 
     fc->quit();
 
-    sf.flush(ctx);
+    sf.finalize(ctx);
 
     auto kfst = sf.key_frame_start_times(R_STORAGE_MEDIA_TYPE_ALL);
     auto result = sf.query(R_STORAGE_MEDIA_TYPE_ALL, kfst.front(), kfst.back());
@@ -820,4 +820,20 @@ void test_r_storage::test_r_storage_file_fake_camera()
 
     muxer.finalize();
 
+}
+
+int64_t bits_to_bytes_per_second(int64_t bits_per_second)
+{
+    return bits_per_second / 8;
+}
+
+int64_t days_to_hours(int64_t days)
+{
+    return days * 24;
+}
+
+void test_r_storage::test_r_storage_file_file_size_calculation()
+{
+    auto info = r_storage_file::required_file_size_for_retention_hours(days_to_hours(3), bits_to_bytes_per_second(524288));
+    RTF_ASSERT((info.first * info.second) > 16588800000);
 }

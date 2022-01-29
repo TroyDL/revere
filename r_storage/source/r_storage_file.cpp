@@ -134,8 +134,6 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
         _gop g = _gop_buffer.front();
         _gop_buffer.pop_front();
 
-        printf("_gop_buffer.size()=%lu\n", _gop_buffer.size());
-
         if(_current_block.is_null() || !_current_block.value().fits(g.data.size()))
             _current_block.assign(_get_index_block(ctx, _block_index.insert(g.ts), g.ts, _h.block_size / g.data.size()));
 
@@ -143,7 +141,7 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
     }
 }
 
-void r_storage_file::flush(const r_storage_write_context& ctx)
+void r_storage_file::finalize(const r_storage_write_context& ctx)
 {
     while(!_gop_buffer.empty())
     {
@@ -302,11 +300,17 @@ void r_storage_file::allocate(const std::string& file_name, size_t block_size, s
     }
 }
 
-int64_t r_storage_file::required_file_size_for_retention_hours(int64_t retention_hours, int64_t byte_rate)
+pair<int64_t, int64_t> r_storage_file::required_file_size_for_retention_hours(int64_t retention_hours, int64_t byte_rate)
 {
-    // This may need to get more complicated in the future. The overhead should be linear however so we
-    // we should be able to compute a constant overhead factor.
-    return byte_rate * 60 * 60 * retention_hours;
+    // Note: windows mmap implementation requires mapped regions to be a multiple of 65536.
+    const int64_t FIFTY_MB_FILE = 52428800;
+    const int64_t FUDGE_FACTOR = 2;
+
+    int64_t natural_byte_size = (byte_rate * 60 * 60 * retention_hours);
+
+    int64_t num_blocks = (natural_byte_size / FIFTY_MB_FILE) + FUDGE_FACTOR;
+
+    return make_pair(num_blocks, FIFTY_MB_FILE);
 }
 
 r_storage_file::_header r_storage_file::_read_header(const std::string& file_name)

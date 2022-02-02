@@ -22,10 +22,14 @@ add_executable(
     source/neworexisting.ui
     source/neworexisting.h
     source/neworexisting.cpp
+    source/pleasewait.ui
+    source/pleasewait.h
+    source/pleasewait.cpp
 )
 
 target_include_directories(
     revere PUBLIC 
+    ../r_codec/include
     ../r_vss/include
     ../r_disco/include
     ../r_storage/include
@@ -47,6 +51,7 @@ target_link_directories(
 
 target_link_libraries(
     revere LINK_PUBLIC
+    r_codec
     r_vss
     r_disco
     r_storage

@@ -8,6 +8,8 @@ FriendlyName::FriendlyName(QWidget *parent) :
     _ui(new Ui::FriendlyName)
 {
     _ui->setupUi(this);
+    setWindowTitle("Camera Name");
+    setModal(true);
 }
 
 FriendlyName::~FriendlyName()

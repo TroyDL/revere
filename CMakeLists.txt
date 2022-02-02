@@ -4,6 +4,8 @@ include(TestBigEndian)
 
 # Global Config
 
+set(CMAKE_CXX_STANDARD 14)
+
 if(IS_BIG_ENDIAN)
     add_compile_definitions(BYTE_ORDER=BIG_ENDIAN)
 else()

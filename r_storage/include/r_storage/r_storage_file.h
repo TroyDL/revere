@@ -69,6 +69,8 @@ public:
 
     static std::pair<int64_t, int64_t> required_file_size_for_retention_hours(int64_t retention_hours, int64_t byte_rate);
 
+    static std::string human_readable_file_size(double size);
+
 private:
     struct _header
     {

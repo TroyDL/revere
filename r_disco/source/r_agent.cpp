@@ -1,7 +1,7 @@
 
 #include "r_disco/r_agent.h"
-#include "r_disco/providers/r_onvif_provider.h"
 #include "r_utils/r_exception.h"
+#include "r_utils/r_md5.h"
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -15,7 +15,7 @@ using namespace std::chrono;
 r_agent::r_agent(const std::string& top_dir) :
     _th(),
     _running(false),
-    _providers(),
+    _onvif_provider(top_dir, this),
     _changed_streams_cb(),
     _top_dir(top_dir),
     _timer(),
@@ -31,9 +31,6 @@ r_agent::~r_agent() noexcept
 
 void r_agent::start()
 {
-    // push providers into _providers
-    _providers.push_back(make_shared<r_onvif_provider>(_top_dir, this));
-
     _running = true;
     _th = std::thread(&r_agent::_entry_point, this);
 }
@@ -47,7 +44,30 @@ void r_agent::stop()
     }
 }
 
-pair<r_nullable<string>, r_nullable<string>> r_agent::get_credentials(const std::string& id)
+void r_agent::interrogate_camera(
+    const std::string& camera_name,
+    const std::string& ipv4,
+    const std::string& xaddrs,
+    const std::string& address,
+    r_nullable<string> username,
+    r_nullable<string> password
+)
+{
+    r_md5 hash;
+    hash.update((uint8_t*)address.c_str(), address.size());
+    hash.finalize();
+    auto id = hash.get_as_uuid();
+
+    auto sc = _onvif_provider.interrogate_camera(id, camera_name, ipv4, xaddrs, address, username, password);
+
+    vector<pair<r_stream_config, string>> output;
+    output.push_back(make_pair(sc.value(), hash_stream_config(sc.value())));
+
+    if(_changed_streams_cb)
+        _changed_streams_cb(output);
+}
+
+pair<r_nullable<string>, r_nullable<string>> r_agent::_get_credentials(const std::string& id)
 {
     if(!_credential_cb)
         R_THROW(("Please set a credential callback on r_agent before calling start."));
@@ -55,7 +75,7 @@ pair<r_nullable<string>, r_nullable<string>> r_agent::get_credentials(const std:
     return _credential_cb(id);
 }
 
-bool r_agent::is_recording(const std::string& id)
+bool r_agent::_is_recording(const std::string& id)
 {
     if(!_is_recording_cb)
         R_THROW(("Please set a is_recording callback on r_agent before calling start."));
@@ -81,22 +101,10 @@ void r_agent::_entry_point()
     }
 }
 
-vector<r_stream_config> r_agent::_collect_stream_configs()
-{
-    vector<r_stream_config> all_devices;
-    for(auto& provider : _providers)
-    {
-        auto devices = provider->poll();
-        all_devices.insert(all_devices.end(), devices.begin(), devices.end());
-    }
-
-    return all_devices;
-}
-
 void r_agent::_process_new_or_changed_streams_configs()
 {
     // fetch all our stream_configs from all providers
-    auto devices = this->_collect_stream_configs();
+    auto devices = _onvif_provider.poll();
 
     if(!devices.empty())
     {

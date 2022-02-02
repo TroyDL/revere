@@ -15,6 +15,15 @@ string top_dir()
     return top_dir.toStdString();
 }
 
+string sub_dir(const string& subdir)
+{
+    auto sd = QString::fromStdString(top_dir()) + QDir::separator() + QString::fromStdString(subdir);
+    if(!QDir(sd).exists())
+        QDir().mkpath(sd);
+    return sd.toStdString();
+
+}
+
 vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t>& times)
 {
     // Since our input times are key frames and different cameras may have different GOP sizes we need to discover for

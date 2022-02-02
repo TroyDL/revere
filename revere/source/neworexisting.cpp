@@ -8,6 +8,7 @@ NewOrExisting::NewOrExisting(QWidget *parent) :
     _ui(new Ui::NewOrExisting)
 {
     _ui->setupUi(this);
+    setModal(true);
 }
 
 NewOrExisting::~NewOrExisting()

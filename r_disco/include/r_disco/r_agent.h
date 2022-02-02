@@ -5,7 +5,7 @@
 #include "r_disco/r_stream_config.h"
 #include "r_utils/r_timer.h"
 #include "r_utils/r_nullable.h"
-#include "r_disco/r_provider.h"
+#include "r_disco/providers/r_onvif_provider.h"
 #include <thread>
 #include <vector>
 #include <memory>
@@ -32,6 +32,8 @@ typedef std::function<bool(const std::string&)> is_recording_cb;
 
 class r_agent
 {
+    friend class r_onvif_provider;
+
 public:
     r_agent(const std::string& top_dir);
     ~r_agent() noexcept;
@@ -42,18 +44,24 @@ public:
 
     void start();
     void stop();
-
-    std::pair<r_utils::r_nullable<std::string>, r_utils::r_nullable<std::string>> get_credentials(const std::string& id);
-    bool is_recording(const std::string& id);
+    void interrogate_camera(
+        const std::string& camera_name,
+        const std::string& ipv4,
+        const std::string& xaddrs,
+        const std::string& address,
+        r_utils::r_nullable<std::string> username,
+        r_utils::r_nullable<std::string> password
+    );
 
 private:
+    std::pair<r_utils::r_nullable<std::string>, r_utils::r_nullable<std::string>> _get_credentials(const std::string& id);
+    bool _is_recording(const std::string& id);
     void _entry_point();
-    std::vector<r_stream_config> _collect_stream_configs();
     void _process_new_or_changed_streams_configs();
 
     std::thread _th;
     bool _running;
-    std::vector<std::shared_ptr<r_provider>> _providers;
+    r_onvif_provider _onvif_provider;
     changed_streams_cb _changed_streams_cb;
     std::string _top_dir;
     r_utils::r_timer _timer;

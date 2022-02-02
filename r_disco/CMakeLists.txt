@@ -5,7 +5,6 @@ add_library(
     source/r_agent.cpp
     include/r_disco/r_devices.h
     source/r_devices.cpp
-    include/r_disco/r_provider.h
     include/r_disco/r_stream_config.h
     include/r_disco/r_camera.h
     source/r_stream_config.cpp

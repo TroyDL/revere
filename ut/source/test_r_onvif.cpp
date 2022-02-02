@@ -78,7 +78,14 @@ void test_r_onvif::test_r_onvif_session_basic()
     {
         auto keys = key_map.at(di.address);
 
-        auto rdi = session.get_rtsp_url(di, keys.username, keys.password);
+        auto rdi = session.get_rtsp_url(
+            di.camera_name,
+            di.ipv4,
+            di.xaddrs,
+            di.address,
+            keys.username,
+            keys.password
+        );
 
         if(!rdi.is_null())
         {

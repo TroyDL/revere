@@ -36,6 +36,13 @@ typedef std::function<void(const sample_context& ctx, const uint8_t* p, size_t s
 typedef std::function<void(const std::map<std::string, r_sdp_media>& sdp_medias)> r_sdp_media_cb;
 typedef std::function<void(r_media type, const r_pad_info& pad_info)> r_pad_added_cb;
 
+struct r_camera_params
+{
+    int64_t bytes_per_second;
+    std::map<std::string, r_sdp_media> sdp_medias;
+    std::vector<uint8_t> video_key_frame;
+};
+
 std::map<std::string, r_sdp_media> fetch_sdp_media(
     const std::string& rtsp_url,
     const r_utils::r_nullable<std::string>& username = r_utils::r_nullable<std::string>(),
@@ -45,6 +52,12 @@ std::map<std::string, r_sdp_media> fetch_sdp_media(
 int64_t fetch_bytes_per_second(
     const std::string& rtsp_url,
     int measured_duration_seconds = 15,
+    const r_utils::r_nullable<std::string>& username = r_utils::r_nullable<std::string>(),
+    const r_utils::r_nullable<std::string>& password = r_utils::r_nullable<std::string>()
+);
+
+r_camera_params fetch_camera_params(
+    const std::string& rtsp_url,
     const r_utils::r_nullable<std::string>& username = r_utils::r_nullable<std::string>(),
     const r_utils::r_nullable<std::string>& password = r_utils::r_nullable<std::string>()
 );

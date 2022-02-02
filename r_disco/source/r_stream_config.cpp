@@ -13,6 +13,11 @@ string r_disco::hash_stream_config(const r_stream_config& sc)
     h.update((uint8_t*)sc.id.c_str(), sc.id.length());
     if(!sc.ipv4.is_null())
         h.update((uint8_t*)sc.ipv4.value().c_str(), sc.ipv4.value().length());
+    if(!sc.xaddrs.is_null())
+        h.update((uint8_t*)sc.xaddrs.value().c_str(), sc.xaddrs.value().length());
+    if(!sc.address.is_null())
+        h.update((uint8_t*)sc.address.value().c_str(), sc.address.value().length());
+
     if(!sc.rtsp_url.is_null())
         h.update((uint8_t*)sc.rtsp_url.value().c_str(), sc.rtsp_url.value().length());
 

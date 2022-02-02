@@ -104,7 +104,10 @@ vector<r_onvif_discovery_info> r_onvif_session::discover()
 }
 
 r_nullable<r_onvif_device_info> r_onvif_session::get_rtsp_url(
-    const r_onvif_discovery_info& info,
+    const std::string& camera_name,
+    const std::string& ipv4,
+    const std::string& xaddrs,
+    const std::string& address,
     r_nullable<string> username,
     r_nullable<string> password
 ) const
@@ -113,29 +116,29 @@ r_nullable<r_onvif_device_info> r_onvif_session::get_rtsp_url(
 
     try
     {
-        auto service = _extract_onvif_service(info.xaddrs, true);
+        auto service = _extract_onvif_service(xaddrs, true);
 
-        auto timeOffset = _get_time_offset(service, info.xaddrs);
+        auto timeOffset = _get_time_offset(service, xaddrs);
 
-        raii_ptr<xmlDoc> capsDoc(_send_get_capabilities(username, password, info.xaddrs, timeOffset), xmlFreeDoc);
+        raii_ptr<xmlDoc> capsDoc(_send_get_capabilities(username, password, xaddrs, timeOffset), xmlFreeDoc);
 
         if(!capsDoc.get())
             R_THROW(("Unable to fetch device capabilities."));
 
-        _check_for_xml_error_msg(capsDoc.get(), info.xaddrs);
+        _check_for_xml_error_msg(capsDoc.get(), xaddrs);
 
         auto media_service = _extract_onvif_service(_get_xml_value(capsDoc.get(), "//s:Body//tds:GetCapabilitiesResponse//tds:Capabilities//tt:Media//tt:XAddr"), true);
 
-        auto profile_token = _get_first_profile_token(username, password, info.xaddrs, media_service, timeOffset);
+        auto profile_token = _get_first_profile_token(username, password, xaddrs, media_service, timeOffset);
 
-        auto rtsp_url = _get_stream_uri(username, password, timeOffset, profile_token, info.xaddrs, media_service);
+        auto rtsp_url = _get_stream_uri(username, password, timeOffset, profile_token, xaddrs, media_service);
 
-        raii_ptr<xmlDoc> di_doc(_send_get_device_information(username, password, timeOffset, info.xaddrs, media_service), xmlFreeDoc);
+        raii_ptr<xmlDoc> di_doc(_send_get_device_information(username, password, timeOffset, xaddrs, media_service), xmlFreeDoc);
 
         if(!di_doc.get())
             R_THROW(("Unable to fetch device information."));
 
-        _check_for_xml_error_msg(di_doc.get(), info.xaddrs);
+        _check_for_xml_error_msg(di_doc.get(), xaddrs);
 
         auto serial_number = _get_xml_value(di_doc.get(), "//s:Body//tds:GetDeviceInformationResponse//tds:SerialNumber");
         auto model_number = _get_xml_value(di_doc.get(), "//s:Body//tds:GetDeviceInformationResponse//tds:Model");
@@ -144,8 +147,10 @@ r_nullable<r_onvif_device_info> r_onvif_session::get_rtsp_url(
         auto hardware_id = _get_xml_value(di_doc.get(), "//s:Body//tds:GetDeviceInformationResponse//tds:HardwareId");
 
         r_onvif_device_info rdi;
-        rdi.camera_name = info.camera_name;
-        rdi.address = info.address;
+        rdi.camera_name = camera_name;
+        rdi.ipv4 = ipv4;
+        rdi.xaddrs = xaddrs;
+        rdi.address = address;
         rdi.serial_number = serial_number;
         rdi.model_number = model_number;
         rdi.firmware_version = firmware_version;

@@ -8,6 +8,7 @@ Retention::Retention(QWidget *parent) :
     _ui(new Ui::Retention)
 {
     _ui->setupUi(this);
+    setModal(true);
 }
 
 Retention::~Retention()

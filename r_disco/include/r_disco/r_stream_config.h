@@ -13,6 +13,8 @@ struct r_stream_config
     std::string id;
     r_utils::r_nullable<std::string> camera_name;
     r_utils::r_nullable<std::string> ipv4;
+    r_utils::r_nullable<std::string> xaddrs;
+    r_utils::r_nullable<std::string> address;
     r_utils::r_nullable<std::string> rtsp_url;
 
     // Streams can be video or audio only (or both) and they may not have any parameters

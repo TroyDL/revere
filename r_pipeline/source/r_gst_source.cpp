@@ -111,6 +111,81 @@ int64_t r_pipeline::fetch_bytes_per_second(
     return (int64_t)(((double)(audio_byte_total + video_byte_total)) / (double)duration_cast<seconds>(delta).count());
 }
 
+//struct r_camera_info
+//{
+//    int64_t bytes_per_second;
+//    r_sdp_media sdp_media;
+//    std::vector<uint8_t> video_key_frame;
+//};
+
+r_camera_params r_pipeline::fetch_camera_params(
+    const std::string& rtsp_url,
+    const r_utils::r_nullable<std::string>& username,
+    const r_utils::r_nullable<std::string>& password
+)
+{
+    vector<r_arg> arguments;
+    add_argument(arguments, "url", rtsp_url);
+
+    if(!username.is_null())
+        add_argument(arguments, "username", username.value());
+
+    if(!password.is_null())
+        add_argument(arguments, "password", password.value());
+
+    r_gst_source src;
+    src.set_args(arguments);
+
+    bool done = false;
+
+    map<string, r_sdp_media> medias;
+    src.set_sdp_media_cb([&](const map<string, r_sdp_media>& sdp_medias){
+        medias = sdp_medias;
+    });
+
+    int64_t audio_byte_total = 0;
+    src.set_audio_sample_cb([&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        if(!done)
+            audio_byte_total += sz;
+    });
+
+    bool stream_start_time_set = false;
+    system_clock::time_point stream_start_time;    
+
+    vector<uint8_t> video_key_frame;
+
+    int64_t video_byte_total = 0;
+    src.set_video_sample_cb([&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        if(!stream_start_time_set)
+        {
+            stream_start_time_set = true;
+            stream_start_time = system_clock::now();
+
+            video_key_frame.resize(sz);
+            memcpy(&video_key_frame[0], p, sz);
+        }
+
+        if(!done)
+            video_byte_total += sz;
+    });
+
+    src.play();
+
+    std::this_thread::sleep_for(std::chrono::seconds(15));
+
+    done = true;
+
+    auto delta = system_clock::now() - stream_start_time;
+
+    src.stop();
+
+    r_camera_params cp;
+    cp.bytes_per_second = (int64_t)(((double)(audio_byte_total + video_byte_total)) / (double)duration_cast<seconds>(delta).count());
+    cp.sdp_medias = medias;
+    cp.video_key_frame = video_key_frame;
+    return cp;
+}
+
 r_gst_source::r_gst_source() :
     _sample_cb_lock(),
     _video_sample_cb(),

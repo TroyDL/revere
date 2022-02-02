@@ -73,7 +73,14 @@ int main(int argc, char *argv[])
             auto username = r_args::get_optional_argument(arguments, "--username");
             auto password = r_args::get_optional_argument(arguments, "--password");
 
-            auto ci = session.get_rtsp_url(info, username, password);
+            auto ci = session.get_rtsp_url(
+                info.camera_name,
+                info.ipv4,
+                info.xaddrs,
+                info.address,
+                username,
+                password
+            );
 
             if(!ci.is_null())
             {

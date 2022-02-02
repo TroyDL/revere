@@ -313,6 +313,18 @@ pair<int64_t, int64_t> r_storage_file::required_file_size_for_retention_hours(in
     return make_pair(num_blocks, FIFTY_MB_FILE);
 }
 
+string r_storage_file::human_readable_file_size(double size)
+{
+    int i = 0;
+    const char* units[] = {"bytes", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+    while (size > 1024) {
+        size /= 1024;
+        i++;
+    }
+
+    return r_string_utils::format("%.2f %s", size, units[i]);
+}
+
 r_storage_file::_header r_storage_file::_read_header(const std::string& file_name)
 {
     auto tmp_f = r_file::open(file_name, "r+");

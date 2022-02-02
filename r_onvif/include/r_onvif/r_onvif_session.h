@@ -24,6 +24,8 @@ struct r_onvif_discovery_info
 struct r_onvif_device_info
 {
     std::string camera_name;
+    std::string ipv4;
+    std::string xaddrs;
     std::string address;
     std::string serial_number;
     std::string model_number;
@@ -42,7 +44,10 @@ public:
     std::vector<r_onvif_discovery_info> discover();
 
     r_utils::r_nullable<r_onvif_device_info> get_rtsp_url(
-        const r_onvif_discovery_info& info,
+        const std::string& camera_name,
+        const std::string& ipv4,
+        const std::string& xaddrs,
+        const std::string& address,
         r_utils::r_nullable<std::string> username,
         r_utils::r_nullable<std::string> password
     ) const;

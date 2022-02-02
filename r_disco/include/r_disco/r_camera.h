@@ -13,6 +13,8 @@ struct r_camera
     std::string id;
     r_utils::r_nullable<std::string> camera_name;
     r_utils::r_nullable<std::string> ipv4;
+    r_utils::r_nullable<std::string> xaddrs;
+    r_utils::r_nullable<std::string> address;
     r_utils::r_nullable<std::string> rtsp_url;
     r_utils::r_nullable<std::string> video_codec;
     r_utils::r_nullable<std::string> video_codec_parameters;

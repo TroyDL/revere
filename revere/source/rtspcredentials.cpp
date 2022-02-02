@@ -8,6 +8,8 @@ RTSPCredentials::RTSPCredentials(QWidget *parent) :
     _ui(new Ui::RTSPCredentials)
 {
     _ui->setupUi(this);
+    setWindowTitle("Camera Credentials");
+    setModal(true);
 }
 
 RTSPCredentials::~RTSPCredentials()

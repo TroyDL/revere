@@ -837,3 +837,15 @@ void test_r_storage::test_r_storage_file_file_size_calculation()
     auto info = r_storage_file::required_file_size_for_retention_hours(days_to_hours(3), bits_to_bytes_per_second(524288));
     RTF_ASSERT((info.first * info.second) > 16588800000);
 }
+
+void test_r_storage::test_r_storage_file_human_readable_file_size()
+{
+    auto sz = r_storage_file::human_readable_file_size(1610612736);
+    RTF_ASSERT(sz == "1.50 GB");
+
+    sz = r_storage_file::human_readable_file_size(21474836480);
+    RTF_ASSERT(sz == "20.00 GB");
+
+    sz = r_storage_file::human_readable_file_size(1023);
+    RTF_ASSERT(sz == "1023.00 bytes");
+}

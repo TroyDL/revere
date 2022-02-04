@@ -5,6 +5,7 @@
 #include "r_pipeline/r_gst_source.h"
 #include "r_storage/r_storage_file.h"
 #include "r_utils/r_time_utils.h"
+#include "r_utils/r_file.h"
 #include "r_codec/r_video_decoder.h"
 #include <QLabel>
 #include <QMessageBox>
@@ -12,6 +13,7 @@
 #include <QCloseEvent>
 #include <QHBoxLayout>
 #include <QFileDialog>
+#include <QLayout>
 #include <functional>
 #include <thread>
 
@@ -37,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     _retention(new Retention(this)),
     _newOrExisting(new NewOrExisting(this)),
     _pleaseWait(new PleaseWait(this)),
+    _newFileName(new NewFileName(this)),
     _assignmentState()
 {
     r_pipeline::gstreamer_init();
@@ -116,6 +119,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    _pleaseWait->hide();
+    delete _pleaseWait;
+
+    _newFileName->hide();
+    delete _newFileName;
+
     _rtspCredentials->hide();
     delete _rtspCredentials;
 
@@ -154,7 +163,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         return;
     }
 #endif
-    if (_trayIcon->isVisible()) {
+    if(_trayIcon->isVisible())
+    {
         QMessageBox::information(this, tr("Minmize to tray"),
                                  tr("The program will keep running in the system tray. To terminate the program, "
                                     "choose <b>Exit</b> in the Revere context menu."));
@@ -173,8 +183,36 @@ void MainWindow::on_camera_ui_update_timer()
 
     _recordingListWidget->clear();
 
+    int i = 0;
     for(auto& c: assigned)
-        _recordingListWidget->addItem(QString::fromStdString(c.second.camera_name.value()));
+    {
+        //_recordingListWidget->addItem(QString::fromStdString(c.second.camera_name.value()));
+        QWidget* w = new QWidget(_recordingListWidget);
+        QHBoxLayout* hl = new QHBoxLayout(w);
+        hl->setSizeConstraint(QLayout::SetFixedSize);
+        w->setLayout(hl);
+        QPushButton* b = new QPushButton(w);
+        b->setText("Remove");
+        b->setProperty("camera_id", QString::fromStdString(c.first));
+        connect(b, SIGNAL(clicked()), this, SLOT(on_remove_button_clicked()));
+
+        QWidget* lc = new QWidget(_recordingListWidget);
+        QVBoxLayout* vl = new QVBoxLayout(lc);
+        lc->setLayout(vl);
+        QLabel* camera_name_l = new QLabel(QString::fromStdString(c.second.friendly_name.value()), lc);
+        QLabel* camera_ip_l = new QLabel(QString::fromStdString(c.second.ipv4.value()), lc);
+        vl->addWidget(camera_name_l);
+        vl->addWidget(camera_ip_l);
+
+        hl->addWidget(b);
+        hl->addWidget(lc);
+
+        QListWidgetItem* item = new QListWidgetItem(_recordingListWidget);
+        item->setSizeHint(w->sizeHint());
+        _recordingListWidget->insertItem(i, item);
+        _recordingListWidget->setItemWidget(item, w);
+        ++i;
+    }
 
     auto all_cameras = _devices.get_all_cameras();
 
@@ -188,16 +226,25 @@ void MainWindow::on_camera_ui_update_timer()
             continue;
 
         QWidget* w = new QWidget(_discoveredListWidget);
-        QLabel* l = new QLabel(QString::fromStdString(c.camera_name.value()), w);
+        QHBoxLayout* hl = new QHBoxLayout(w);
+        hl->setSizeConstraint(QLayout::SetFixedSize);
+        w->setLayout(hl);
         QPushButton* b = new QPushButton(w);
         b->setText("Record");
         b->setProperty("camera_id", QString::fromStdString(c.id));
         connect(b, SIGNAL(clicked()), this, SLOT(on_record_button_clicked()));
-        QHBoxLayout* layout = new QHBoxLayout(w);
-        layout->addWidget(b);
-        layout->addWidget(l);
-        layout->setSizeConstraint(QLayout::SetFixedSize);
-        w->setLayout(layout);
+
+        QWidget* lc = new QWidget(_discoveredListWidget);
+        QVBoxLayout* vl = new QVBoxLayout(lc);
+        lc->setLayout(vl);
+        QLabel* camera_name_l = new QLabel(QString::fromStdString(c.camera_name.value()), lc);
+        QLabel* camera_ip_l = new QLabel(QString::fromStdString(c.ipv4.value()), lc);
+        vl->addWidget(camera_name_l);
+        vl->addWidget(camera_ip_l);
+
+        hl->addWidget(b);
+        hl->addWidget(lc);
+
         QListWidgetItem* item = new QListWidgetItem(_discoveredListWidget);
         item->setSizeHint(w->sizeHint());
         _discoveredListWidget->insertItem(i, item);
@@ -224,6 +271,18 @@ void MainWindow::on_record_button_clicked()
     _rtspCredentials->findChild<QLabel*>("ipAddressLabel")->setText(QString::fromStdString(as.ipv4));
 
     _rtspCredentials->show();
+}
+
+void MainWindow::on_remove_button_clicked()
+{
+    QPushButton* sender = qobject_cast<QPushButton*>(QObject::sender());
+
+    auto camera_id = sender->property("camera_id").toString().toStdString();
+
+    auto maybe_c = _devices.get_camera_by_id(camera_id);
+
+    if(!maybe_c.is_null())
+        _devices.remove_camera(maybe_c.value());
 }
 
 void MainWindow::on_rtsp_credentials_ok_clicked()
@@ -304,19 +363,63 @@ void MainWindow::on_new_storage_clicked()
 void MainWindow::on_existing_storage_clicked()
 {
     printf("on_existing_storage_clicked()\n");
-    // pop load file dialog
+    _newOrExisting->hide();
+
+    auto fileName = QFileDialog::getOpenFileName(
+        this,
+        tr("Open File"),
+        QString::fromStdString(sub_dir("video")),
+        tr("Revere Video Database (*.rvd)")
+    ).toStdString();
+
+
+    fileName = fileName.substr(fileName.rfind(r_fs::PATH_SLASH)+1);
+
+    auto as = _assignmentState.value();
+
+    auto c = as.camera.value();
+
+    c.rtsp_username = as.rtsp_username;
+    c.rtsp_password = as.rtsp_password;
+    c.friendly_name = as.camera_friendly_name;
+    c.record_file_path = fileName;
+    //c.n_record_file_blocks = as.num_storage_file_blocks;
+    //c.record_file_block_size = as.storage_file_block_size;
+    c.state = "assigned";
+
+    _devices.save_camera(c);
+
+//    QFileDialog dialog(this, "Open File");
+//    dialog.setFileMode(QFileDialog::ExistingFile);
+//    dialog.setWindowTitle(QObject::tr("Open Existing..."));
+//    dialog.setDirectory(QString::fromStdString(sub_dir("video")));
+//    dialog.exec();
+
+
+}
+
+static string _make_file_name(string name)
+{
+    replace(begin(name), end(name), ' ', '_');
+    return name + ".rvd";
 }
 
 void MainWindow::on_retention_ok_clicked()
 {
     _retention->hide();
 
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, "New File", "Create a snew storage file?",
-                                  QMessageBox::Yes|QMessageBox::No);
-    if(reply == QMessageBox::Yes)
-        printf("YES clicked\n");
-    else printf("NO clicked\n");
+    auto as = _assignmentState.value();
+
+    auto fileNameEdit = _newFileName->findChild<QLineEdit*>("fileNameLineEdit");
+    fileNameEdit->setText(QString::fromStdString(_make_file_name(as.camera_friendly_name)));
+
+    auto button_box = _newFileName->findChild<QDialogButtonBox*>("buttonBox");
+    auto ok_button = button_box->button(QDialogButtonBox::Ok);
+    connect(ok_button, SIGNAL(clicked()), this, SLOT(on_new_filename_ok_clicked()));
+    auto cancel_button = button_box->button(QDialogButtonBox::Cancel);
+    connect(cancel_button, SIGNAL(clicked()), _newFileName, SLOT(close()));
+
+    _newFileName->show();
 }
 
 void MainWindow::on_continuous_retention_days_changed(QString value)
@@ -370,4 +473,60 @@ void MainWindow::update_retention_ui()
     fileSizeLabel->setText(QString::fromStdString(human_readable_size));
 
     _assignmentState.set_value(as);
+}
+
+void MainWindow::on_new_filename_ok_clicked()
+{
+    _newFileName->hide();
+
+    auto video_path = sub_dir("video");
+
+    auto as = _assignmentState.value();
+
+    auto c = as.camera.value();
+
+    auto fileName = _newFileName->findChild<QLineEdit*>("fileNameLineEdit")->text().toStdString();
+
+    auto storage_path = join_path(video_path, fileName);
+
+    printf("on_new_filename_ok_clicked(): %s\n", storage_path.c_str());
+
+    r_storage::r_storage_file::allocate(storage_path, as.storage_file_block_size, as.num_storage_file_blocks);
+
+    c.rtsp_username = as.rtsp_username;
+    c.rtsp_password = as.rtsp_password;
+    c.friendly_name = as.camera_friendly_name;
+    c.record_file_path = fileName;
+    c.n_record_file_blocks = as.num_storage_file_blocks;
+    c.record_file_block_size = as.storage_file_block_size;
+    c.state = "assigned";
+
+    _devices.save_camera(c);
+
+    // -make the record file with the as settings
+    //   r_storage_file::allocate(file_name, block_size, n_blocks);
+    // -set rtsp_username, rtsp_password, friendly_name, record_file_path, n_record_file_blocks, record_file_block_size
+    //     on as.camera
+    // -set state=assigned on as.camera
+    // -save camera
+
+
+    //std::string ipv4;
+    //r_utils::r_nullable<std::string> rtsp_username;
+    //r_utils::r_nullable<std::string> rtsp_password;
+    //std::string camera_friendly_name;
+    //int64_t byte_rate {64000};
+    //int continuous_retention_days {3};
+    //int motion_retention_days {10};
+    //int motion_percentage_estimate {5};
+    //int64_t num_storage_file_blocks {0};
+    //int64_t storage_file_block_size {0};
+    //std::string storage_path;
+    //r_utils::r_nullable<r_disco::r_camera> camera;
+    //std::map<std::string, r_pipeline::r_sdp_media> sdp_medias;
+    //std::vector<uint8_t> key_frame;
+
+    _assignmentState.set_value(as);
+
+
 }

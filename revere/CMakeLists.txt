@@ -25,6 +25,9 @@ add_executable(
     source/pleasewait.ui
     source/pleasewait.h
     source/pleasewait.cpp
+    source/newfilename.ui
+    source/newfilename.h
+    source/newfilename.cpp
 )
 
 target_include_directories(

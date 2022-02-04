@@ -21,7 +21,11 @@ string sub_dir(const string& subdir)
     if(!QDir(sd).exists())
         QDir().mkpath(sd);
     return sd.toStdString();
+}
 
+std::string join_path(const std::string& path, const std::string& fileName)
+{
+    return (QString::fromStdString(path) + QDir::separator() + QString::fromStdString(fileName)).toStdString();
 }
 
 vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t>& times)

@@ -109,7 +109,7 @@
          </font>
         </property>
         <property name="text">
-         <string>What percent of time does this camera have motion?</string>
+         <string>About what percent of time does this camera have motion?</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

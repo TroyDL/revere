@@ -82,7 +82,6 @@ void r_stream_keeper::_entry_point()
 
                 _remove_recording_contexts(_devices.get_modified_cameras(cameras));
                 _remove_recording_contexts(_devices.get_assigned_cameras_removed(cameras));
-
                 _add_recording_contexts(_devices.get_assigned_cameras_added(_get_current_cameras()));
             }
 
@@ -105,7 +104,6 @@ void r_stream_keeper::_entry_point()
                 {
                     r_stream_keeper_result result;
                     result.is_recording = _streams.find(cmd.first.id) != _streams.end();
-                    printf("%s.is_recording=%s\n", cmd.first.id.c_str(), result.is_recording ? "true" : "false");
                     cmd.second.set_value(result);
                 }
                 else R_THROW(("Unknown command sent to stream keeper!"));
@@ -131,9 +129,9 @@ void r_stream_keeper::_add_recording_contexts(const vector<r_camera>& cameras)
 {
     for(const auto& camera : cameras)
     {
-        if(!_streams.count(camera.id))
+        if(_streams.count(camera.id) == 0)
         {
-            printf("stream keeper add\n");
+            printf("stream keeper add camera.id=%s\n", camera.id.c_str());
             _streams[camera.id] = make_shared<r_recording_context>(camera, _top_dir);
         }
     }
@@ -143,7 +141,7 @@ void r_stream_keeper::_remove_recording_contexts(const std::vector<r_disco::r_ca
 {
     for(const auto& camera : cameras)
     {
-        if(_streams.count(camera.id))
+        if(_streams.count(camera.id) > 0)
             _streams.erase(camera.id);
     }
 }

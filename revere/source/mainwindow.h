@@ -11,6 +11,7 @@
 #include "retention.h"
 #include "neworexisting.h"
 #include "pleasewait.h"
+#include "newfilename.h"
 #include "r_disco/r_agent.h"
 #include "r_disco/r_devices.h"
 #include "r_vss/r_stream_keeper.h"
@@ -60,8 +61,8 @@ signals:
 private slots:
     void on_camera_ui_update_timer();
 
-    // assignment
     void on_record_button_clicked();
+    void on_remove_button_clicked();
     void on_rtsp_credentials_ok_clicked();
     void on_fetch_camera_params_done();
     void on_friendly_name_ok_clicked();
@@ -71,6 +72,7 @@ private slots:
     void on_continuous_retention_days_changed(QString value);
     void on_motion_retention_days_changed(QString value);
     void on_percentage_estimate_changed(QString value);
+    void on_new_filename_ok_clicked();
 
 private:
     void update_retention_ui();
@@ -97,6 +99,7 @@ private:
     Retention* _retention;
     NewOrExisting* _newOrExisting;
     PleaseWait* _pleaseWait;
+    NewFileName* _newFileName;
 
     r_utils::r_nullable<assignment_state> _assignmentState;
 };

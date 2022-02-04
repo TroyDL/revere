@@ -12,6 +12,7 @@ struct r_camera
     // r_stream_config sourced fields
     std::string id;
     r_utils::r_nullable<std::string> camera_name;
+    r_utils::r_nullable<std::string> friendly_name;
     r_utils::r_nullable<std::string> ipv4;
     r_utils::r_nullable<std::string> xaddrs;
     r_utils::r_nullable<std::string> address;

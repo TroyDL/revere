@@ -248,8 +248,8 @@ void r_storage_file::allocate(const std::string& file_name, size_t block_size, s
         if(!f)
             R_THROW(("r_storage_file: unable to create r_storage_file file."));
 
-        if(!_is_power_of_2((uint32_t)block_size))
-            R_THROW(("r_storage_file: block_size must be power of 2."));
+//        if(!_is_power_of_2((uint32_t)block_size))
+//            R_THROW(("r_storage_file: block_size must be power of 2."));
 
         if(r_fs::fallocate(f.get(), num_blocks * block_size) < 0)
             R_THROW(("r_storage_file: unable to allocate file."));

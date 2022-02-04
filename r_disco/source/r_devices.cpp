@@ -241,6 +241,7 @@ void r_devices::_create_db(const std::string& top_dir) const
         "CREATE TABLE IF NOT EXISTS cameras ("
             "id TEXT PRIMARY KEY NOT NULL UNIQUE, "
             "camera_name TEXT, "
+            "friendly_name TEXT, "
             "ipv4 TEXT, "
             "xaddrs TEXT, "
             "address TEXT, "
@@ -282,6 +283,7 @@ r_sqlite_conn r_devices::_open_or_create_db(const string& top_dir) const
         "CREATE TABLE IF NOT EXISTS cameras ("
             "id TEXT PRIMARY KEY NOT NULL UNIQUE, "
             "camera_name TEXT, "
+            "friendly_name TEXT, "
             "ipv4 TEXT, "
             "xaddrs TEXT, "
             "address TEXT, "
@@ -428,6 +430,8 @@ r_camera r_devices::_create_camera(const map<string, r_nullable<string>>& row) c
     camera.id = row.at("id").value();
     if(!row.at("camera_name").is_null())
         camera.camera_name = row.at("camera_name").value();
+    if(!row.at("friendly_name").is_null())
+        camera.friendly_name = row.at("friendly_name").value();
     if(!row.at("ipv4").is_null())
         camera.ipv4 = row.at("ipv4").value();
     if(!row.at("xaddrs").is_null())
@@ -535,8 +539,9 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
 
     auto query = r_string_utils::format(
             "REPLACE INTO cameras("
-                "id, %s%s%s%s%s%s%s%s%s%s%s%s%sstate, %s%s%sstream_config_hash) "
+                "id, %s%s%s%s%s%s%s%s%s%s%s%s%s%sstate, %s%s%sstream_config_hash) "
             "VALUES("
+                "%s"
                 "%s"
                 "%s"
                 "%s"
@@ -558,6 +563,7 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
                 "%s"
             ");",
             (!camera.camera_name.is_null())?"camera_name, ":"",
+            (!camera.friendly_name.is_null())?"friendly_name, ":"",
             (!camera.ipv4.is_null())?"ipv4, ":"",
             (!camera.xaddrs.is_null())?"xaddrs, ":"",
             (!camera.address.is_null())?"address, ":"",
@@ -576,6 +582,7 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
 
             r_string_utils::format("'%s', ", camera.id.c_str()).c_str(),
             (!camera.camera_name.is_null())?r_string_utils::format("'%s', ", camera.camera_name.value().c_str()).c_str():"",
+            (!camera.friendly_name.is_null())?r_string_utils::format("'%s', ", camera.friendly_name.value().c_str()).c_str():"",
             (!camera.ipv4.is_null())?r_string_utils::format("'%s', ", camera.ipv4.value().c_str()).c_str():"",
             (!camera.xaddrs.is_null())?r_string_utils::format("'%s', ", camera.xaddrs.value().c_str()).c_str():"",
             (!camera.address.is_null())?r_string_utils::format("'%s', ", camera.address.value().c_str()).c_str():"",

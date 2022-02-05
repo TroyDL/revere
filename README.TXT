@@ -36,6 +36,10 @@ TODO
        - Triggers object detection
        - Schedule aware analytic triggers (txt messages, UI notifications, etc)
 
+Known Issues
+    - Removing camera from Recording list it doesn't re-appear in discovered for a while. Axis cameras
+      dont return for a long time (i think because our discovery code uses the same guid on subsequent runs).
+
 Compiling on Linux
 
    To prepare a fresh Linux Mint 20.3 VM for compilation:

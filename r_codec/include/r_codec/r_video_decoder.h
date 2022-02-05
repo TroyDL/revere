@@ -49,6 +49,8 @@ public:
     r_video_decoder& operator=(const r_video_decoder&) = delete;
     r_video_decoder& operator=(r_video_decoder&& obj);
 
+    void set_extradata(const uint8_t* data, size_t size);
+
     void attach_buffer(const uint8_t* data, size_t size);
 
     r_video_decoder_state decode();

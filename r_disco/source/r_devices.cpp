@@ -105,6 +105,12 @@ void r_devices::assign_camera(r_camera& camera)
     save_camera(camera);
 }
 
+void r_devices::unassign_camera(r_camera& camera)
+{
+    camera.state = "discovered";
+    save_camera(camera);
+}
+
 pair<r_nullable<string>, r_nullable<string>> r_devices::get_credentials(const std::string& id)
 {
     r_devices_cmd cmd;

@@ -2,6 +2,7 @@
 #include "r_codec/r_video_decoder.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_std_utils.h"
+#include <cstring>
 
 using namespace r_codec;
 using namespace r_utils;
@@ -64,6 +65,9 @@ r_video_decoder::r_video_decoder(AVCodecID codec_id, bool parse_input) :
     if(!_frame)
         R_THROW(("Failed to allocate frame"));
 
+    _context->extradata = nullptr;
+    _context->extradata_size = 0;
+
     if(!_parse_input)
         _parser->flags = PARSER_FLAG_COMPLETE_FRAMES;
     
@@ -122,6 +126,23 @@ r_video_decoder& r_video_decoder::operator=(r_video_decoder&& obj)
     }
 
     return *this;
+}
+
+void r_video_decoder::set_extradata(const uint8_t* data, size_t size)
+{
+    if(!_context)
+        R_THROW(("Context is not initialized"));
+
+    if(_context->extradata)
+    {
+        av_free(_context->extradata);
+        _context->extradata = nullptr;
+        _context->extradata_size = 0;
+    }
+
+    _context->extradata = (uint8_t*)av_malloc(size);
+    _context->extradata_size = size;
+    memcpy(_context->extradata, data, size);
 }
 
 void r_video_decoder::attach_buffer(const uint8_t* data, size_t size)
@@ -289,6 +310,12 @@ void r_video_decoder::_clear()
     }
     if(_context)
     {
+        if(_context->extradata)
+        {
+            av_free(_context->extradata);
+            _context->extradata = nullptr;
+            _context->extradata_size = 0;
+        }
         avcodec_close(_context);
         av_free(_context);
         _context = nullptr;

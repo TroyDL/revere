@@ -3,6 +3,7 @@
 #include "ui_mainwindow.h"
 #include "r_disco/r_stream_config.h"
 #include "r_pipeline/r_gst_source.h"
+#include "r_pipeline/r_stream_info.h"
 #include "r_storage/r_storage_file.h"
 #include "r_utils/r_time_utils.h"
 #include "r_utils/r_file.h"
@@ -14,6 +15,8 @@
 #include <QHBoxLayout>
 #include <QFileDialog>
 #include <QLayout>
+#include <QImage>
+#include <QPixmap>
 #include <functional>
 #include <thread>
 
@@ -282,7 +285,10 @@ void MainWindow::on_remove_button_clicked()
     auto maybe_c = _devices.get_camera_by_id(camera_id);
 
     if(!maybe_c.is_null())
-        _devices.remove_camera(maybe_c.value());
+    {
+        auto c = maybe_c.value();
+        _devices.unassign_camera(c);
+    }
 }
 
 void MainWindow::on_rtsp_credentials_ok_clicked()
@@ -331,8 +337,102 @@ void MainWindow::on_rtsp_credentials_ok_clicked()
     _pleaseWait->show();
 }
 
+static AVCodecID _r_encoding_to_avcodec_id(r_pipeline::r_encoding e)
+{
+    switch(e)
+    {
+    case r_pipeline::r_encoding::H264_ENCODING:
+        return AV_CODEC_ID_H264;
+    case r_pipeline::r_encoding::H265_ENCODING:
+        return AV_CODEC_ID_HEVC;
+    case r_pipeline::r_encoding::AAC_LATM_ENCODING:
+        return AV_CODEC_ID_AAC_LATM;
+    case r_pipeline::r_encoding::AAC_GENERIC_ENCODING:
+        return AV_CODEC_ID_AAC;
+    case r_pipeline::r_encoding::PCMU_ENCODING:
+        return AV_CODEC_ID_PCM_MULAW;
+    case r_pipeline::r_encoding::PCMA_ENCODING:
+        return AV_CODEC_ID_PCM_ALAW;
+    default:
+        return AV_CODEC_ID_NONE;
+    }
+}
+
+r_nullable<vector<uint8_t>> _decode_frame(assignment_state& as, uint16_t output_width, uint16_t output_height)
+{
+    auto formats = as.sdp_medias["video"].formats;
+    auto encoding = as.sdp_medias["video"].rtpmaps[formats.front()].encoding;
+    auto key_frame = as.key_frame;
+
+    r_codec::r_video_decoder decoder(_r_encoding_to_avcodec_id(encoding));
+
+    auto attributes = as.sdp_medias["video"].attributes;
+
+    vector<uint8_t> ed;
+    vector<uint8_t> start_code = {0x00, 0x00, 0x00, 0x01};
+
+    if(attributes.find("sprop-vps") != attributes.end())
+    {
+        auto sprop_buffer = r_string_utils::from_base64(attributes["sprop-vps"]);
+        auto current_size = ed.size();
+        ed.resize(current_size + sprop_buffer.size() + start_code.size());
+        memcpy(&ed[current_size], &start_code[0], start_code.size());
+        memcpy(&ed[current_size + start_code.size()], sprop_buffer.data(), sprop_buffer.size());
+    }
+    if(attributes.find("sprop-sps") != attributes.end())
+    {
+        auto sprop_buffer = r_string_utils::from_base64(attributes["sprop-sps"]);
+        auto current_size = ed.size();
+        ed.resize(current_size + sprop_buffer.size() + start_code.size());
+        memcpy(&ed[current_size], &start_code[0], start_code.size());
+        memcpy(&ed[current_size + start_code.size()], sprop_buffer.data(), sprop_buffer.size());
+    }
+    if(attributes.find("sprop-pps") != attributes.end())
+    {
+        auto sprop_buffer = r_string_utils::from_base64(attributes["sprop-pps"]);
+        auto current_size = ed.size();
+        ed.resize(current_size + sprop_buffer.size() + start_code.size());
+        memcpy(&ed[current_size], &start_code[0], start_code.size());
+        memcpy(&ed[current_size + start_code.size()], sprop_buffer.data(), sprop_buffer.size());
+    }
+
+    if(ed.size() > 0)
+        decoder.set_extradata(&ed[0], ed.size());
+
+    int attempt = 0;
+    r_codec::r_video_decoder_state state = r_codec::R_VIDEO_DECODER_STATE_INITIALIZED;
+    while(attempt < 10 && state != r_codec::R_VIDEO_DECODER_STATE_HAS_OUTPUT)
+    {
+        decoder.attach_buffer(&key_frame[0], key_frame.size());
+        state = decoder.decode();
+        printf("DECODED\n");
+    }
+    
+    r_nullable<vector<uint8_t>> output;
+    if(state == r_codec::R_VIDEO_DECODER_STATE_HAS_OUTPUT)
+    {
+        auto frame = decoder.get(AV_PIX_FMT_BGRA, output_width, output_height);
+        printf("DECODED KEY FRAME! %lu\n", frame.size());
+
+        output.set_value(frame);
+    }
+
+    return output;
+}
+
 void MainWindow::on_fetch_camera_params_done()
 {
+    // get the codec from the _assignmentState sdp_medias
+    auto as = _assignmentState.value();
+    auto decoded_frame = _decode_frame(as, 320, 240);
+
+    auto imageLabel = _friendlyName->findChild<QLabel*>("imageLabel");
+
+    auto image = QImage(&decoded_frame.value()[0], 320, 240, 1280, QImage::Format_ARGB32);
+    auto pixmap = QPixmap::fromImage(image);
+    imageLabel->setPixmap(pixmap);
+    imageLabel->show();
+    
     _friendlyName->findChild<QLabel*>("cameraNameLabel")->setText(QString::fromStdString(_assignmentState.value().camera.value().camera_name.value()));
     _friendlyName->show();
 }
@@ -385,17 +485,7 @@ void MainWindow::on_existing_storage_clicked()
     c.record_file_path = fileName;
     //c.n_record_file_blocks = as.num_storage_file_blocks;
     //c.record_file_block_size = as.storage_file_block_size;
-    c.state = "assigned";
-
-    _devices.save_camera(c);
-
-//    QFileDialog dialog(this, "Open File");
-//    dialog.setFileMode(QFileDialog::ExistingFile);
-//    dialog.setWindowTitle(QObject::tr("Open Existing..."));
-//    dialog.setDirectory(QString::fromStdString(sub_dir("video")));
-//    dialog.exec();
-
-
+    _devices.assign_camera(c);
 }
 
 static string _make_file_name(string name)
@@ -477,8 +567,6 @@ void MainWindow::update_retention_ui()
 
 void MainWindow::on_new_filename_ok_clicked()
 {
-    _newFileName->hide();
-
     auto video_path = sub_dir("video");
 
     auto as = _assignmentState.value();
@@ -489,7 +577,19 @@ void MainWindow::on_new_filename_ok_clicked()
 
     auto storage_path = join_path(video_path, fileName);
 
-    printf("on_new_filename_ok_clicked(): %s\n", storage_path.c_str());
+    if(r_fs::file_exists(storage_path))
+    {
+        // There is a bug in Qt that causes this slot (on_new_filename_ok_clicked()) to fire twice if we
+        // pop this warning dialog. The solution is to block signals from the sending button while we pop
+        // the warning dialog.
+        QPushButton* sender = qobject_cast<QPushButton*>(QObject::sender());
+        sender->blockSignals(true);
+        QMessageBox::warning(this, "File Exists", "File already exists. Please choose a different name.");
+        sender->blockSignals(false);
+        return;
+    }
+
+    _newFileName->hide();
 
     r_storage::r_storage_file::allocate(storage_path, as.storage_file_block_size, as.num_storage_file_blocks);
 
@@ -499,34 +599,7 @@ void MainWindow::on_new_filename_ok_clicked()
     c.record_file_path = fileName;
     c.n_record_file_blocks = as.num_storage_file_blocks;
     c.record_file_block_size = as.storage_file_block_size;
-    c.state = "assigned";
-
-    _devices.save_camera(c);
-
-    // -make the record file with the as settings
-    //   r_storage_file::allocate(file_name, block_size, n_blocks);
-    // -set rtsp_username, rtsp_password, friendly_name, record_file_path, n_record_file_blocks, record_file_block_size
-    //     on as.camera
-    // -set state=assigned on as.camera
-    // -save camera
-
-
-    //std::string ipv4;
-    //r_utils::r_nullable<std::string> rtsp_username;
-    //r_utils::r_nullable<std::string> rtsp_password;
-    //std::string camera_friendly_name;
-    //int64_t byte_rate {64000};
-    //int continuous_retention_days {3};
-    //int motion_retention_days {10};
-    //int motion_percentage_estimate {5};
-    //int64_t num_storage_file_blocks {0};
-    //int64_t storage_file_block_size {0};
-    //std::string storage_path;
-    //r_utils::r_nullable<r_disco::r_camera> camera;
-    //std::map<std::string, r_pipeline::r_sdp_media> sdp_medias;
-    //std::vector<uint8_t> key_frame;
+    _devices.assign_camera(c);
 
     _assignmentState.set_value(as);
-
-
 }

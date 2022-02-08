@@ -18,6 +18,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QMenu>
+#include <QErrorMessage>
 #include <functional>
 #include <thread>
 
@@ -84,6 +85,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     _recordingListWidget = findChild<QListWidget*>("recordingListWidget");
 
+    connect(_recordingListWidget, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(on_record_list_item_clicked(QListWidgetItem*)));
+
     _cameraUIUpdateTimer = new QTimer(this);
     connect(_cameraUIUpdateTimer, &QTimer::timeout, this, QOverload<>::of(&MainWindow::on_camera_ui_update_timer));
 
@@ -128,6 +131,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ok_button, SIGNAL(clicked()), this, SLOT(on_new_filename_ok_clicked()));
     cancel_button = button_box->button(QDialogButtonBox::Cancel);
     connect(cancel_button, SIGNAL(clicked()), _newFileName, SLOT(close()));
+
+    _update_list_ui();
 }
 
 MainWindow::~MainWindow()
@@ -179,8 +184,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     if(_trayIcon->isVisible())
     {
         QMessageBox::information(this, tr("Minmize to tray"),
-                                 tr("The program will keep running in the system tray. To terminate the program, "
-                                    "choose <b>Exit</b> in the Revere context menu."));
+                                 tr("Revere will keep running (and recording your cameras) in the system tray."));
         hide();
         event->ignore();
     }
@@ -188,124 +192,12 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::on_camera_ui_update_timer()
 {
-    auto assigned_cameras = _devices.get_assigned_cameras();
+    _update_list_ui();
+}
 
-    map<string, r_disco::r_camera> assigned;
-    for(auto& c: assigned_cameras)
-        assigned[c.id] = c;
-
-    auto selectedRow = _recordingListWidget->currentRow();
-
-    _recordingListWidget->clear();
-
-    int i = 0;
-    for(auto& c: assigned)
-    {
-        //_recordingListWidget->addItem(QString::fromStdString(c.second.camera_name.value()));
-        QWidget* w = new QWidget(_recordingListWidget);
-        w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        if(i == selectedRow)
-            w->setStyleSheet("background-color: #e0e0e0;");
-        QHBoxLayout* hl = new QHBoxLayout(w);
-        //hl->setSizeConstraint(QLayout::SetFixedSize);
-        w->setLayout(hl);
-        QPushButton* b = new QPushButton(w);
-        b->setFixedWidth(100);
-        b->setText("Remove");
-        b->setStyleSheet("QPushButton { padding: 8px; border-style: outset; border-width: 1px; background-color: #2c394b; color: #d8d8d8; }");
-        b->setProperty("camera_id", QString::fromStdString(c.first));
-        connect(b, SIGNAL(clicked()), this, SLOT(on_remove_button_clicked()));
-
-        QWidget* lc = new QWidget(_recordingListWidget);
-        QVBoxLayout* vl = new QVBoxLayout(lc);
-        lc->setLayout(vl);
-        QLabel* camera_name_l = new QLabel(QString::fromStdString(c.second.friendly_name.value()), lc);
-        camera_name_l->setFont(QFont("SansSerif", 12));
-        if(i == selectedRow)
-            camera_name_l->setStyleSheet("QLabel { color : #000; }");
-        else camera_name_l->setStyleSheet("QLabel { color : #d8d8d8; }");
-        QLabel* camera_ip_l = new QLabel(QString::fromStdString(c.second.ipv4.value()), lc);
-        camera_ip_l->setFont(QFont("SansSerif", 10));
-        if(i == selectedRow)
-            camera_ip_l->setStyleSheet("QLabel { color : #000; }");
-        else camera_ip_l->setStyleSheet("QLabel { color : #d8d8d8; }");
-        vl->addWidget(camera_name_l);
-        vl->addWidget(camera_ip_l);
-
-        hl->addWidget(b);
-        hl->addWidget(lc);
-
-        QListWidgetItem* item = new QListWidgetItem(_recordingListWidget);
-        item->setSizeHint(w->sizeHint());
-        _recordingListWidget->insertItem(i, item);
-        _recordingListWidget->setItemWidget(item, w);
-        ++i;
-    }
-
-    _recordingListWidget->setCurrentRow(selectedRow);
-
-    auto sizeHintRecordingList = _recordingListWidget->sizeHintForColumn(0);
-
-
-    auto all_cameras = _devices.get_all_cameras();
-
-    _discoveredListWidget->clear();
-
-    for(int i = 0; i < all_cameras.size(); ++i)
-    {
-        auto c = all_cameras[i];
-
-        if(assigned.find(c.id) != assigned.end())
-            continue;
-
-        QWidget* w = new QWidget(_discoveredListWidget);
-        QHBoxLayout* hl = new QHBoxLayout(w);
-        hl->setSizeConstraint(QLayout::SetFixedSize);
-        w->setLayout(hl);
-        QPushButton* b = new QPushButton(w);
-        b->setFixedWidth(100);
-        b->setText("Record");
-        b->setStyleSheet("QPushButton { padding: 8px; border-style: outset; border-width: 1px; background-color: #2c394b; color: #d8d8d8; }");
-        b->setProperty("camera_id", QString::fromStdString(c.id));
-        connect(b, SIGNAL(clicked()), this, SLOT(on_record_button_clicked()));
-
-        QWidget* lc = new QWidget(_discoveredListWidget);
-        QVBoxLayout* vl = new QVBoxLayout(lc);
-        lc->setLayout(vl);
-        QLabel* camera_name_l = new QLabel(QString::fromStdString(c.camera_name.value()), lc);
-        camera_name_l->setFont(QFont("SansSerif", 12));
-        camera_name_l->setStyleSheet("QLabel { color : #d8d8d8; }");
-        QLabel* camera_ip_l = new QLabel(QString::fromStdString(c.ipv4.value()), lc);
-        camera_ip_l->setFont(QFont("SansSerif", 10));
-        camera_ip_l->setStyleSheet("QLabel { color : #d8d8d8; }");
-        vl->addWidget(camera_name_l);
-        vl->addWidget(camera_ip_l);
-
-        hl->addWidget(b);
-        hl->addWidget(lc);
-
-        QListWidgetItem* item = new QListWidgetItem(_discoveredListWidget);
-        item->setSizeHint(w->sizeHint());
-        _discoveredListWidget->insertItem(i, item);
-        _discoveredListWidget->setItemWidget(item, w);
-    }
-
-    // Find which list has the largest item and set the size hint of both lists to match.
-    auto sizeHintDiscoveredList = _discoveredListWidget->sizeHintForColumn(0);
-
-    if(sizeHintDiscoveredList > sizeHintRecordingList)
-    {
-        _discoveredListWidget->setMaximumWidth(sizeHintDiscoveredList + 20);
-        _recordingListWidget->setMaximumWidth(sizeHintDiscoveredList + 20);
-        findChild<QWidget*>("cameraSideBar")->setMaximumWidth(sizeHintDiscoveredList + 20);
-        
-    }
-    else
-    {
-        _discoveredListWidget->setMaximumWidth(sizeHintRecordingList + 20);
-        _recordingListWidget->setMaximumWidth(sizeHintRecordingList + 20);
-        findChild<QWidget*>("cameraSideBar")->setMaximumWidth(sizeHintRecordingList + 20);
-    }
+void MainWindow::on_record_list_item_clicked(QListWidgetItem *item)
+{
+    _update_list_ui();
 }
 
 void MainWindow::on_record_button_clicked()
@@ -342,6 +234,8 @@ void MainWindow::on_remove_button_clicked()
         auto c = maybe_c.value();
         _devices.unassign_camera(c);
     }
+
+    _update_list_ui();
 }
 
 void MainWindow::on_rtsp_credentials_ok_clicked()
@@ -473,19 +367,28 @@ static r_nullable<vector<uint8_t>> _decode_frame(const r_pipeline::r_sdp_media& 
 
 void MainWindow::on_fetch_camera_params_done()
 {
-    // get the codec from the _assignmentState sdp_medias
-    auto as = _assignmentState.value();
-    auto decoded_frame = _decode_frame(as.sdp_medias["video"], as.key_frame, 320, 240, AV_PIX_FMT_BGRA);
+    try
+    {
+        // get the codec from the _assignmentState sdp_mediasr
+        auto as = _assignmentState.value();
+        auto decoded_frame = _decode_frame(as.sdp_medias["video"], as.key_frame, 320, 240, AV_PIX_FMT_BGRA);
 
-    auto imageLabel = _friendlyName->findChild<QLabel*>("imageLabel");
+        auto imageLabel = _friendlyName->findChild<QLabel*>("imageLabel");
 
-    auto image = QImage(&decoded_frame.value()[0], 320, 240, 1280, QImage::Format_ARGB32);
-    auto pixmap = QPixmap::fromImage(image);
-    imageLabel->setPixmap(pixmap);
-    imageLabel->show();
-    
-    _friendlyName->findChild<QLabel*>("cameraNameLabel")->setText(QString::fromStdString(_assignmentState.value().camera.value().camera_name.value()));
-    _friendlyName->show();
+        auto image = QImage(&decoded_frame.value()[0], 320, 240, 1280, QImage::Format_ARGB32);
+        auto pixmap = QPixmap::fromImage(image);
+        imageLabel->setPixmap(pixmap);
+        imageLabel->show();
+
+        _friendlyName->findChild<QLabel*>("cameraNameLabel")->setText(QString::fromStdString(_assignmentState.value().camera.value().camera_name.value()));
+        _friendlyName->show();
+    }
+    catch(const std::exception& e)
+    {
+        QMessageBox messageBox;
+        messageBox.critical(0,"Error","An error has occured: %s", e.what());
+        messageBox.setFixedSize(500,200);
+    }
 }
 
 void MainWindow::on_friendly_name_ok_clicked()
@@ -504,7 +407,7 @@ void MainWindow::on_new_storage_clicked()
     _newOrExisting->hide();
 
     _retention->show();
-    update_retention_ui();
+    _update_retention_ui();
 }
 
 void MainWindow::on_existing_storage_clicked()
@@ -531,6 +434,8 @@ void MainWindow::on_existing_storage_clicked()
     //c.n_record_file_blocks = as.num_storage_file_blocks;
     //c.record_file_block_size = as.storage_file_block_size;
     _devices.assign_camera(c);
+
+    _update_list_ui();
 }
 
 static string _make_file_name(string name)
@@ -557,7 +462,7 @@ void MainWindow::on_continuous_retention_days_changed(QString value)
     as.continuous_retention_days = value.toInt();
     _assignmentState.set_value(as);
 
-    update_retention_ui();
+    _update_retention_ui();
 }
 
 void MainWindow::on_motion_retention_days_changed(QString value)
@@ -566,7 +471,7 @@ void MainWindow::on_motion_retention_days_changed(QString value)
     as.motion_retention_days = value.toInt();
     _assignmentState.set_value(as);
 
-    update_retention_ui();
+    _update_retention_ui();
 }
 
 void MainWindow::on_percentage_estimate_changed(QString value)
@@ -575,10 +480,133 @@ void MainWindow::on_percentage_estimate_changed(QString value)
     as.motion_percentage_estimate = value.toInt();
     _assignmentState.set_value(as);
 
-    update_retention_ui();
+    _update_retention_ui();
 }
 
-void MainWindow::update_retention_ui()
+void MainWindow::_update_list_ui()
+{
+    auto assigned_cameras = _devices.get_assigned_cameras();
+
+    map<string, r_disco::r_camera> assigned;
+    for(auto& c: assigned_cameras)
+        assigned[c.id] = c;
+
+    auto selectedRow = _recordingListWidget->currentRow();
+
+    _recordingListWidget->clear();
+
+    int i = 0;
+    for(auto& c: assigned)
+    {
+        //_recordingListWidget->addItem(QString::fromStdString(c.second.camera_name.value()));
+        QWidget* w = new QWidget(_recordingListWidget);
+        w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        if(i == selectedRow)
+            w->setStyleSheet("background-color: #e0e0e0;");
+        QHBoxLayout* hl = new QHBoxLayout(w);
+        //hl->setSizeConstraint(QLayout::SetFixedSize);
+        w->setLayout(hl);
+        QPushButton* b = new QPushButton(w);
+        b->setFixedWidth(100);
+        b->setText("Remove");
+        b->setStyleSheet("QPushButton { padding: 8px; border-style: outset; border-width: 1px; background-color: #2c394b; color: #d8d8d8; }");
+        b->setProperty("camera_id", QString::fromStdString(c.first));
+        connect(b, SIGNAL(clicked()), this, SLOT(on_remove_button_clicked()));
+
+        QWidget* lc = new QWidget(_recordingListWidget);
+        QVBoxLayout* vl = new QVBoxLayout(lc);
+        lc->setLayout(vl);
+        QLabel* camera_name_l = new QLabel(QString::fromStdString(c.second.friendly_name.value()), lc);
+        camera_name_l->setFont(QFont("SansSerif", 12));
+        if(i == selectedRow)
+            camera_name_l->setStyleSheet("QLabel { color : #000; }");
+        else camera_name_l->setStyleSheet("QLabel { color : #d8d8d8; }");
+        QLabel* camera_ip_l = new QLabel(QString::fromStdString(c.second.ipv4.value()), lc);
+        camera_ip_l->setFont(QFont("SansSerif", 10));
+        if(i == selectedRow)
+            camera_ip_l->setStyleSheet("QLabel { color : #000; }");
+        else camera_ip_l->setStyleSheet("QLabel { color : #d8d8d8; }");
+        vl->addWidget(camera_name_l);
+        vl->addWidget(camera_ip_l);
+
+        hl->addWidget(b);
+        hl->addWidget(lc);
+
+        QListWidgetItem* item = new QListWidgetItem(_recordingListWidget);
+        item->setSizeHint(w->sizeHint());
+
+        _recordingListWidget->insertItem(i, item);
+        _recordingListWidget->setItemWidget(item, w);
+        ++i;
+    }
+
+    _recordingListWidget->setCurrentRow(selectedRow);
+
+    auto sizeHintRecordingList = _recordingListWidget->sizeHintForColumn(0);
+
+
+    auto all_cameras = _devices.get_all_cameras();
+
+    _discoveredListWidget->clear();
+
+    for(int i = 0; i < all_cameras.size(); ++i)
+    {
+        auto c = all_cameras[i];
+
+        if(assigned.find(c.id) != assigned.end())
+            continue;
+
+        QWidget* w = new QWidget(_discoveredListWidget);
+        QHBoxLayout* hl = new QHBoxLayout(w);
+        hl->setSizeConstraint(QLayout::SetFixedSize);
+        w->setLayout(hl);
+        QPushButton* b = new QPushButton(w);
+        b->setFixedWidth(100);
+        b->setText("Record");
+        b->setStyleSheet("QPushButton { padding: 8px; border-style: outset; border-width: 1px; background-color: #2c394b; color: #d8d8d8; }");
+        b->setProperty("camera_id", QString::fromStdString(c.id));
+        connect(b, SIGNAL(clicked()), this, SLOT(on_record_button_clicked()));
+
+        QWidget* lc = new QWidget(_discoveredListWidget);
+        QVBoxLayout* vl = new QVBoxLayout(lc);
+        lc->setLayout(vl);
+        QLabel* camera_name_l = new QLabel(QString::fromStdString(c.camera_name.value()), lc);
+        camera_name_l->setFont(QFont("SansSerif", 12));
+        camera_name_l->setStyleSheet("QLabel { color : #d8d8d8; }");
+        QLabel* camera_ip_l = new QLabel(QString::fromStdString(c.ipv4.value()), lc);
+        camera_ip_l->setFont(QFont("SansSerif", 10));
+        camera_ip_l->setStyleSheet("QLabel { color : #d8d8d8; }");
+        vl->addWidget(camera_name_l);
+        vl->addWidget(camera_ip_l);
+
+        hl->addWidget(b);
+        hl->addWidget(lc);
+
+        QListWidgetItem* item = new QListWidgetItem(_discoveredListWidget);
+        item->setSizeHint(w->sizeHint());
+        _discoveredListWidget->insertItem(i, item);
+        _discoveredListWidget->setItemWidget(item, w);
+    }
+
+    // Find which list has the largest item and set the size hint of both lists to match.
+    auto sizeHintDiscoveredList = _discoveredListWidget->sizeHintForColumn(0);
+
+    if(sizeHintDiscoveredList > sizeHintRecordingList)
+    {
+        _discoveredListWidget->setMaximumWidth(sizeHintDiscoveredList + 20);
+        _recordingListWidget->setMaximumWidth(sizeHintDiscoveredList + 20);
+        findChild<QWidget*>("cameraSideBar")->setMaximumWidth(sizeHintDiscoveredList + 20);
+        
+    }
+    else
+    {
+        _discoveredListWidget->setMaximumWidth(sizeHintRecordingList + 20);
+        _recordingListWidget->setMaximumWidth(sizeHintRecordingList + 20);
+        findChild<QWidget*>("cameraSideBar")->setMaximumWidth(sizeHintRecordingList + 20);
+    }
+}
+
+void MainWindow::_update_retention_ui()
 {
     auto as = _assignmentState.value();
 
@@ -616,9 +644,6 @@ void MainWindow::on_new_filename_ok_clicked()
 
     auto storage_path = join_path(video_path, fileName);
 
-    printf("storage path: %s\n", storage_path.c_str());
-    fflush(stdout);
-
     if(r_fs::file_exists(storage_path))
     {
         // There is a bug in Qt that causes this slot (on_new_filename_ok_clicked()) to fire twice if we
@@ -644,4 +669,6 @@ void MainWindow::on_new_filename_ok_clicked()
     _devices.assign_camera(c);
 
     _assignmentState.set_value(as);
+
+    _update_list_ui();
 }

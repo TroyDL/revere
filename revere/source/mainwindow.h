@@ -61,6 +61,7 @@ signals:
 private slots:
     void on_camera_ui_update_timer();
 
+    void on_record_list_item_clicked(QListWidgetItem *item);
     void on_record_button_clicked();
     void on_remove_button_clicked();
     void on_rtsp_credentials_ok_clicked();
@@ -75,7 +76,8 @@ private slots:
     void on_new_filename_ok_clicked();
 
 private:
-    void update_retention_ui();
+    void _update_list_ui();
+    void _update_retention_ui();
 
     Ui::MainWindow* _ui;
 

@@ -9,23 +9,8 @@ Project Goals
 
 TODO
    - r_disco
-       - Add camera assignment backend
-           - Assign with existing file
-           - Assign with Create file
-               - desired retention
-               - implement slider api to set retention
-   - Silo
-       - UI for discovering cameras
-           - Add camera wizard
-       - UI for monitoring
-           - Show camera status (discovered, assigned, current recording bitrate etc)
-   - r_vss
-       - Add api to stream keeper to query stats information about running streams:
-         - number and type of streams (video & audio or just video)
-         - bitrate
        - Add muxed file query API
        - Add jpg API
-   - Add encode / decode lib
    - Viewer
        - Cross platform QT Viewer
        - CRAZY fast + tons of keyboard shortcuts + super minimal UI
@@ -39,6 +24,9 @@ TODO
 Known Issues
     - Removing camera from Recording list it doesn't re-appear in discovered for a while. Axis cameras
       dont return for a long time (i think because our discovery code uses the same guid on subsequent runs).
+    - _decode_frame() segfault accessing as.sdp_media["video"] map when key doesn't exist.
+    - Put in invalid password. Should error out.
+    - We should have a warning for extremely high bitrate cameras
 
 Compiling on Linux
 

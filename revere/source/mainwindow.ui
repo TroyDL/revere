@@ -16,6 +16,43 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="palette">
+   <palette>
+    <active>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>44</red>
+        <green>57</green>
+        <blue>75</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </active>
+    <inactive>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>240</red>
+        <green>240</green>
+        <blue>240</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </inactive>
+    <disabled>
+     <colorrole role="Window">
+      <brush brushstyle="SolidPattern">
+       <color alpha="255">
+        <red>240</red>
+        <green>240</green>
+        <blue>240</blue>
+       </color>
+      </brush>
+     </colorrole>
+    </disabled>
+   </palette>
+  </property>
   <property name="windowTitle">
    <string>Revere</string>
   </property>
@@ -59,27 +96,27 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QWidget" name="widget_3" native="true">
+        <widget class="QWidget" name="cameraSideBar" native="true">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="minimumSize">
           <size>
-           <width>600</width>
+           <width>0</width>
            <height>0</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>16777215</width>
+           <width>350</width>
            <height>16777215</height>
           </size>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(178, 179, 171);</string>
+          <string notr="true">background-color: rgb(44, 57, 75);</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
@@ -95,18 +132,32 @@
               <pointsize>12</pointsize>
              </font>
             </property>
+            <property name="styleSheet">
+             <string notr="true">color: rgb(216, 216, 216);</string>
+            </property>
             <property name="text">
-             <string>Recording</string>
+             <string>Recording Cameras</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QListWidget" name="recordingListWidget">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(8, 32, 50);
+selection-background-color: rgb(224, 224, 224);
+selection-color: rgb(224, 224, 224);</string>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
+            </property>
+            <property name="layoutMode">
+             <enum>QListView::SinglePass</enum>
             </property>
            </widget>
           </item>
@@ -123,18 +174,27 @@
               <pointsize>12</pointsize>
              </font>
             </property>
+            <property name="styleSheet">
+             <string notr="true">color: rgb(216, 216, 216);</string>
+            </property>
             <property name="text">
-             <string>Discovered</string>
+             <string>Discovered Cameras</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QListWidget" name="discoveredListWidget">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">background-color: rgb(8, 32, 50);</string>
+            </property>
+            <property name="sizeAdjustPolicy">
+             <enum>QAbstractScrollArea::AdjustToContents</enum>
             </property>
            </widget>
           </item>
@@ -156,7 +216,7 @@
           </size>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(212, 213, 205);</string>
+          <string notr="true">background-color: rgb(51, 71, 86);</string>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2"/>
         </widget>
@@ -165,31 +225,6 @@
      </widget>
     </item>
    </layout>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1600</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuSystem">
-    <property name="title">
-     <string>System</string>
-    </property>
-    <addaction name="actionPreferences"/>
-    <addaction name="actionExit"/>
-   </widget>
-   <widget class="QMenu" name="menuHelp">
-    <property name="title">
-     <string>Help</string>
-    </property>
-    <addaction name="actionAbout_Silo"/>
-   </widget>
-   <addaction name="menuSystem"/>
-   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionPreferences">

@@ -17,6 +17,7 @@
 #include <QLayout>
 #include <QImage>
 #include <QPixmap>
+#include <QMenu>
 #include <functional>
 #include <thread>
 
@@ -48,6 +49,8 @@ MainWindow::MainWindow(QWidget *parent) :
     r_pipeline::gstreamer_init();
 
     _ui->setupUi(this);
+
+    statusBar()->hide();
 
     connect(this, &MainWindow::fetch_camera_params_done, this, &MainWindow::on_fetch_camera_params_done);
 
@@ -118,6 +121,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     auto motionPercentageEstimate = _retention->findChild<QLineEdit*>("motionPercentageEstimate");
     connect(motionPercentageEstimate, SIGNAL(textChanged(QString)), this, SLOT(on_percentage_estimate_changed(QString)));
+
+    // _newFileName dialog connects...
+    button_box = _newFileName->findChild<QDialogButtonBox*>("buttonBox");
+    ok_button = button_box->button(QDialogButtonBox::Ok);
+    connect(ok_button, SIGNAL(clicked()), this, SLOT(on_new_filename_ok_clicked()));
+    cancel_button = button_box->button(QDialogButtonBox::Cancel);
+    connect(cancel_button, SIGNAL(clicked()), _newFileName, SLOT(close()));
 }
 
 MainWindow::~MainWindow()
@@ -184,6 +194,8 @@ void MainWindow::on_camera_ui_update_timer()
     for(auto& c: assigned_cameras)
         assigned[c.id] = c;
 
+    auto selectedRow = _recordingListWidget->currentRow();
+
     _recordingListWidget->clear();
 
     int i = 0;
@@ -191,11 +203,16 @@ void MainWindow::on_camera_ui_update_timer()
     {
         //_recordingListWidget->addItem(QString::fromStdString(c.second.camera_name.value()));
         QWidget* w = new QWidget(_recordingListWidget);
+        w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        if(i == selectedRow)
+            w->setStyleSheet("background-color: #e0e0e0;");
         QHBoxLayout* hl = new QHBoxLayout(w);
-        hl->setSizeConstraint(QLayout::SetFixedSize);
+        //hl->setSizeConstraint(QLayout::SetFixedSize);
         w->setLayout(hl);
         QPushButton* b = new QPushButton(w);
+        b->setFixedWidth(100);
         b->setText("Remove");
+        b->setStyleSheet("QPushButton { padding: 8px; border-style: outset; border-width: 1px; background-color: #2c394b; color: #d8d8d8; }");
         b->setProperty("camera_id", QString::fromStdString(c.first));
         connect(b, SIGNAL(clicked()), this, SLOT(on_remove_button_clicked()));
 
@@ -203,7 +220,15 @@ void MainWindow::on_camera_ui_update_timer()
         QVBoxLayout* vl = new QVBoxLayout(lc);
         lc->setLayout(vl);
         QLabel* camera_name_l = new QLabel(QString::fromStdString(c.second.friendly_name.value()), lc);
+        camera_name_l->setFont(QFont("SansSerif", 12));
+        if(i == selectedRow)
+            camera_name_l->setStyleSheet("QLabel { color : #000; }");
+        else camera_name_l->setStyleSheet("QLabel { color : #d8d8d8; }");
         QLabel* camera_ip_l = new QLabel(QString::fromStdString(c.second.ipv4.value()), lc);
+        camera_ip_l->setFont(QFont("SansSerif", 10));
+        if(i == selectedRow)
+            camera_ip_l->setStyleSheet("QLabel { color : #000; }");
+        else camera_ip_l->setStyleSheet("QLabel { color : #d8d8d8; }");
         vl->addWidget(camera_name_l);
         vl->addWidget(camera_ip_l);
 
@@ -216,6 +241,11 @@ void MainWindow::on_camera_ui_update_timer()
         _recordingListWidget->setItemWidget(item, w);
         ++i;
     }
+
+    _recordingListWidget->setCurrentRow(selectedRow);
+
+    auto sizeHintRecordingList = _recordingListWidget->sizeHintForColumn(0);
+
 
     auto all_cameras = _devices.get_all_cameras();
 
@@ -233,7 +263,9 @@ void MainWindow::on_camera_ui_update_timer()
         hl->setSizeConstraint(QLayout::SetFixedSize);
         w->setLayout(hl);
         QPushButton* b = new QPushButton(w);
+        b->setFixedWidth(100);
         b->setText("Record");
+        b->setStyleSheet("QPushButton { padding: 8px; border-style: outset; border-width: 1px; background-color: #2c394b; color: #d8d8d8; }");
         b->setProperty("camera_id", QString::fromStdString(c.id));
         connect(b, SIGNAL(clicked()), this, SLOT(on_record_button_clicked()));
 
@@ -241,7 +273,11 @@ void MainWindow::on_camera_ui_update_timer()
         QVBoxLayout* vl = new QVBoxLayout(lc);
         lc->setLayout(vl);
         QLabel* camera_name_l = new QLabel(QString::fromStdString(c.camera_name.value()), lc);
+        camera_name_l->setFont(QFont("SansSerif", 12));
+        camera_name_l->setStyleSheet("QLabel { color : #d8d8d8; }");
         QLabel* camera_ip_l = new QLabel(QString::fromStdString(c.ipv4.value()), lc);
+        camera_ip_l->setFont(QFont("SansSerif", 10));
+        camera_ip_l->setStyleSheet("QLabel { color : #d8d8d8; }");
         vl->addWidget(camera_name_l);
         vl->addWidget(camera_ip_l);
 
@@ -252,6 +288,23 @@ void MainWindow::on_camera_ui_update_timer()
         item->setSizeHint(w->sizeHint());
         _discoveredListWidget->insertItem(i, item);
         _discoveredListWidget->setItemWidget(item, w);
+    }
+
+    // Find which list has the largest item and set the size hint of both lists to match.
+    auto sizeHintDiscoveredList = _discoveredListWidget->sizeHintForColumn(0);
+
+    if(sizeHintDiscoveredList > sizeHintRecordingList)
+    {
+        _discoveredListWidget->setMaximumWidth(sizeHintDiscoveredList + 20);
+        _recordingListWidget->setMaximumWidth(sizeHintDiscoveredList + 20);
+        findChild<QWidget*>("cameraSideBar")->setMaximumWidth(sizeHintDiscoveredList + 20);
+        
+    }
+    else
+    {
+        _discoveredListWidget->setMaximumWidth(sizeHintRecordingList + 20);
+        _recordingListWidget->setMaximumWidth(sizeHintRecordingList + 20);
+        findChild<QWidget*>("cameraSideBar")->setMaximumWidth(sizeHintRecordingList + 20);
     }
 }
 
@@ -354,19 +407,22 @@ static AVCodecID _r_encoding_to_avcodec_id(r_pipeline::r_encoding e)
     case r_pipeline::r_encoding::PCMA_ENCODING:
         return AV_CODEC_ID_PCM_ALAW;
     default:
-        return AV_CODEC_ID_NONE;
+        R_THROW(("Unknown encoding!"));
     }
 }
 
-r_nullable<vector<uint8_t>> _decode_frame(assignment_state& as, uint16_t output_width, uint16_t output_height)
+static AVCodecID _find_codec_id(const r_pipeline::r_sdp_media& video_media)
 {
-    auto formats = as.sdp_medias["video"].formats;
-    auto encoding = as.sdp_medias["video"].rtpmaps[formats.front()].encoding;
-    auto key_frame = as.key_frame;
+    if(video_media.formats.size() <= 0)
+        R_THROW(("Unable to find video format!"));
+    return _r_encoding_to_avcodec_id(video_media.rtpmaps.at(video_media.formats.front()).encoding);
+}
 
-    r_codec::r_video_decoder decoder(_r_encoding_to_avcodec_id(encoding));
+static r_nullable<vector<uint8_t>> _decode_frame(const r_pipeline::r_sdp_media& video_media, const vector<uint8_t> key_frame, uint16_t output_width, uint16_t output_height, AVPixelFormat fmt)
+{
+    r_codec::r_video_decoder decoder(_find_codec_id(video_media));
 
-    auto attributes = as.sdp_medias["video"].attributes;
+    auto attributes = video_media.attributes;
 
     vector<uint8_t> ed;
     vector<uint8_t> start_code = {0x00, 0x00, 0x00, 0x01};
@@ -405,17 +461,12 @@ r_nullable<vector<uint8_t>> _decode_frame(assignment_state& as, uint16_t output_
     {
         decoder.attach_buffer(&key_frame[0], key_frame.size());
         state = decoder.decode();
-        printf("DECODED\n");
+        ++attempt;
     }
     
     r_nullable<vector<uint8_t>> output;
     if(state == r_codec::R_VIDEO_DECODER_STATE_HAS_OUTPUT)
-    {
-        auto frame = decoder.get(AV_PIX_FMT_BGRA, output_width, output_height);
-        printf("DECODED KEY FRAME! %lu\n", frame.size());
-
-        output.set_value(frame);
-    }
+        output.set_value(decoder.get(fmt, output_width, output_height));
 
     return output;
 }
@@ -424,7 +475,7 @@ void MainWindow::on_fetch_camera_params_done()
 {
     // get the codec from the _assignmentState sdp_medias
     auto as = _assignmentState.value();
-    auto decoded_frame = _decode_frame(as, 320, 240);
+    auto decoded_frame = _decode_frame(as.sdp_medias["video"], as.key_frame, 320, 240, AV_PIX_FMT_BGRA);
 
     auto imageLabel = _friendlyName->findChild<QLabel*>("imageLabel");
 
@@ -444,10 +495,7 @@ void MainWindow::on_friendly_name_ok_clicked()
     _assignmentState.set_value(as);
 
     _friendlyName->hide();
-    // _friendlyName->findChild<QLabel*>("cameraNameLabel")
-    // _friendlyName->findChild<QWidget*>("imageContainer")
-    // _friendlyName->findChild<QLineEdit*>("friendlyNameLineEdit")
-    // populate _assignmentState with friendly_name
+
     _newOrExisting->show();
 }
 
@@ -455,14 +503,12 @@ void MainWindow::on_new_storage_clicked()
 {
     _newOrExisting->hide();
 
-
     _retention->show();
     update_retention_ui();
 }
 
 void MainWindow::on_existing_storage_clicked()
 {
-    printf("on_existing_storage_clicked()\n");
     _newOrExisting->hide();
 
     auto fileName = QFileDialog::getOpenFileName(
@@ -471,7 +517,6 @@ void MainWindow::on_existing_storage_clicked()
         QString::fromStdString(sub_dir("video")),
         tr("Revere Video Database (*.rvd)")
     ).toStdString();
-
 
     fileName = fileName.substr(fileName.rfind(r_fs::PATH_SLASH)+1);
 
@@ -502,12 +547,6 @@ void MainWindow::on_retention_ok_clicked()
 
     auto fileNameEdit = _newFileName->findChild<QLineEdit*>("fileNameLineEdit");
     fileNameEdit->setText(QString::fromStdString(_make_file_name(as.camera_friendly_name)));
-
-    auto button_box = _newFileName->findChild<QDialogButtonBox*>("buttonBox");
-    auto ok_button = button_box->button(QDialogButtonBox::Ok);
-    connect(ok_button, SIGNAL(clicked()), this, SLOT(on_new_filename_ok_clicked()));
-    auto cancel_button = button_box->button(QDialogButtonBox::Cancel);
-    connect(cancel_button, SIGNAL(clicked()), _newFileName, SLOT(close()));
 
     _newFileName->show();
 }
@@ -576,6 +615,9 @@ void MainWindow::on_new_filename_ok_clicked()
     auto fileName = _newFileName->findChild<QLineEdit*>("fileNameLineEdit")->text().toStdString();
 
     auto storage_path = join_path(video_path, fileName);
+
+    printf("storage path: %s\n", storage_path.c_str());
+    fflush(stdout);
 
     if(r_fs::file_exists(storage_path))
     {

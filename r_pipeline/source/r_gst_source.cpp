@@ -640,6 +640,7 @@ void r_gst_source::_attach_h264_video_pipeline(GstPad* new_pad)
 {
     GstElement* v_depay = gst_element_factory_make("rtph264depay", "v_depay");
     GstElement* v_parser = gst_element_factory_make("h264parse", "v_parser");
+    g_object_set(G_OBJECT(v_parser), "config-interval", -1, NULL);
     _v_appsink = gst_element_factory_make("appsink", "v_appsink");
     g_object_set(G_OBJECT(_v_appsink), "emit-signals", TRUE, "sync", FALSE, NULL);
 
@@ -690,6 +691,7 @@ void r_gst_source::_attach_h265_video_pipeline(GstPad* new_pad)
 {
     GstElement* v_depay = gst_element_factory_make("rtph265depay", "v_depay");
     GstElement* v_parser = gst_element_factory_make("h265parse", "v_parser");
+    g_object_set(G_OBJECT(v_parser), "config-interval", -1, NULL);
     _v_appsink = gst_element_factory_make("appsink", "v_appsink");
     g_object_set(G_OBJECT(_v_appsink), "emit-signals", TRUE, "sync", FALSE, NULL);
 

@@ -156,9 +156,9 @@ std::string r_stream_keeper::add_restream_mount(const std::map<std::string, r_pi
     string launch_str = r_string_utils::format("( appsrc name=videosrc ! ");
 
     if(video_encoding == r_pipeline::r_encoding::H264_ENCODING)
-        launch_str += r_string_utils::format("h264parse ! rtph264pay name=pay0 pt=%d ", sdp_video.formats.front());
+        launch_str += r_string_utils::format("h264parse config-interval=-1 ! rtph264pay name=pay0 pt=%d ", sdp_video.formats.front());
     else if(video_encoding == r_pipeline::r_encoding::H265_ENCODING)
-        launch_str += r_string_utils::format("h265parse ! rtph265pay name=pay0 pt=%d ", sdp_video.formats.front());
+        launch_str += r_string_utils::format("h265parse config-interval=-1 ! rtph265pay name=pay0 pt=%d ", sdp_video.formats.front());
     else
         R_THROW(("Unsupported video encoding: %s", r_pipeline::encoding_to_str(video_encoding).c_str()));
 

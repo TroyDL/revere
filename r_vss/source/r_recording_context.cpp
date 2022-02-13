@@ -52,7 +52,15 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     _v_appsrc(nullptr),
     _a_appsrc(nullptr),
     _video_samples(),
-    _audio_samples()
+    _audio_samples(),
+    _restreaming(false),
+    _restream_key_sent(false),
+    _first_restream_v_times_set(false),
+    _first_restream_v_pts(0),
+    _first_restream_v_dts(0),
+    _first_restream_a_times_set(false),
+    _first_restream_a_pts(0),
+    _first_restream_a_dts(0)
 {
     vector<r_arg> arguments;
     add_argument(arguments, "url", _camera.rtsp_url.value());
@@ -67,6 +75,8 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     _source.set_audio_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
         int64_t ts = 0;
         
+        // Record the frame...
+
         {
             _has_audio = true;
             _last_a_time = system_clock::now();
@@ -91,14 +101,26 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
             );
         }
 
+        // and copy it into our audio queue for restreaming.
+        if(this->_restreaming)
         {
-            _frame_context fc;
-            fc.gst_pts = sc.gst_pts_running_time();
-            fc.gst_dts = sc.gst_dts_running_time();
-            fc.key = key;
-            fc.data.resize(sz);
-            memcpy(fc.data.data(), p, sz);
-            _audio_samples.post(fc);
+            if(this->_restream_key_sent)
+            {
+                if(!this->_first_restream_a_times_set)
+                {
+                    this->_first_restream_a_times_set = true;
+                    this->_first_restream_a_pts = sc.gst_pts_running_time();
+                    this->_first_restream_a_dts = sc.gst_dts_running_time();
+                }
+
+                _frame_context fc;
+                fc.gst_pts = sc.gst_pts_running_time() - this->_first_restream_a_pts;
+                fc.gst_dts = sc.gst_dts_running_time() - this->_first_restream_a_dts;
+                fc.key = key;
+                fc.data.resize(sz);
+                memcpy(fc.data.data(), p, sz);
+                _audio_samples.post(fc);
+            }
         }
     });
 
@@ -129,14 +151,27 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
             );
         }
 
+        if(this->_restreaming)
         {
-            _frame_context fc;
-            fc.gst_pts = sc.gst_pts_running_time();
-            fc.gst_dts = sc.gst_dts_running_time();
-            fc.key = key;
-            fc.data.resize(sz);
-            memcpy(fc.data.data(), p, sz);
-            _video_samples.post(fc);
+            if(this->_restream_key_sent || key)
+            {
+                this->_restream_key_sent = true;
+
+                if(!this->_first_restream_v_times_set)
+                {
+                    this->_first_restream_v_times_set = true;
+                    this->_first_restream_v_pts = sc.gst_pts_running_time();
+                    this->_first_restream_v_dts = sc.gst_dts_running_time();
+                }
+
+                _frame_context fc;
+                fc.gst_pts = sc.gst_pts_running_time() - this->_first_restream_v_pts;
+                fc.gst_dts = sc.gst_dts_running_time() - this->_first_restream_v_dts;
+                fc.key = key;
+                fc.data.resize(sz);
+                memcpy(fc.data.data(), p, sz);
+                _video_samples.post(fc);
+            }
         }
     });
 
@@ -191,6 +226,12 @@ void r_recording_context::restream_media_configure(GstRTSPMediaFactory* factory,
     if(!element)
         R_THROW(("Failed to get element from media in restream media configure."));
 
+    // attach media cleanup callback to unset _restreaming flag
+    g_object_set_data_full(G_OBJECT(media), "rtsp-extra-data", this, (GDestroyNotify)_restream_cleanup);
+
+    printf("MEDIA CONFIGURE\n");
+    // set restreaming flag (used in frame callbacks to determine if we should send the frame to the restreamer)
+    _restreaming = true;
 
     _v_appsrc = gst_bin_get_by_name_recurse_up(GST_BIN(element), "videosrc");
     if(!_v_appsrc)
@@ -213,37 +254,6 @@ void r_recording_context::restream_media_configure(GstRTSPMediaFactory* factory,
 
         g_signal_connect(_a_appsrc, "need-data", (GCallback)r_recording_context::_need_data, this);
     }
-
-
-
-
-    // 1) create a video caps
-    //     - need a mime type like "video/x-h264"
-    //     - stream_format will always be "byte-stream"
-    //     - alignment will always be "au"
-    //     - need width and height
-    //     - need framerate
-    //  caps = gst_caps_new_simple ("video/x-h264",
-    //           "stream-format", G_TYPE_STRING, "byte-stream",
-    //           "alignment", G_TYPE_STRING, "au",
-    //           "width", G_TYPE_INT, 384, "height", G_TYPE_INT, 288,
-    //           "framerate", GST_TYPE_FRACTION, 15, 1, NULL);
-    //
-    // 2) on the appsrc set "format" to "time"
-    //     gst_util_set_object_arg (G_OBJECT (appsrc), "format", "time");
-    // 3) set the caps on the appsrc
-    //     g_object_set (G_OBJECT (appsrc), "caps", caps, NULL);
-    // 4) install the callback on appsrc that is called when a buffer is needed
-    //     g_signal_connect (appsrc, "need-data", (GCallback) need_data, ctx);
-    // 5) unref the caps
-    //     gst_caps_unref (caps);
-    // 6) create audio caps (maybe)
-    //     - need mime type
-    //         "audio/aac"          AAC
-    //         "audio/basic"        MULAW
-    //         "audio/x-alaw-basic" ALAW
-    //         "audio/x-g726"       G726
-
 }
 
 void r_recording_context::_need_data(GstElement* appsrc, guint unused, r_recording_context* rc)
@@ -253,19 +263,13 @@ void r_recording_context::_need_data(GstElement* appsrc, guint unused, r_recordi
 
 void r_recording_context::need_data(GstElement* appsrc, guint unused)
 {
-//        if(_last_video_sample.size() < sz)
-//            _last_video_sample.resize(sz);
-//        memcpy(_last_video_sample.data(), p, sz);
-//        _last_video_ts = ts;
-
     GstBuffer* buffer = nullptr;
 
     if(appsrc == _v_appsrc)
     {
-        auto sample = _video_samples.poll();
+        auto sample = _video_samples.poll(chrono::milliseconds(3000));
         if(!sample.is_null())
         {
-            printf("v [%lu} ", sample.value().data.size());
             buffer = gst_buffer_new_and_alloc(sample.value().data.size());
             GST_BUFFER_PTS(buffer) = sample.value().gst_pts;
             GST_BUFFER_DTS(buffer) = sample.value().gst_dts;
@@ -277,10 +281,9 @@ void r_recording_context::need_data(GstElement* appsrc, guint unused)
     }
     else
     {
-        auto sample = _audio_samples.poll();
+        auto sample = _audio_samples.poll(chrono::milliseconds(3000));
         if(!sample.is_null())
         {
-            printf("a [%lu} ", sample.value().data.size());
             buffer = gst_buffer_new_and_alloc(sample.value().data.size());
             GST_BUFFER_PTS(buffer) = sample.value().gst_pts;
             GST_BUFFER_DTS(buffer) = sample.value().gst_dts;
@@ -296,8 +299,13 @@ void r_recording_context::need_data(GstElement* appsrc, guint unused)
         int ret;
         g_signal_emit_by_name(appsrc, "push-buffer", buffer, &ret);
 
-        printf("ret=%d\n",ret);
-
         gst_buffer_unref(buffer);
     }
+}
+
+void r_recording_context::_restream_cleanup(r_recording_context* rc)
+{
+    printf("RESTREAM CLEANUP\n");
+    rc->_restreaming = false;
+    rc->_restream_key_sent = false;
 }

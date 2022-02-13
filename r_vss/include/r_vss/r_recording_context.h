@@ -55,6 +55,8 @@ private:
     static void _need_data(GstElement* appsrc, guint unused, r_recording_context* rc);
     void need_data(GstElement* appsrc, guint unused);
 
+    static void _restream_cleanup(r_recording_context* rc);
+
     r_stream_keeper* _sk;
     r_disco::r_camera _camera;
     std::string _top_dir;
@@ -75,6 +77,14 @@ private:
     GstElement* _a_appsrc;
     r_utils::r_blocking_q<_frame_context> _video_samples;
     r_utils::r_blocking_q<_frame_context> _audio_samples;
+    bool _restreaming;
+    bool _restream_key_sent;
+    bool _first_restream_v_times_set;
+    uint64_t _first_restream_v_pts;
+    uint64_t _first_restream_v_dts;
+    bool _first_restream_a_times_set;
+    uint64_t _first_restream_a_pts;
+    uint64_t _first_restream_a_dts;
 };
 
 }

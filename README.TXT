@@ -46,8 +46,7 @@ TODO SOON
        - Cross platform QT Viewer
        - CRAZY fast + tons of keyboard shortcuts + super minimal UI
        - Pop up analytic event notifications
-   - Analytics
-       - key frame motion detection
+   - Advanced Analytics
        - Triggers blob Tracking
        - Triggers object detection
        - Schedule aware analytic triggers (txt messages, UI notifications, etc)

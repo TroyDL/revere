@@ -73,8 +73,6 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     _source.set_args(arguments);
 
     _source.set_audio_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
-        int64_t ts = 0;
-        
         // Record the frame...
 
         {
@@ -89,7 +87,7 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
                     this->_sk->add_restream_mount(_sdp_medias, _camera, this);
             }
 
-            ts = sc.stream_start_ts() + pts;
+            auto ts = sc.stream_start_ts() + pts;
             this->_storage_file.write_frame(
                 this->_storage_write_context,
                 R_STORAGE_MEDIA_TYPE_AUDIO,
@@ -125,9 +123,6 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     });
 
     _source.set_video_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
-
-        int64_t ts = 0;
-
         {
             _last_v_time = system_clock::now();
             _v_bytes_received += sz;
@@ -139,7 +134,7 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
                     this->_sk->add_restream_mount(_sdp_medias, _camera, this);
             }
 
-            ts = sc.stream_start_ts() + pts;
+            auto ts = sc.stream_start_ts() + pts;
             this->_storage_file.write_frame(
                 this->_storage_write_context,
                 R_STORAGE_MEDIA_TYPE_VIDEO,
@@ -308,4 +303,10 @@ void r_recording_context::_restream_cleanup(r_recording_context* rc)
     printf("RESTREAM CLEANUP\n");
     rc->_restreaming = false;
     rc->_restream_key_sent = false;
+    rc->_first_restream_v_times_set = false;
+    rc->_first_restream_a_times_set = false;
+    rc->_first_restream_v_pts = 0;
+    rc->_first_restream_v_dts = 0;
+    rc->_first_restream_a_pts = 0;
+    rc->_first_restream_a_dts = 0;
 }

@@ -224,7 +224,6 @@ void r_recording_context::restream_media_configure(GstRTSPMediaFactory* factory,
     // attach media cleanup callback to unset _restreaming flag
     g_object_set_data_full(G_OBJECT(media), "rtsp-extra-data", this, (GDestroyNotify)_restream_cleanup);
 
-    printf("MEDIA CONFIGURE\n");
     // set restreaming flag (used in frame callbacks to determine if we should send the frame to the restreamer)
     _restreaming = true;
 
@@ -300,7 +299,8 @@ void r_recording_context::need_data(GstElement* appsrc, guint unused)
 
 void r_recording_context::_restream_cleanup(r_recording_context* rc)
 {
-    printf("RESTREAM CLEANUP\n");
+    rc->_video_samples.clear();
+    rc->_audio_samples.clear();
     rc->_restreaming = false;
     rc->_restream_key_sent = false;
     rc->_first_restream_v_times_set = false;

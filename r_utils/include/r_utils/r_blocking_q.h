@@ -57,6 +57,14 @@ public:
         _cond.notify_one();
     }
 
+    void clear()
+    {
+        std::unique_lock<std::mutex> g(_lock);
+        _queue.clear();
+        _asleep = false;
+        _cond.notify_one();
+    }
+
 private:
     std::mutex _lock;
     std::condition_variable _cond;

@@ -34,3 +34,23 @@ r_sdp_media sample_context::sdp_media(r_media type) const
 {
     return _sdp_medias.at((type==VIDEO_MEDIA)?"video":"audio");
 }
+
+uint64_t sample_context::gst_pts() const
+{
+    return _gst_time_info.pts;
+}
+
+uint64_t sample_context::gst_pts_running_time() const
+{
+    return _gst_time_info.pts_running_time;
+}
+
+uint64_t sample_context::gst_dts() const
+{
+    return _gst_time_info.dts;
+}
+
+uint64_t sample_context::gst_dts_running_time() const
+{
+    return _gst_time_info.dts_running_time;
+}

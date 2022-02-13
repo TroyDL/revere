@@ -27,6 +27,22 @@ r_encoding r_pipeline::str_to_encoding(const std::string& encoding_str)
         return PCMU_ENCODING;
     else if(lower_encoding == "pcma")
         return PCMA_ENCODING;
+    else if(lower_encoding == "aal2-g726-16")
+        return AAL2_G726_16_ENCODING;
+    else if(lower_encoding == "aal2-g726-24")
+        return AAL2_G726_24_ENCODING;
+    else if(lower_encoding == "aal2-g726-32")
+        return AAL2_G726_32_ENCODING;
+    else if(lower_encoding == "aal2-g726-40")
+        return AAL2_G726_40_ENCODING;
+    else if(lower_encoding == "g726-16")
+        return G726_16_ENCODING;
+    else if(lower_encoding == "g726-24")
+        return G726_24_ENCODING;
+    else if(lower_encoding == "g726-32")
+        return G726_32_ENCODING;
+    else if(lower_encoding == "g726-40")
+        return G726_40_ENCODING;
 
     R_THROW(("Unknown encoding: %s",encoding_str.c_str()));
 }
@@ -45,6 +61,22 @@ string r_pipeline::encoding_to_str(r_encoding encoding)
         return "pcmu";
     else if(encoding == PCMA_ENCODING)
         return "pcma";
+    else if(encoding == AAL2_G726_16_ENCODING)
+        return "aal2-g726-16";
+    else if(encoding == AAL2_G726_24_ENCODING)
+        return "aal2-g726-24";
+    else if(encoding == AAL2_G726_32_ENCODING)
+        return "aal2-g726-32";
+    else if(encoding == AAL2_G726_40_ENCODING)
+        return "aal2-g726-40";
+    else if(encoding == G726_16_ENCODING)
+        return "g726-16";
+    else if(encoding == G726_24_ENCODING)
+        return "g726-24";
+    else if(encoding == G726_32_ENCODING)
+        return "g726-32";
+    else if(encoding == G726_40_ENCODING)
+        return "g726-40";
 
     R_THROW(("Unknown encoding: %d",encoding));
 }

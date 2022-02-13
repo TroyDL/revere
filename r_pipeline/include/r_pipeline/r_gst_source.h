@@ -62,6 +62,47 @@ r_camera_params fetch_camera_params(
     const r_utils::r_nullable<std::string>& password = r_utils::r_nullable<std::string>()
 );
 
+class r_gst_caps final
+{
+public:
+    r_gst_caps() : _caps(nullptr) {}
+    r_gst_caps(GstCaps* caps) : _caps(caps) {}
+    r_gst_caps(const r_gst_caps& obj) = delete;
+    r_gst_caps(r_gst_caps&& obj) :
+        _caps(std::move(obj._caps))
+    {
+        obj._caps = nullptr;
+    }
+    r_gst_caps& operator=(const r_gst_caps&) = delete;
+    r_gst_caps& operator=(r_gst_caps&& obj)
+    {
+        _clear();
+
+        _caps = std::move(obj._caps);
+        obj._caps = nullptr;
+
+        return *this;
+    }
+    ~r_gst_caps() noexcept
+    {
+        _clear();
+    }
+
+    operator GstCaps*() const {return _caps;}
+
+private:
+    void _clear() noexcept
+    {
+        if(_caps)
+        {
+            gst_caps_unref(_caps);
+            _caps = nullptr;
+        }
+    }
+
+    GstCaps* _caps;
+};
+
 class r_gst_source
 {
 public:
@@ -83,6 +124,10 @@ public:
     void set_sdp_media_cb(r_sdp_media_cb cb) {_sdp_media_cb = cb;}
     void set_pad_added_cb(r_pad_added_cb cb) {_pad_added_cb = cb;}
 
+    // valid after ready callback
+    r_utils::r_nullable<r_gst_caps> get_video_caps() const;
+    r_utils::r_nullable<r_gst_caps> get_audio_caps() const;
+
 private:
     static GstFlowReturn _new_video_sample(GstElement* elt, r_gst_source* src);
     static GstFlowReturn _new_audio_sample(GstElement* elt, r_gst_source* src);
@@ -98,6 +143,7 @@ private:
     void _attach_aac_audio_pipeline(GstPad* new_pad, r_encoding encoding);
     void _attach_mulaw_audio_pipeline(GstPad* new_pad);
     void _attach_alaw_audio_pipeline(GstPad* new_pad);
+    void _attach_g726_audio_pipeline(GstPad* new_pad);
 
     static gboolean _bus_callbackS(GstBus* bus, GstMessage* message, gpointer data);
     gboolean _bus_callback(GstBus* bus, GstMessage* message);

@@ -111,13 +111,6 @@ int64_t r_pipeline::fetch_bytes_per_second(
     return (int64_t)(((double)(audio_byte_total + video_byte_total)) / (double)duration_cast<seconds>(delta).count());
 }
 
-//struct r_camera_info
-//{
-//    int64_t bytes_per_second;
-//    r_sdp_media sdp_media;
-//    std::vector<uint8_t> video_key_frame;
-//};
-
 r_camera_params r_pipeline::fetch_camera_params(
     const std::string& rtsp_url,
     const r_utils::r_nullable<std::string>& username,
@@ -286,6 +279,32 @@ void r_gst_source::stop()
 
         _running = false;
     }
+}
+
+r_nullable<r_gst_caps> r_gst_source::get_video_caps() const
+{
+    r_nullable<r_gst_caps> maybe_caps;
+    auto sink_pad = gst_element_get_static_pad(_v_appsink, "sink");
+    if(sink_pad)
+    {
+        auto caps = gst_pad_get_current_caps(sink_pad);
+        if(caps)
+            maybe_caps.assign(r_gst_caps(caps));
+    }
+    return maybe_caps;
+}
+
+r_nullable<r_gst_caps> r_gst_source::get_audio_caps() const
+{
+    r_nullable<r_gst_caps> maybe_caps;
+    auto sink_pad = gst_element_get_static_pad(_a_appsink, "sink");
+    if(sink_pad)
+    {
+        auto caps = gst_pad_get_current_caps(sink_pad);
+        if(caps)
+            maybe_caps.assign(r_gst_caps(caps));
+    }
+    return maybe_caps;
 }
 
 #if 0
@@ -482,13 +501,16 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
         }
         else if(si.media == AUDIO_MEDIA)
         {
+            r_nullable<int> clock_rate;
+
+            int value;
+            if(gst_structure_get_int(new_pad_struct, "clock-rate", &value) == true)
+                clock_rate.set_value(value);
+
             if(encoding == AAC_LATM_ENCODING)
             {
                 r_aac_info aac_info;
-
-                int value;
-                if(gst_structure_get_int(new_pad_struct, "clock-rate", &value) == true)
-                    aac_info.clock_rate.set_value(value);
+                aac_info.clock_rate = clock_rate;
 
                 si.encoding = AAC_LATM_ENCODING;
                 si.aac.set_value(aac_info);
@@ -498,10 +520,7 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
             else if(encoding == AAC_GENERIC_ENCODING)
             {
                 r_aac_info aac_info;
-
-                int value;
-                if(gst_structure_get_int(new_pad_struct, "clock-rate", &value) == true)
-                    aac_info.clock_rate.set_value(value);
+                aac_info.clock_rate = clock_rate;
 
                 si.encoding = AAC_GENERIC_ENCODING;
                 si.aac.set_value(aac_info);
@@ -511,10 +530,7 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
             else if(encoding == PCMU_ENCODING)
             {
                 r_pcmu_info pcmu_info;
-
-                int value;
-                if(gst_structure_get_int(new_pad_struct, "clock-rate", &value) == true)
-                    pcmu_info.clock_rate.set_value(value);
+                pcmu_info.clock_rate = clock_rate;
 
                 si.encoding = PCMU_ENCODING;
                 si.pcmu.set_value(pcmu_info);
@@ -523,16 +539,93 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
             }
             else if(encoding == PCMA_ENCODING)
             {
-                r_pcmu_info pcmu_info;
-
-                int value;
-                if(gst_structure_get_int(new_pad_struct, "clock-rate", &value) == true)
-                    pcmu_info.clock_rate.set_value(value);
+                r_pcma_info pcma_info;
+                pcma_info.clock_rate = clock_rate;
 
                 si.encoding = PCMA_ENCODING;
-                si.pcmu.set_value(pcmu_info);
+                si.pcma.set_value(pcma_info);
 
                 _attach_mulaw_audio_pipeline(new_pad);
+            }
+            else if(encoding == AAL2_G726_16_ENCODING)
+            {
+                r_g726_info g726_info;
+                g726_info.clock_rate = clock_rate;
+
+                si.encoding = AAL2_G726_16_ENCODING;
+                si.g726.set_value(g726_info);
+
+                _attach_g726_audio_pipeline(new_pad);
+            }
+            else if(encoding == AAL2_G726_24_ENCODING)
+            {
+                r_g726_info g726_info;
+                g726_info.clock_rate = clock_rate;
+
+                si.encoding = AAL2_G726_24_ENCODING;
+                si.g726.set_value(g726_info);
+
+                _attach_g726_audio_pipeline(new_pad);
+            }
+            else if(encoding == AAL2_G726_32_ENCODING)
+            {
+                r_g726_info g726_info;
+                g726_info.clock_rate = clock_rate;
+
+                si.encoding = AAL2_G726_32_ENCODING;
+                si.g726.set_value(g726_info);
+
+                _attach_g726_audio_pipeline(new_pad);
+            }
+            else if(encoding == AAL2_G726_40_ENCODING)
+            {
+                r_g726_info g726_info;
+                g726_info.clock_rate = clock_rate;
+
+                si.encoding = AAL2_G726_40_ENCODING;
+                si.g726.set_value(g726_info);
+
+                _attach_g726_audio_pipeline(new_pad);
+            }
+            else if(encoding == G726_16_ENCODING)
+            {
+                r_g726_info g726_info;
+                g726_info.clock_rate = clock_rate;
+
+                si.encoding = G726_16_ENCODING;
+                si.g726.set_value(g726_info);
+
+                _attach_g726_audio_pipeline(new_pad);
+            }
+            else if(encoding == G726_24_ENCODING)
+            {
+                r_g726_info g726_info;
+                g726_info.clock_rate = clock_rate;
+
+                si.encoding = G726_24_ENCODING;
+                si.g726.set_value(g726_info);
+
+                _attach_g726_audio_pipeline(new_pad);
+            }
+            else if(encoding == G726_32_ENCODING)
+            {
+                r_g726_info g726_info;
+                g726_info.clock_rate = clock_rate;
+
+                si.encoding = G726_32_ENCODING;
+                si.g726.set_value(g726_info);
+
+                _attach_g726_audio_pipeline(new_pad);
+            }
+            else if(encoding == G726_40_ENCODING)
+            {
+                r_g726_info g726_info;
+                g726_info.clock_rate = clock_rate;
+                
+                si.encoding = G726_40_ENCODING;
+                si.g726.set_value(g726_info);
+
+                _attach_g726_audio_pipeline(new_pad);
             }
         }
 
@@ -723,6 +816,32 @@ void r_gst_source::_attach_alaw_audio_pipeline(GstPad* new_pad)
     g_signal_connect(_a_appsink, "new-sample", G_CALLBACK(_new_audio_sample), this);
 }
 
+void r_gst_source::_attach_g726_audio_pipeline(GstPad* new_pad)
+{
+    GstElement* a_depay = gst_element_factory_make("rtpg726depay", "a_depay");
+    _a_appsink = gst_element_factory_make("appsink", "a_appsink");
+    g_object_set(G_OBJECT(_a_appsink), "emit-signals", TRUE, "sync", FALSE, NULL);
+
+    gst_bin_add_many(GST_BIN(_pipeline), a_depay, _a_appsink, NULL);
+
+    gst_element_sync_state_with_parent(a_depay);
+    gst_element_sync_state_with_parent(_a_appsink);
+
+    auto linked = gst_element_link_many(a_depay, _a_appsink, NULL);
+
+    raii_ptr<GstPad> a_depay_sink_pad(
+        gst_element_get_static_pad(a_depay, "sink"),
+        [](GstPad* pad){gst_object_unref(pad);}
+    );
+
+    GstPadLinkReturn ret = gst_pad_link(new_pad, a_depay_sink_pad.get());
+
+    if(GST_PAD_LINK_FAILED(ret))
+        R_LOG_ERROR("AUDIO PAD LINK FAILED");
+
+    g_signal_connect(_a_appsink, "new-sample", G_CALLBACK(_new_audio_sample), this);
+}
+
 GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src)
 {
     lock_guard<mutex> g(src->_sample_cb_lock);
@@ -731,6 +850,8 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
         gst_app_sink_pull_sample(GST_APP_SINK(elt)),
         [](GstSample* sample){gst_sample_unref(sample);}
     );
+
+    GstSegment* seg = gst_sample_get_segment(sample.get());
 
     auto buffer = gst_sample_get_buffer(sample.get());
     if(!buffer)
@@ -749,6 +870,8 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
 
         auto sample_pts = GST_BUFFER_PTS(buffer);
         bool has_pts = (sample_pts != GST_CLOCK_TIME_NONE);
+        bool sample_dts = GST_BUFFER_DTS(buffer);
+        bool has_dts = (sample_dts != GST_CLOCK_TIME_NONE);
 
         // OK, this is kind of a workaround for a specific axis camera. Basically, we see an
         // access unit containing an SEI but with a valid timestamp and then immediately after
@@ -760,6 +883,16 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
 
         if(has_pts && is_picture)
         {
+            // first, save gstreamers time info into the sample context...
+            gst_time_info ti;
+            ti.pts = sample_pts;
+            ti.pts_running_time = gst_segment_to_running_time(seg, GST_FORMAT_TIME, ti.pts);
+            ti.dts = sample_dts;
+            ti.dts_running_time = gst_segment_to_running_time(seg, GST_FORMAT_TIME, ti.dts);
+
+            src->_sample_context._gst_time_info = ti;
+
+            // now, do our pts work...
             auto pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
 
             if(!src->_sample_sent)
@@ -792,6 +925,8 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
         [](GstSample* sample){gst_sample_unref(sample);}
     );
 
+    GstSegment* seg = gst_sample_get_segment(sample.get());
+
     auto buffer = gst_sample_get_buffer(sample.get());
     if(!buffer)
         return GST_FLOW_ERROR;
@@ -805,9 +940,20 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
     if(result == GST_FLOW_OK)
     {
         auto sample_pts = GST_BUFFER_PTS(buffer);
+        bool sample_dts = GST_BUFFER_DTS(buffer);
 
         if(sample_pts != GST_CLOCK_TIME_NONE)
         {
+            // first, save gstreamers time info into the sample context...
+            gst_time_info ti;
+            ti.pts = sample_pts;
+            ti.pts_running_time = gst_segment_to_running_time(seg, GST_FORMAT_TIME, ti.pts);
+            ti.dts = sample_dts;
+            ti.dts_running_time = gst_segment_to_running_time(seg, GST_FORMAT_TIME, ti.dts);
+
+            src->_sample_context._gst_time_info = ti;;
+
+            // now, do our pts work...
             auto pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
 
             if(!src->_sample_sent)
@@ -1076,7 +1222,8 @@ void r_gst_source::_clear() noexcept
         gst_h264_nal_parser_free(_h264_nal_parser);
         _h264_nal_parser = nullptr;
     }
-    if(!_h265_nal_parser)
+
+    if(_h265_nal_parser)
     {
         gst_h265_parser_free(_h265_nal_parser);
         _h265_nal_parser = nullptr;

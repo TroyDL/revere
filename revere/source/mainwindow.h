@@ -1,22 +1,22 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QSystemTrayIcon>
-#include <QListWidget>
-#include <QTimer>
-#include <QTabWidget>
+#include "r_disco/r_agent.h"
+#include "r_disco/r_devices.h"
+#include "r_vss/r_stream_keeper.h"
+#include "r_utils/r_nullable.h"
+#include "r_pipeline/r_stream_info.h"
 #include "rtspcredentials.h"
 #include "friendlyname.h"
 #include "retention.h"
 #include "neworexisting.h"
 #include "pleasewait.h"
 #include "newfilename.h"
-#include "r_disco/r_agent.h"
-#include "r_disco/r_devices.h"
-#include "r_vss/r_stream_keeper.h"
-#include "r_utils/r_nullable.h"
-#include "r_pipeline/r_stream_info.h"
+#include <QMainWindow>
+#include <QSystemTrayIcon>
+#include <QListWidget>
+#include <QTimer>
+#include <QTabWidget>
 #include <memory>
 #include <string>
 

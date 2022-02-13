@@ -15,6 +15,12 @@ target_include_directories(
     ../r_utils/include
     ../r_disco/include
     ../r_storage/include
+    ${GSTREAMER_INCLUDE_DIRS}
+)
+
+target_link_directories(
+    r_vss PUBLIC
+    ${GSTREAMER_LIB_DIRS}
 )
 
 target_link_libraries(
@@ -22,4 +28,5 @@ target_link_libraries(
     r_disco
     r_storage
     r_utils
+    ${GSTREAMER_LIBS}
 )

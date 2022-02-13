@@ -27,6 +27,9 @@ Known Issues
     - _decode_frame() segfault accessing as.sdp_media["video"] map when key doesn't exist.
     - Put in invalid password. Should error out.
     - We should have a warning for extremely high bitrate cameras
+    - 401 Unauthorized when occurring with camera setup should be visible to user somehow.
+    - It will currently let you configure a record file with more space than the disk has free right now.
+    - Support G.726 audio
 
 Compiling on Linux
 

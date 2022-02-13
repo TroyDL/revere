@@ -23,7 +23,15 @@ enum r_encoding
     AAC_LATM_ENCODING,
     AAC_GENERIC_ENCODING,
     PCMU_ENCODING,
-    PCMA_ENCODING
+    PCMA_ENCODING,
+    AAL2_G726_16_ENCODING,
+    AAL2_G726_24_ENCODING,
+    AAL2_G726_32_ENCODING,
+    AAL2_G726_40_ENCODING,
+    G726_16_ENCODING,
+    G726_24_ENCODING,
+    G726_32_ENCODING,
+    G726_40_ENCODING
 };
 
 r_encoding str_to_encoding(const std::string& encoding_str);
@@ -53,6 +61,16 @@ struct r_pcmu_info
     r_utils::r_nullable<int> clock_rate;
 };
 
+struct r_pcma_info
+{
+    r_utils::r_nullable<int> clock_rate;
+};
+
+struct r_g726_info
+{
+    r_utils::r_nullable<int> clock_rate;
+};
+
 struct r_pad_info
 {
     r_media media;
@@ -65,6 +83,8 @@ struct r_pad_info
     r_utils::r_nullable<r_h265_info> h265;
     r_utils::r_nullable<r_aac_info> aac;
     r_utils::r_nullable<r_pcmu_info> pcmu;
+    r_utils::r_nullable<r_pcma_info> pcma;
+    r_utils::r_nullable<r_g726_info> g726;
 
     r_utils::r_nullable<double> framerate;
 };

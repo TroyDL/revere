@@ -128,7 +128,7 @@ r_video_decoder& r_video_decoder::operator=(r_video_decoder&& obj)
     return *this;
 }
 
-void r_video_decoder::set_extradata(const uint8_t* data, size_t size)
+void r_video_decoder::set_extradata(const vector<uint8_t>& ed)
 {
     if(!_context)
         R_THROW(("Context is not initialized"));
@@ -140,9 +140,9 @@ void r_video_decoder::set_extradata(const uint8_t* data, size_t size)
         _context->extradata_size = 0;
     }
 
-    _context->extradata = (uint8_t*)av_malloc(size);
-    _context->extradata_size = size;
-    memcpy(_context->extradata, data, size);
+    _context->extradata = (uint8_t*)av_malloc(ed.size());
+    _context->extradata_size = ed.size();
+    memcpy(_context->extradata, ed.data(), ed.size());
 }
 
 void r_video_decoder::attach_buffer(const uint8_t* data, size_t size)
@@ -153,7 +153,7 @@ void r_video_decoder::attach_buffer(const uint8_t* data, size_t size)
     _remaining_size = _buffer.size();
 }
 
-r_video_decoder_state r_video_decoder::decode()
+r_codec_state r_video_decoder::decode()
 {
     raii_ptr<AVPacket> pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
 
@@ -162,7 +162,7 @@ r_video_decoder_state r_video_decoder::decode()
         R_THROW(("Failed to parse data"));
 
     if(bytes_parsed == 0)
-        return R_VIDEO_DECODER_STATE_HUNGRY;
+        return R_CODEC_STATE_HUNGRY;
 
     int sp_ret = avcodec_send_packet(_context, pkt.get());
 
@@ -170,62 +170,63 @@ r_video_decoder_state r_video_decoder::decode()
     {
         auto rf_ret = avcodec_receive_frame(_context, _frame);
 
+        if(rf_ret == AVERROR(EAGAIN))
+            return R_CODEC_STATE_HUNGRY;
+        else if(rf_ret == AVERROR_EOF)
+            return R_CODEC_STATE_EOF;
+        else if(rf_ret < 0)
+            R_THROW(("Failed to receive frame: %s", _ff_rc_to_msg(rf_ret).c_str()));
+
         _pos += bytes_parsed;
         _remaining_size -= bytes_parsed;
 
-        if(sp_ret < 0)
-        {
-            R_LOG_ERROR(("Failed to receive frame from decoder: %s", _ff_rc_to_msg(sp_ret).c_str()));
-            return R_VIDEO_DECODER_STATE_HUNGRY;
-        }
-
-        if(rf_ret == 0)
-            return R_VIDEO_DECODER_STATE_HAS_OUTPUT;
+        return R_CODEC_STATE_AGAIN_HAS_OUTPUT;
     }
+    else if(sp_ret == AVERROR_EOF)
+        return R_CODEC_STATE_EOF;
+    else if(sp_ret < 0)
+        R_THROW(("Failed to send packet: %s", _ff_rc_to_msg(sp_ret).c_str()));
 
     _pos += bytes_parsed;
     _remaining_size -= bytes_parsed;
 
-    if(sp_ret < 0)
+    auto rf_ret = avcodec_receive_frame(_context, _frame);
+    if(rf_ret == AVERROR(EAGAIN))
+        return R_CODEC_STATE_HUNGRY;
+    else if(rf_ret == AVERROR_EOF)
+        return R_CODEC_STATE_EOF;
+    else if(rf_ret < 0)
+        R_THROW(("Failed to receive frame: %s", _ff_rc_to_msg(rf_ret).c_str()));
+
+    return R_CODEC_STATE_HAS_OUTPUT;
+}
+
+r_codec_state r_video_decoder::flush()
+{
+    int ret = avcodec_send_packet(_context, nullptr);
+    if(ret == AVERROR(EAGAIN))
     {
-        R_LOG_ERROR(("Failed to send packet to decoder: %s", _ff_rc_to_msg(sp_ret).c_str()));
-        return R_VIDEO_DECODER_STATE_HUNGRY;
+        auto rf_ret = avcodec_receive_frame(_context, _frame);
+
+        if(rf_ret == AVERROR(EAGAIN) || rf_ret == AVERROR_EOF)
+            return R_CODEC_STATE_EOF;
+        else if(rf_ret < 0)
+            R_THROW(("Failed to flush decoder: %s", _ff_rc_to_msg(rf_ret).c_str()));
+
+        return R_CODEC_STATE_HAS_OUTPUT;
     }
+    else if(ret == AVERROR_EOF)
+        return R_CODEC_STATE_EOF;
+    else if(ret < 0)
+        R_THROW(("Failed to flush decoder: %s", _ff_rc_to_msg(ret).c_str()));
 
     auto rf_ret = avcodec_receive_frame(_context, _frame);
     if(rf_ret == AVERROR(EAGAIN) || rf_ret == AVERROR_EOF)
-        return R_VIDEO_DECODER_STATE_DECODE_AGAIN;
+        return R_CODEC_STATE_EOF;
     else if(rf_ret < 0)
-    {
-        R_LOG_ERROR(("Failed to receive frame from decoder: %s", _ff_rc_to_msg(rf_ret).c_str()));
-        return R_VIDEO_DECODER_STATE_HUNGRY;
-    }
-    else return R_VIDEO_DECODER_STATE_HAS_OUTPUT;
-}
+        R_THROW(("Failed to flush decoder: %s", _ff_rc_to_msg(rf_ret).c_str()));
 
-r_video_decoder_state r_video_decoder::flush()
-{
-FLUSH:
-    int ret = avcodec_send_packet(_context, nullptr);
-    if(ret < 0)
-    {
-        R_LOG_ERROR(("Failed to flush decoder: %s", _ff_rc_to_msg(ret).c_str()));
-        return R_VIDEO_DECODER_STATE_HUNGRY;
-    }
-    else
-    {
-        auto rf_ret = avcodec_receive_frame(_context, _frame);
-        if(rf_ret == AVERROR(EAGAIN))
-            goto FLUSH;
-        if(rf_ret == AVERROR_EOF)
-            return R_VIDEO_DECODER_STATE_HUNGRY;
-        else if(rf_ret < 0)
-        {
-            R_LOG_ERROR(("Failed to flush decoder: %s", _ff_rc_to_msg(rf_ret).c_str()));
-            return R_VIDEO_DECODER_STATE_HUNGRY;
-        }
-        return R_VIDEO_DECODER_STATE_HAS_OUTPUT;
-    }
+    return R_CODEC_STATE_HAS_OUTPUT;
 }
 
 vector<uint8_t> r_video_decoder::get(AVPixelFormat output_format, uint16_t output_width, uint16_t output_height)

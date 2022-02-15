@@ -15,6 +15,9 @@ What exists
    - basic recording GUI
 
 TODO SOON
+   - r_codec
+       - r_audio_encoder
+       - r_audio_decoder
    - HTTP server infrastructure
        - Use r_http, setup server (in r_vss?)
    - Contents Queries

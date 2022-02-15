@@ -10,20 +10,14 @@ extern "C"
 #include <libavutil/pixfmt.h>
 }
 
+#include "r_codec/r_codec_state.h"
+
 #include <vector>
 #include <cstdint>
 #include <map>
 
 namespace r_codec
 {
-
-enum r_video_decoder_state
-{
-    R_VIDEO_DECODER_STATE_INITIALIZED,
-    R_VIDEO_DECODER_STATE_HUNGRY,
-    R_VIDEO_DECODER_STATE_DECODE_AGAIN,
-    R_VIDEO_DECODER_STATE_HAS_OUTPUT
-};
 
 struct r_scaler_state
 {
@@ -37,7 +31,7 @@ struct r_scaler_state
 
 bool operator<(const r_scaler_state& lhs, const r_scaler_state& rhs);
 
-class r_video_decoder
+class r_video_decoder final
 {
 public:
     r_video_decoder();
@@ -49,12 +43,12 @@ public:
     r_video_decoder& operator=(const r_video_decoder&) = delete;
     r_video_decoder& operator=(r_video_decoder&& obj);
 
-    void set_extradata(const uint8_t* data, size_t size);
+    void set_extradata(const std::vector<uint8_t>& ed);
 
     void attach_buffer(const uint8_t* data, size_t size);
 
-    r_video_decoder_state decode();
-    r_video_decoder_state flush();
+    r_codec_state decode();
+    r_codec_state flush();
 
     std::vector<uint8_t> get(AVPixelFormat output_format, uint16_t output_width, uint16_t output_height);
 

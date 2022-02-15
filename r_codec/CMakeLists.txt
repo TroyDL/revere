@@ -3,6 +3,9 @@ add_library(
     r_codec
     include/r_codec/r_video_decoder.h
     source/r_video_decoder.cpp
+    include/r_codec/r_video_encoder.h
+    source/r_video_encoder.cpp
+    include/r_codec/r_codec_state.h
 )
 
 target_include_directories(

@@ -71,6 +71,11 @@ public:
 
     operator bool() const {return _thing != nullptr;}
 
+    void reset() noexcept
+    {
+        _clear();
+    }
+
 private:
     void _clear() noexcept
     {

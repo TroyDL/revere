@@ -37,7 +37,7 @@ r_muxer::r_muxer(const std::string& path, bool output_to_buffer) :
 {
     avformat_alloc_output_context2(&_fc.raw(), NULL, NULL, _path.c_str());
     if(!_fc)
-        throw runtime_error("Unable to create libavformat output context");
+        R_THROW(("Unable to create libavformat output context"));
 
     if(_fc.get()->oformat->flags & AVFMT_GLOBALHEADER)
         _fc.get()->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
@@ -55,11 +55,11 @@ void r_muxer::add_video_stream(AVRational frame_rate, AVCodecID codec_id, uint16
 {
     auto codec = avcodec_find_encoder(codec_id);
     if(!codec)
-        throw runtime_error("Unable to find encoder stream.");
+        R_THROW(("Unable to find encoder stream."));
 
     _video_stream = avformat_new_stream(_fc.get(), codec);
     if(!_video_stream)
-        throw runtime_error("Unable to allocate AVStream.");
+        R_THROW(("Unable to allocate AVStream."));
 
     _video_stream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
     _video_stream->codecpar->codec_id = codec_id;
@@ -79,7 +79,7 @@ void r_muxer::add_audio_stream(AVCodecID codec_id, uint8_t channels, uint32_t sa
 
     _audio_stream = avformat_new_stream(_fc.get(), codec);
     if(!_audio_stream)
-        throw runtime_error("Unable to allocate AVStream");
+        R_THROW(("Unable to allocate AVStream"));
 
     _audio_stream->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
     _audio_stream->codecpar->codec_id = codec_id;
@@ -119,18 +119,18 @@ void r_muxer::set_audio_extradata(const std::vector<uint8_t>& ed)
 void r_muxer::open()
 {
     if(_fc.get()->nb_streams < 1)
-        throw runtime_error("Please add a stream before opening this muxer.");
+        R_THROW(("Please add a stream before opening this muxer."));
 
     if(_output_to_buffer)
     {
         if(avio_open_dyn_buf(&_fc.get()->pb) < 0)
-            throw runtime_error("Unable to allocate a memory IO object.");
+            R_THROW(("Unable to allocate a memory IO object."));
     }
     else if(avio_open(&_fc.get()->pb, _path.c_str(), AVIO_FLAG_WRITE) < 0)
-        throw runtime_error("Unable to open output io context.");
+        R_THROW(("Unable to open output io context."));
 
     if(avformat_write_header(_fc.get(), NULL) < 0)
-        throw runtime_error("Unable to write header to output file.");
+        R_THROW(("Unable to write header to output file."));
 
     _needs_finalize = true;
 }
@@ -153,7 +153,7 @@ static void _get_packet_defaults(AVPacket* pkt)
 void r_muxer::write_video_frame(uint8_t* p, size_t size, int64_t input_pts, int64_t input_dts, AVRational input_time_base, bool key)
 {
     if(_fc.get()->pb == nullptr)
-        throw runtime_error("Please call open() before writing frames.");
+        R_THROW(("Please call open() before writing frames."));
 
     raii_ptr<AVPacket> pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
     _get_packet_defaults(pkt.get());
@@ -166,13 +166,13 @@ void r_muxer::write_video_frame(uint8_t* p, size_t size, int64_t input_pts, int6
     pkt.get()->flags |= (key)?AV_PKT_FLAG_KEY:0;
 
     if(av_interleaved_write_frame(_fc.get(), pkt.get()) < 0)
-        throw runtime_error("Unable to write frame to output stream.");
+        R_THROW(("Unable to write frame to output stream."));
 }
 
 void r_muxer::write_audio_frame(uint8_t* p, size_t size, int64_t input_pts, AVRational input_time_base)
 {
     if(_fc.get()->pb == nullptr)
-        throw runtime_error("Please call open() before writing frames.");
+        R_THROW(("Please call open() before writing frames."));
 
     raii_ptr<AVPacket> pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
     _get_packet_defaults(pkt.get());
@@ -185,7 +185,7 @@ void r_muxer::write_audio_frame(uint8_t* p, size_t size, int64_t input_pts, AVRa
     pkt.get()->flags = AV_PKT_FLAG_KEY;
 
     if(av_interleaved_write_frame(_fc.get(), pkt.get()) < 0)
-        throw runtime_error("Unable to write frame to output stream.");
+        R_THROW(("Unable to write frame to output stream."));
 }
 
 uint8_t* r_muxer::extradata()
@@ -219,7 +219,7 @@ void r_muxer::finalize()
 const uint8_t* r_muxer::buffer() const
 {
     if(!_output_to_buffer)
-        throw runtime_error("Please only call buffer() on muxers configured to output to buffer.");
+        R_THROW(("Please only call buffer() on muxers configured to output to buffer."));
 
     return &_buffer[0];
 }
@@ -227,7 +227,7 @@ const uint8_t* r_muxer::buffer() const
 size_t r_muxer::buffer_size() const
 {
     if(!_output_to_buffer)
-        throw runtime_error("Please only call buffer_size() on muxers configured to output to buffer.");
+        R_THROW(("Please only call buffer_size() on muxers configured to output to buffer."));
 
     return _buffer.size();
 }

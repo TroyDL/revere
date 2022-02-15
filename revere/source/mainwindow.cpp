@@ -218,6 +218,8 @@ void MainWindow::on_record_button_clicked()
 
     _rtspCredentials->findChild<QLabel*>("ipAddressLabel")->setText(QString::fromStdString(as.ipv4));
 
+    _rtspCredentials->findChild<QLineEdit*>("usernameLineEdit")->setText(QString());
+    _rtspCredentials->findChild<QLineEdit*>("passwordLineEdit")->setText(QString());
     _rtspCredentials->show();
 }
 
@@ -347,11 +349,11 @@ static r_nullable<vector<uint8_t>> _decode_frame(const r_pipeline::r_sdp_media& 
     }
 
     if(ed.size() > 0)
-        decoder.set_extradata(&ed[0], ed.size());
+        decoder.set_extradata(ed);
 
     int attempt = 0;
-    r_codec::r_video_decoder_state state = r_codec::R_VIDEO_DECODER_STATE_INITIALIZED;
-    while(attempt < 10 && state != r_codec::R_VIDEO_DECODER_STATE_HAS_OUTPUT)
+    r_codec::r_codec_state state = r_codec::R_CODEC_STATE_INITIALIZED;
+    while(attempt < 10 && state != r_codec::R_CODEC_STATE_HAS_OUTPUT)
     {
         decoder.attach_buffer(&key_frame[0], key_frame.size());
         state = decoder.decode();
@@ -359,7 +361,7 @@ static r_nullable<vector<uint8_t>> _decode_frame(const r_pipeline::r_sdp_media& 
     }
     
     r_nullable<vector<uint8_t>> output;
-    if(state == r_codec::R_VIDEO_DECODER_STATE_HAS_OUTPUT)
+    if(state == r_codec::R_CODEC_STATE_HAS_OUTPUT)
         output.set_value(decoder.get(fmt, output_width, output_height));
 
     return output;
@@ -381,6 +383,7 @@ void MainWindow::on_fetch_camera_params_done()
         imageLabel->show();
 
         _friendlyName->findChild<QLabel*>("cameraNameLabel")->setText(QString::fromStdString(_assignmentState.value().camera.value().camera_name.value()));
+        _friendlyName->findChild<QLineEdit*>("friendlyNameLineEdit")->setText(QString());
         _friendlyName->show();
     }
     catch(const std::exception& e)
@@ -406,6 +409,10 @@ void MainWindow::on_new_storage_clicked()
 {
     _newOrExisting->hide();
 
+    _retention->findChild<QLineEdit*>("daysContinuousRetention")->setText(QString("2"));
+    _retention->findChild<QLineEdit*>("daysMotionRetention")->setText(QString("5"));
+    _retention->findChild<QLineEdit*>("motionPercentageEstimate")->setText(QString("5"));
+    _retention->findChild<QLabel*>("fileSizeLabel")->setText(QString());
     _retention->show();
     _update_retention_ui();
 }
@@ -420,6 +427,9 @@ void MainWindow::on_existing_storage_clicked()
         QString::fromStdString(sub_dir("video")),
         tr("Revere Video Database (*.rvd)")
     ).toStdString();
+
+    if(fileName.empty())
+        return;
 
     fileName = fileName.substr(fileName.rfind(r_fs::PATH_SLASH)+1);
 
@@ -609,6 +619,8 @@ void MainWindow::_update_list_ui()
 void MainWindow::_update_retention_ui()
 {
     auto as = _assignmentState.value();
+
+    printf("as.byte_rate = %ld\n", as.byte_rate);
 
     _retention->findChild<QLabel*>("headingLabel")->setText(QString::fromStdString(as.camera_friendly_name + " at " + to_string((as.byte_rate * 8) / 1024)) + " kbps.\n");
 

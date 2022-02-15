@@ -43,11 +43,11 @@ static vector<uint8_t> decode_h264_frame(AVCodecID codec_id, AVPixelFormat fmt, 
     decoder.attach_buffer(data, size);
 
     vector<uint8_t> result;
-    r_video_decoder_state decoder_state = R_VIDEO_DECODER_STATE_DECODE_AGAIN;
-    while(decoder_state == R_VIDEO_DECODER_STATE_DECODE_AGAIN)
+    r_codec_state decoder_state = R_CODEC_STATE_AGAIN;
+    while(decoder_state == R_CODEC_STATE_AGAIN)
         decoder_state = decoder.decode();
     decoder_state = decoder.flush();
-    if(decoder_state == R_VIDEO_DECODER_STATE_HAS_OUTPUT)
+    if(decoder_state == R_CODEC_STATE_HAS_OUTPUT)
         result = decoder.get(AV_PIX_FMT_ARGB,w,h);
 
     return result;

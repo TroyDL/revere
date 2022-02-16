@@ -1,9 +1,11 @@
 
 #include "ws.h"
+#include "utils.h"
 #include "r_utils/3rdparty/json/json.h"
 #include "r_utils/r_time_utils.h"
 #include "r_utils/r_file.h"
 #include "r_utils/r_blob_tree.h"
+#include "r_utils/3rdparty/json/json.h"
 #include "r_disco/r_camera.h"
 #include "r_storage/r_storage_file.h"
 #include "r_pipeline/r_stream_info.h"
@@ -21,6 +23,7 @@ using namespace r_codec;
 using namespace std;
 using namespace std::chrono;
 using namespace std::placeholders;
+using json = nlohmann::json;
 
 const int WEB_SERVER_PORT = 10080;
 
@@ -30,46 +33,9 @@ ws::ws(const string& top_dir, r_devices& devices) :
     _server(WEB_SERVER_PORT)
 {
     _server.add_route(METHOD_GET, "/jpg", std::bind(&ws::_get_jpg, this, _1, _2, _3));
+    _server.add_route(METHOD_GET, "/contents", std::bind(&ws::_get_contents, this, _1, _2, _3));
 
     _server.start();
-
-// ws.add_route(METHOD_GET, "/data_sources", std::bind(&data_sources::handle_get, &ds, _1, _2, _3));
-//
-// then handle like this:
-//
-// #include "r_utils/3rdparty/json/json.h"
-// using json = nlohmann::json;
-//
-// r_server_response data_sources::handle_get(const r_web_server<r_socket>& ws,
-//                                            r_buffered_socket<r_socket>& conn,
-//                                            const r_server_request& request)
-// {
-//     r_sqlite_conn dbconn(_dataSourcesPath);
-//
-//     json j;
-//
-//     j["data"]["data_sources"] = json::array();
-//
-//     auto results = dbconn.exec("SELECT * FROM data_sources;");
-//
-//     for(auto r : results)
-//     {
-//         j["data"]["data_sources"] += {{"id", r["id"]},
-//                                       {"type", r["type"]},
-//                                       {"rtsp_url", r["rtsp_url"]},
-//                                       {"recording", r["recording"]},
-//                                       {"transport_pref", r["transport_pref"]},
-//                                       {"auth_username", r["auth_username"]},
-//                                       {"auth_password", r["auth_password"]}};
-//     }
-//
-//     r_server_response response;
-//
-//     response.set_body(j.dump());
-//
-//     return response;
-// }
-
 }
 
 ws::~ws()
@@ -131,4 +97,50 @@ r_http::r_server_response ws::_get_jpg(const r_http::r_web_server<r_utils::r_soc
     }
 
     R_STHROW(r_http_500_exception, ("Failed to decode video frame."));
+}
+
+r_http::r_server_response ws::_get_contents(const r_http::r_web_server<r_utils::r_socket>& ws,
+                                            r_utils::r_buffered_socket<r_utils::r_socket>& conn,
+                                            const r_http::r_server_request& request)
+{
+    auto args = request.get_uri().get_get_args();
+
+    auto maybe_camera = _devices.get_camera_by_id(args["camera_id"]);
+
+    if(maybe_camera.is_null())
+        R_STHROW(r_http_404_exception, ("Unknown camera id."));
+
+    if(maybe_camera.value().record_file_path.is_null())
+        R_STHROW(r_http_404_exception, ("Camera has no recording file!"));
+
+    r_storage_file sf(_top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + maybe_camera.value().record_file_path.value());
+
+    r_storage_media_type mt = R_STORAGE_MEDIA_TYPE_ALL;
+    if(args["media_type"] == "audio")
+        mt = R_STORAGE_MEDIA_TYPE_AUDIO;
+    else if(args["media_type"] == "video")
+        mt = R_STORAGE_MEDIA_TYPE_VIDEO;
+
+    auto key_starts = sf.key_frame_start_times(
+        mt,
+        duration_cast<std::chrono::milliseconds>(r_time_utils::iso_8601_to_tp(args["start_time"]).time_since_epoch()).count(),
+        duration_cast<std::chrono::milliseconds>(r_time_utils::iso_8601_to_tp(args["end_time"]).time_since_epoch()).count()
+    );
+
+    auto segments = find_contiguous_segments(key_starts);
+
+    json j;
+    j["segments"] = json::array();
+
+    for(auto& s : segments)
+    {
+        // note: instead of push_back here its also possible to use += operator to append json object to array
+        j["segments"].push_back({{"start_time", r_time_utils::tp_to_iso_8601(r_time_utils::epoch_millis_to_tp(s.first), false)},
+                                 {"end_time", r_time_utils::tp_to_iso_8601(r_time_utils::epoch_millis_to_tp(s.second), false)}});
+    }
+
+    r_server_response response;
+    response.set_content_type("text/json");
+    response.set_body(j.dump());
+    return response;
 }

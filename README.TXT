@@ -57,13 +57,6 @@ TODO SOON
        - Triggers object detection
        - Schedule aware analytic triggers (txt messages, UI notifications, etc)
 
-Known Issues
-    - Put in invalid password. Should error out.
-    - We should have a warning for extremely high bitrate cameras
-    - 401 Unauthorized when occurring with camera setup should be visible to user somehow.
-    - It will currently let you configure a record file with more space than the disk has free
-      right now.
-
 Compiling on Linux
 
    To prepare a fresh Linux Mint 20.3 VM for compilation:

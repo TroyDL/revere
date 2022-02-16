@@ -75,7 +75,7 @@ public:
     };
 
     r_dumbdex();
-    r_dumbdex(uint8_t* p, size_t max_indexes);
+    r_dumbdex(const std::string& name, uint8_t* p, size_t max_indexes);
     r_dumbdex(const r_dumbdex&) = delete;
     r_dumbdex(r_dumbdex&& other) noexcept;
 
@@ -93,7 +93,7 @@ public:
     void remove(uint64_t ts);
     void print();
 
-    static void allocate(uint8_t* p, size_t block_size, size_t num_blocks);
+    static void allocate(const std::string& name, uint8_t* p, size_t block_size, size_t num_blocks);
 
     static uint32_t max_indexes_within(size_t block_size);
 
@@ -109,6 +109,7 @@ private:
     std::pair<uint64_t, uint16_t> _read_index(const uint8_t* p) const;
     uint32_t _num_indexes() const;
 
+    std::string _get_journal_name() const;
     FILE* _open_journal();
     void _close_journal(FILE* f);
     void _remove_journal();
@@ -116,6 +117,7 @@ private:
     void _rollback_changes(uint8_t* base);
     bool _needs_rollback();
 
+    std::string _name;
     uint8_t* _block;
     size_t _max_indexes;
     uint32_t* _n_indexes;

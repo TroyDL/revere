@@ -28,6 +28,8 @@ add_executable(
     source/newfilename.ui
     source/newfilename.h
     source/newfilename.cpp
+    source/ws.h
+    source/ws.cpp
 )
 
 target_include_directories(

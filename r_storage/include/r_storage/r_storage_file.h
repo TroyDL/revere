@@ -62,6 +62,8 @@ public:
     // query() returns an r_blob_tree populated with the query results (see unit tests).
     std::vector<uint8_t> query(r_storage_media_type media_type, int64_t start_ts, int64_t end_ts);
 
+    std::vector<uint8_t> query_key(r_storage_media_type media_type, int64_t ts);
+
     // key_frame_start_times() returns an array of the independent block ts's
     std::vector<int64_t> key_frame_start_times(r_storage_media_type media_type, int64_t start_ts = 0, int64_t end_ts = LLONG_MAX);
 
@@ -95,6 +97,9 @@ private:
 
     template<typename CB>
     void _visit_ind_blocks(r_storage_media_type media_type, int64_t start_ts, int64_t end_ts, CB cb);
+
+    template<typename CB>
+    void _visit_ind_block(r_storage_media_type media_type, int64_t ts, CB cb);
 
     r_utils::r_memory_map _map_block(uint16_t block);
     r_ind_block _get_index_block(const r_storage_write_context& ctx, uint16_t block, int64_t ts, size_t n_indexes);

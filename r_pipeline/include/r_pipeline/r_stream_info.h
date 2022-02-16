@@ -134,6 +134,8 @@ struct r_h265_sps
 struct r_h264_sps parse_h264_sps(const std::vector<uint8_t>& sps);
 struct r_h265_sps parse_h265_sps(const std::vector<uint8_t>& sps);
 
+std::vector<uint8_t> get_video_codec_extradata(const std::string& video_codec_name, const std::string& video_codec_parameters);
+
 }
 
 #endif

@@ -85,7 +85,7 @@ void test_r_storage::test_r_dumbdex_writing()
 {
     vector<uint8_t> buffer(1024*1024);
 
-    r_dumbdex d(&buffer[0], 1000);
+    r_dumbdex d("foo", &buffer[0], 1000);
 
     for(int i = 0; i < 1000; ++i)
         d._push_free_block(i);
@@ -105,9 +105,9 @@ void test_r_storage::test_r_dumbdex_consistency()
     const size_t MAX_INDEXES = 8;
     vector<uint8_t> buffer(sizeof(uint32_t) + (MAX_INDEXES * INDEX_ELEMENT_SIZE) + sizeof(uint32_t) + (MAX_INDEXES * FREEDEX_ELEMENT_SIZE));
 
-    r_dumbdex::allocate(&buffer[0], buffer.size(), MAX_INDEXES);
+    r_dumbdex::allocate("bar", &buffer[0], buffer.size(), MAX_INDEXES);
 
-    r_dumbdex d(&buffer[0], 8);
+    r_dumbdex d("bar", &buffer[0], 8);
 
     auto blk = d.insert(10);
     RTF_ASSERT(blk == 1);
@@ -274,9 +274,9 @@ void test_r_storage::test_r_dumbdex_full()
     const size_t MAX_INDEXES = 8;
     vector<uint8_t> buffer(sizeof(uint32_t) + (MAX_INDEXES * INDEX_ELEMENT_SIZE) + sizeof(uint32_t) + (MAX_INDEXES * FREEDEX_ELEMENT_SIZE));
 
-    r_dumbdex::allocate(&buffer[0], buffer.size(), MAX_INDEXES);
+    r_dumbdex::allocate("baz", &buffer[0], buffer.size(), MAX_INDEXES);
 
-    r_dumbdex d(&buffer[0], 8);
+    r_dumbdex d("baz", &buffer[0], 8);
 
     auto blk = d.insert(1000);
     RTF_ASSERT(blk == 1);

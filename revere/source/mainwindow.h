@@ -12,6 +12,7 @@
 #include "neworexisting.h"
 #include "pleasewait.h"
 #include "newfilename.h"
+#include "ws.h"
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include <QListWidget>
@@ -104,5 +105,7 @@ private:
     NewFileName* _newFileName;
 
     r_utils::r_nullable<assignment_state> _assignmentState;
+
+    ws _ws;
 };
 #endif

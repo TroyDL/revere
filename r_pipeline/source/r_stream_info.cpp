@@ -307,3 +307,14 @@ struct r_h265_sps r_pipeline::parse_h265_sps(const vector<uint8_t>& sps)
 
     return result;
 }
+
+vector<uint8_t> r_pipeline::get_video_codec_extradata(const std::string& video_codec_name, const std::string& video_codec_parameters)
+{
+    auto lower_codec_name = r_string_utils::to_lower(video_codec_name);
+
+    if( lower_codec_name == "h264")
+        return make_h264_extradata(get_h264_sps(video_codec_parameters), get_h264_pps(video_codec_parameters));
+    else if(lower_codec_name == "h265")
+        return make_h265_extradata(get_h265_vps(video_codec_parameters), get_h265_sps(video_codec_parameters), get_h265_pps(video_codec_parameters));
+    else R_THROW(("Unknown video codec name"));
+}

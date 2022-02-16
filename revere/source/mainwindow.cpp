@@ -45,7 +45,8 @@ MainWindow::MainWindow(QWidget *parent) :
     _newOrExisting(new NewOrExisting(this)),
     _pleaseWait(new PleaseWait(this)),
     _newFileName(new NewFileName(this)),
-    _assignmentState()
+    _assignmentState(),
+    _ws(top_dir(), _devices)
 {
     r_pipeline::gstreamer_init();
 

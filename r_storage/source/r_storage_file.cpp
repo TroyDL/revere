@@ -29,7 +29,7 @@ r_storage_file::r_storage_file(const string& file_name) :
     _file(r_file::open(file_name, "r+")),
     _h(_read_header(file_name)),
     _dumbdex_map(_map_block(0)),
-    _block_index((uint8_t*)_dumbdex_map.map() + R_STORAGE_FILE_HEADER_SIZE, _h.num_blocks),
+    _block_index(file_name, (uint8_t*)_dumbdex_map.map() + R_STORAGE_FILE_HEADER_SIZE, _h.num_blocks),
     _gop_buffer(),
     _ind_map(),
     _current_block()
@@ -204,6 +204,42 @@ vector<uint8_t> r_storage_file::query(r_storage_media_type media_type, int64_t s
     return r_blob_tree::serialize(bt, 1);
 }
 
+vector<uint8_t> r_storage_file::query_key(r_storage_media_type media_type, int64_t ts)
+{
+    r_blob_tree bt;
+
+    _visit_ind_block(
+        media_type,
+        ts,
+        [&](r_ind_block_info& ibii) {
+            bt["video_codec_name"] = ibii.video_codec_name;
+            bt["video_codec_parameters"] = ibii.video_codec_parameters;
+            bt["audio_codec_name"] = ibii.audio_codec_name;
+            bt["audio_codec_parameters"] = ibii.audio_codec_parameters;
+
+            r_rel_block rel_block(ibii.block, ibii.block_size);
+
+            auto rbi = rel_block.begin();
+
+            if(rbi.valid())
+            {
+                auto frame_info = *rbi;
+
+                vector<uint8_t> frame_buffer(frame_info.size);
+                ::memcpy(frame_buffer.data(), frame_info.data, frame_info.size);
+
+                bt["frames"][0]["ind_block_ts"] = r_string_utils::int64_to_s(ibii.ts);
+                bt["frames"][0]["data"] = frame_buffer;
+                bt["frames"][0]["pts"] = r_string_utils::int64_to_s(frame_info.pts);
+                bt["frames"][0]["key"] = (frame_info.flags>0)?string("true"):string("false");
+                bt["frames"][0]["stream_id"] = r_string_utils::uint8_to_s(ibii.stream_id);
+            }
+        }
+    );
+
+    return r_blob_tree::serialize(bt, 1);
+}
+
 vector<int64_t> r_storage_file::key_frame_start_times(r_storage_media_type media_type, int64_t start_ts, int64_t end_ts)
 {
     vector<int64_t> gop_start_times;
@@ -293,6 +329,7 @@ void r_storage_file::allocate(const std::string& file_name, size_t block_size, s
         *(uint32_t*)(p+4) = (uint32_t)block_size;
 
         r_dumbdex::allocate(
+            file_name,
             p + R_STORAGE_FILE_HEADER_SIZE,
             block_size - R_STORAGE_FILE_HEADER_SIZE,
             num_blocks - 1
@@ -386,6 +423,32 @@ void r_storage_file::_visit_ind_blocks(r_storage_media_type media_type, int64_t 
                 ibi = ind_block.begin();
             }
         }
+    }
+}
+
+template<typename CB>
+void r_storage_file::_visit_ind_block(r_storage_media_type media_type, int64_t ts, CB cb)
+{
+    if(media_type >= R_STORAGE_MEDIA_TYPE_MAX)
+        R_THROW(("Invalid storage media type."));
+
+    int64_t current_ts = ts;
+
+    auto di = _block_index.find_lower_bound(current_ts);
+    if(!di.valid())
+        R_THROW(("Query start not found."));
+
+    auto dumbdex_index_entry = *di;
+
+    auto ind_block_map = _map_block(dumbdex_index_entry.second);
+    r_ind_block ind_block((uint8_t*)ind_block_map.map(), _h.block_size);
+
+    auto ibi = ind_block.find_lower_bound(current_ts);
+
+    if(ibi.valid())
+    {
+        auto ibii = *ibi;
+        cb(ibii);
     }
 }
 

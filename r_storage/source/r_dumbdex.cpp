@@ -25,6 +25,7 @@ static bool _is_power_of_2(uint32_t size)
 }
 
 r_dumbdex::r_dumbdex() :
+    _name(),
     _block(nullptr),
     _max_indexes(0),
     _n_indexes(nullptr),
@@ -34,7 +35,8 @@ r_dumbdex::r_dumbdex() :
 {
 }
 
-r_dumbdex::r_dumbdex(uint8_t* p, size_t max_indexes) :
+r_dumbdex::r_dumbdex(const std::string& name, uint8_t* p, size_t max_indexes) :
+    _name(name),
     _block(p),
     _max_indexes(max_indexes),
     _n_indexes((uint32_t*)&_block[0]),
@@ -45,6 +47,7 @@ r_dumbdex::r_dumbdex(uint8_t* p, size_t max_indexes) :
 }
 
 r_dumbdex::r_dumbdex(r_dumbdex&& other) noexcept :
+    _name(std::move(other._name)),
     _block(std::move(other._block)),
     _max_indexes(std::move(other._max_indexes)),
     _n_indexes(std::move(other._n_indexes)),
@@ -68,6 +71,8 @@ r_dumbdex& r_dumbdex::operator=(r_dumbdex&& other) noexcept
 {
     if(this != &other)
     {
+        _name = std::move(other._name);
+        other._name.clear();
         _block = std::move(other._block);
         other._block = nullptr;
         _max_indexes = std::move(other._max_indexes);
@@ -286,13 +291,13 @@ void r_dumbdex::print()
     printf("]\n");
 }
 
-void r_dumbdex::allocate(uint8_t* p, size_t block_size, size_t num_blocks)
+void r_dumbdex::allocate(const std::string& name, uint8_t* p, size_t block_size, size_t num_blocks)
 {
     memset(p, 0, block_size);
     auto max_indexes = r_dumbdex::max_indexes_within(block_size);
     if(num_blocks > max_indexes)
         R_THROW(("Not enough indexes for number of blocks!"));
-    r_dumbdex dumb(p, num_blocks);
+    r_dumbdex dumb(name, p, num_blocks);
     // Why do we push the free blocks in backwards? To maintain compatibility with
     // the "consistency" unit test.
     for(uint16_t blk = (uint16_t)num_blocks; blk > 0; --blk)
@@ -355,14 +360,22 @@ uint32_t r_dumbdex::_num_indexes() const
     return *_n_indexes;
 }
 
+string r_dumbdex::_get_journal_name() const
+{
+    auto p = _name.rfind('.');
+
+    return (p==string::npos)?_name + "_dumbdex_journal":_name.substr(0,p) + "_dumbdex_journal";
+}
+
 FILE* r_dumbdex::_open_journal()
 {
+    string file_name = _get_journal_name();
 #ifdef IS_WINDOWS
     FILE* f = nullptr;
-    fopen_s(&f, "dumbdex_journal", "a+");
+    fopen_s(&f, file_name.c_str(), "a+");
 #endif
 #ifdef IS_LINUX
-    FILE* f = fopen("dumbdex_journal", "a+");
+    FILE* f = fopen(file_name.c_str(), "a+");
 #endif
     if(!f)
         throw runtime_error("Unable to append to jouranl.");
@@ -378,7 +391,8 @@ void r_dumbdex::_close_journal(FILE* f)
 
 void r_dumbdex::_remove_journal()
 {
-    ::remove("dumbdex_journal");
+    string file_name = _get_journal_name();
+    ::remove(file_name.c_str());
 }
 
 void r_dumbdex::_append_change(FILE* f, const uint8_t* base, const uint8_t* p, size_t size)
@@ -423,12 +437,13 @@ void r_dumbdex::_rollback_changes(uint8_t* base)
 
 bool r_dumbdex::_needs_rollback()
 {
+    string file_name = _get_journal_name();
 #ifdef IS_WINDOWS
     FILE* f = nullptr;
-    fopen_s(&f, "r_dumbdex_journal", "r");
+    fopen_s(&f, file_name.c_str(), "r");
 #endif
 #ifdef IS_LINUX
-    FILE* f = fopen("r_dumbdex_journal", "r");
+    FILE* f = fopen(file_name.c_str(), "r");
 #endif
   
     if(f)

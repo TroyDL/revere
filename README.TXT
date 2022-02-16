@@ -1,11 +1,13 @@
-
+****************************************************************************************************
 Project Goals
    - Simple open source video surveilance software.
    - Onvif, 4K, H.264, H.265, mu-law, AAC (latm & generic), b-frames
    - Linux & Windows
-   - Software should run on almost anything (desktop, server, raspberry pi, etc...) and scale its capabilities automatically.
+   - Software should run on almost anything (desktop, server, raspberry pi, etc...) and scale its
+     capabilities automatically.
    - Pre Allocated Storage
-       - Select the number of days of retention you want for a camera and all the disk space is allocated up front (and never exceeded).
+       - Select the number of days of retention you want for a camera and all the disk space is
+         allocated up front (and never exceeded).
 
 What exists
    - onvif discovery
@@ -37,8 +39,9 @@ TODO SOON
        - Support localtime or UTC Queries
    - Analytics
        - Need motion_processor thread
-           - Wake up, query last 5 seconds worth of key frames from all cameras we need analytics for
-           - Keep state for each camera (create for first encounter, expire state if no motion for a while)
+           - Wake up, query last 5 seconds worth of key frames from all cameras we need analytics
+           - Keep state for each camera (create for first encounter, expire state if no motion for
+             a while)
            - Decode keys
            - Run through r_motion
            - Write to new motion.db
@@ -55,13 +58,15 @@ TODO SOON
        - Schedule aware analytic triggers (txt messages, UI notifications, etc)
 
 Known Issues
-    - Removing camera from Recording list it doesn't re-appear in discovered for a while. Axis cameras
-      dont return for a long time (i think because our discovery code uses the same guid on subsequent runs).
+    - Removing camera from Recording list it doesn't re-appear in discovered for a while. Axis
+      cameras dont return for a long time (i think because our discovery code uses the same guid
+      on subsequent runs).
     - _decode_frame() segfault accessing as.sdp_media["video"] map when key doesn't exist.
     - Put in invalid password. Should error out.
     - We should have a warning for extremely high bitrate cameras
     - 401 Unauthorized when occurring with camera setup should be visible to user somehow.
-    - It will currently let you configure a record file with more space than the disk has free right now.
+    - It will currently let you configure a record file with more space than the disk has free
+      right now.
     - Support G.726 audio
 
 Compiling on Linux

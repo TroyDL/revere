@@ -58,16 +58,11 @@ TODO SOON
        - Schedule aware analytic triggers (txt messages, UI notifications, etc)
 
 Known Issues
-    - Removing camera from Recording list it doesn't re-appear in discovered for a while. Axis
-      cameras dont return for a long time (i think because our discovery code uses the same guid
-      on subsequent runs).
-    - _decode_frame() segfault accessing as.sdp_media["video"] map when key doesn't exist.
     - Put in invalid password. Should error out.
     - We should have a warning for extremely high bitrate cameras
     - 401 Unauthorized when occurring with camera setup should be visible to user somehow.
     - It will currently let you configure a record file with more space than the disk has free
       right now.
-    - Support G.726 audio
 
 Compiling on Linux
 

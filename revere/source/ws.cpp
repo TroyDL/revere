@@ -34,6 +34,7 @@ ws::ws(const string& top_dir, r_devices& devices) :
 {
     _server.add_route(METHOD_GET, "/jpg", std::bind(&ws::_get_jpg, this, _1, _2, _3));
     _server.add_route(METHOD_GET, "/contents", std::bind(&ws::_get_contents, this, _1, _2, _3));
+    _server.add_route(METHOD_GET, "/cameras", std::bind(&ws::_get_cameras, this, _1, _2, _3));
 
     _server.start();
 }
@@ -137,6 +138,37 @@ r_http::r_server_response ws::_get_contents(const r_http::r_web_server<r_utils::
         // note: instead of push_back here its also possible to use += operator to append json object to array
         j["segments"].push_back({{"start_time", r_time_utils::tp_to_iso_8601(r_time_utils::epoch_millis_to_tp(s.first), false)},
                                  {"end_time", r_time_utils::tp_to_iso_8601(r_time_utils::epoch_millis_to_tp(s.second), false)}});
+    }
+
+    r_server_response response;
+    response.set_content_type("text/json");
+    response.set_body(j.dump());
+    return response;
+}
+
+r_http::r_server_response ws::_get_cameras(const r_http::r_web_server<r_utils::r_socket>& ws,
+                                           r_utils::r_buffered_socket<r_utils::r_socket>& conn,
+                                           const r_http::r_server_request& request)
+{
+    auto cameras = _devices.get_all_cameras();
+
+    json j;
+    j["cameras"] = json::array();
+
+    for(auto c : cameras)
+    {
+        j["cameras"].push_back(
+            {
+                {"id", c.id},
+                {"camera_name", (c.camera_name.is_null())?"":c.camera_name.value()},
+                {"friendly_name", (c.friendly_name.is_null())?"":c.friendly_name.value()},
+                {"ipv4", (c.ipv4.is_null())?"":c.ipv4.value()},
+                {"rtsp_url", (c.rtsp_url.is_null())?"":c.rtsp_url.value()},
+                {"video_codec", (c.video_codec.is_null())?"":c.video_codec.value()},
+                {"audio_codec", (c.audio_codec.is_null())?"":c.audio_codec.value()},
+                {"state", c.state}
+            }
+        );
     }
 
     r_server_response response;

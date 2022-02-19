@@ -7,6 +7,58 @@ using namespace std;
 using namespace r_utils;
 using namespace r_motion;
 
+// r_motion TODO
+// - add unit tests
+//    - how to unit test motion detection?
+//       - 1) simply run on consecutive frames and detect motion (motion value should be in specific range)
+//       
+// - implement morphological dilation and erosion
+
+// https://homepages.inf.ed.ac.uk/rbf/HIPR2/dilate.htm#:~:text=The%20dilation%20operator%20takes%20two,dilation%20on%20the%20input%20image.
+
+#if 0
+// grayscale image, binary mask
+void morph(inImage, outImage, kernel, type) {
+ // half size of the kernel, kernel size is n*n (easier if n is odd)
+ sz = (kernel.n - 1 ) / 2;
+
+ for X in inImage.rows {
+  for Y in inImage.cols {
+
+   if ( isOnBoundary(X,Y, inImage, sz) ) {
+    // check if pixel (X,Y) for boundary cases and deal with it (copy pixel as is)
+    // must consider half size of the kernel
+    val = inImage(X,Y);       // quick fix
+   }
+
+   else {
+    list = [];
+
+    // get the neighborhood of this pixel (X,Y)
+    for I in kernel.n {
+     for J in kernel.n {
+      if ( kernel(I,J) == 1 ) {
+       list.add( inImage(X+I-sz, Y+J-sz) );
+      }
+     }
+    }
+
+    if type == dilation {
+     // dilation: set to one if any 1 is present, zero otherwise
+     val = max(list);
+    } else if type == erosion {
+     // erosion: set to zero if any 0 is present, one otherwise
+     val = min(list);
+    }
+   }
+
+   // set output image pixel
+   outImage(X,Y) = val;
+  }
+ }
+}
+#endif
+
 r_image r_motion::argb_to_gray8(const r_image& argb)
 {
     const uint8_t* src = argb.data.data();

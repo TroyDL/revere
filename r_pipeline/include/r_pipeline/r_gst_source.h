@@ -6,6 +6,7 @@
 #include "r_pipeline/r_stream_info.h"
 #include "r_pipeline/r_sample_context.h"
 #include "r_utils/r_nullable.h"
+#include "r_gst_buffer.h"
 #ifdef IS_WINDOWS
 #pragma warning( push )
 #pragma warning( disable : 4244 )
@@ -32,7 +33,7 @@ namespace r_pipeline
 void gstreamer_init();
 
 typedef std::function<void()> r_ready_cb;
-typedef std::function<void(const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts)> r_sample_cb;
+typedef std::function<void(const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts)> r_sample_cb;
 typedef std::function<void(const std::map<std::string, r_sdp_media>& sdp_medias)> r_sdp_media_cb;
 typedef std::function<void(r_media type, const r_pad_info& pad_info)> r_pad_added_cb;
 
@@ -103,6 +104,59 @@ private:
     GstCaps* _caps;
 };
 
+enum class H264_NT : uint32_t 
+{
+    UNKNOWN      = 1,
+    SLICE        = 2,
+    SLICE_DPA    = 4,
+    SLICE_DPB    = 8,
+    SLICE_DPC    = 16,
+    SLICE_IDR    = 32,
+    SEI          = 64,
+    SPS          = 128,
+    PPS          = 256,
+    AU_DELIMITER = 512,
+    SEQ_END      = 1024,
+    STREAM_END   = 2048,
+    FILLER_DATA  = 4096,
+    SPS_EXT      = 8192,
+    PREFIX_UNIT  = 16384,
+    SUBSET_SPS   = 32768,
+    DEPTH_SPS    = 65536,
+    SLICE_AUX    = 131072,
+    SLICE_EXT    = 262144,
+    SLICE_DEPTH  = 524288
+};
+
+enum class H265_NT : uint32_t 
+{
+    SLICE_TRAIL_N    = 1,
+    SLICE_TRAIL_R    = 2,
+    SLICE_TSA_N      = 4,
+    SLICE_TSA_R      = 8,
+    SLICE_STSA_N     = 16,
+    SLICE_STSA_R     = 32,
+    SLICE_RADL_N     = 64,
+    SLICE_RADL_R     = 128,
+    SLICE_RASL_N     = 256,
+    SLICE_RASL_R     = 512,
+    SLICE_BLA_W_LP   = 1024,
+    SLICE_BLA_W_RADL = 2048,
+    SLICE_BLA_N_LP   = 4096,
+    SLICE_IDR_W_RADL = 8192,
+    SLICE_IDR_N_LP   = 16384,
+    SLICE_CRA_NUT    = 32768,
+    VPS              = 65536,
+    SPS              = 131072,
+    PPS              = 262144,
+    AUD              = 524288,
+    EOS              = 1048576,
+    EOB              = 2097152,
+    FD               = 4194304,
+    PREFIX_SEI       = 8388608,
+    SUFFIX_SEI       = 16777216
+};
+
 class r_gst_source
 {
 public:
@@ -151,8 +205,11 @@ private:
     static void _on_sdp_callbackS(GstElement* src, GstSDPMessage* sdp, gpointer data);
     void _on_sdp_callback(GstElement* src, GstSDPMessage* sdp);
 
-    bool _is_h264_picture(GstH264NalParser* parser, const uint8_t* p, size_t size);
-    bool _is_h265_picture(GstH265Parser* parser, const uint8_t* p, size_t size);
+    uint32_t _parse_h264(GstH264NalParser* parser, const uint8_t* p, size_t size);
+    uint32_t _parse_h265(GstH265Parser* parser, const uint8_t* p, size_t size);
+
+    bool _is_h264_picture(uint32_t ft);
+    bool _is_h265_picture(uint32_t ft);
 
     void _parse_audio_sink_caps();
 

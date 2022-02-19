@@ -2,8 +2,10 @@
 #ifndef __r_vss_r_recording_context_h
 #define __r_vss_r_recording_context_h
 
+#include "r_vss/r_stream_keeper.h"
 #include "r_disco/r_camera.h"
 #include "r_pipeline/r_gst_source.h"
+#include "r_pipeline/r_gst_buffer.h"
 #include "r_pipeline/r_stream_info.h"
 #include "r_storage/r_storage_file.h"
 #include "r_utils/r_blocking_q.h"
@@ -21,8 +23,6 @@ typedef _GstRTSPMedia GstRTSPMedia;
 
 namespace r_vss
 {
-
-class r_stream_keeper;
 
 class r_recording_context
 {
@@ -49,7 +49,7 @@ private:
         uint64_t gst_pts;
         uint64_t gst_dts;
         bool key;
-        std::vector<uint8_t> data;
+        r_pipeline::r_gst_buffer buffer;
     };
 
     static void _need_data(GstElement* appsrc, guint unused, r_recording_context* rc);

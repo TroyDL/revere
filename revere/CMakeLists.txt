@@ -33,7 +33,8 @@ add_executable(
 )
 
 target_include_directories(
-    revere PUBLIC 
+    revere PUBLIC
+    ../r_motion/include
     ../r_codec/include
     ../r_vss/include
     ../r_disco/include
@@ -56,6 +57,7 @@ target_link_directories(
 
 target_link_libraries(
     revere LINK_PUBLIC
+    r_motion
     r_codec
     r_vss
     r_disco

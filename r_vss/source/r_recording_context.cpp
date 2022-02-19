@@ -72,13 +72,14 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     
     _source.set_args(arguments);
 
-    _source.set_audio_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+    _source.set_audio_sample_cb([this](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
         // Record the frame...
 
         {
             _has_audio = true;
             _last_a_time = system_clock::now();
-            _a_bytes_received += sz;
+            auto mi = buffer.map(r_gst_buffer::MT_READ);
+            _a_bytes_received += mi.size();
             lock_guard<mutex> g(this->_sample_write_lock);
             if(this->_audio_caps.is_null())
             {
@@ -91,8 +92,8 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
             this->_storage_file.write_frame(
                 this->_storage_write_context,
                 R_STORAGE_MEDIA_TYPE_AUDIO,
-                p,
-                sz,
+                mi.data(),
+                mi.size(),
                 key,
                 ts,
                 pts
@@ -115,17 +116,17 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
                 fc.gst_pts = sc.gst_pts_running_time() - this->_first_restream_a_pts;
                 fc.gst_dts = sc.gst_dts_running_time() - this->_first_restream_a_dts;
                 fc.key = key;
-                fc.data.resize(sz);
-                memcpy(fc.data.data(), p, sz);
+                fc.buffer = buffer;
                 _audio_samples.post(fc);
             }
         }
     });
 
-    _source.set_video_sample_cb([this](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+    _source.set_video_sample_cb([this](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
         {
             _last_v_time = system_clock::now();
-            _v_bytes_received += sz;
+            auto mi = buffer.map(r_gst_buffer::MT_READ);
+            _v_bytes_received += mi.size();
             lock_guard<mutex> g(this->_sample_write_lock);
             if(this->_video_caps.is_null())
             {
@@ -138,12 +139,23 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
             this->_storage_file.write_frame(
                 this->_storage_write_context,
                 R_STORAGE_MEDIA_TYPE_VIDEO,
-                p,
-                sz,
+                mi.data(),
+                mi.size(),
                 key,
                 ts,
                 pts
             );
+
+            if(key || GST_BUFFER_FLAG_IS_SET(buffer.get(), GST_BUFFER_FLAG_NON_DROPPABLE))
+            {
+                this->_sk->post_key_frame_to_motion_engine(
+                    buffer,
+                    ts,
+                    this->_storage_write_context.video_codec_name,
+                    this->_storage_write_context.video_codec_parameters,
+                    this->_camera.id
+                );
+            }
         }
 
         if(this->_restreaming)
@@ -163,8 +175,7 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
                 fc.gst_pts = sc.gst_pts_running_time() - this->_first_restream_v_pts;
                 fc.gst_dts = sc.gst_dts_running_time() - this->_first_restream_v_dts;
                 fc.key = key;
-                fc.data.resize(sz);
-                memcpy(fc.data.data(), p, sz);
+                fc.buffer = buffer;
                 _video_samples.post(fc);
             }
         }
@@ -196,9 +207,6 @@ bool r_recording_context::dead() const
     {
         R_LOG_INFO("found dead stream: camera.id=%s", _camera.id.c_str());
         printf("found dead stream: camera.id=%s\n", _camera.id.c_str());
-
-        printf("SECONDS SINCE LAST VIDEO: %ld\n",duration_cast<seconds>(now - _last_v_time).count());
-        printf("SECONDS SINCE LAST AUDIO: %ld\n",duration_cast<seconds>(now - _last_a_time).count());
         fflush(stdout);
     }
 
@@ -257,20 +265,16 @@ void r_recording_context::_need_data(GstElement* appsrc, guint unused, r_recordi
 
 void r_recording_context::need_data(GstElement* appsrc, guint unused)
 {
-    GstBuffer* buffer = nullptr;
-
     if(appsrc == _v_appsrc)
     {
         auto sample = _video_samples.poll(chrono::milliseconds(3000));
         if(!sample.is_null())
         {
-            buffer = gst_buffer_new_and_alloc(sample.value().data.size());
-            GST_BUFFER_PTS(buffer) = sample.value().gst_pts;
-            GST_BUFFER_DTS(buffer) = sample.value().gst_dts;
-            GstMapInfo map;
-            gst_buffer_map(buffer, &map, GST_MAP_WRITE);
-            memcpy(map.data, sample.value().data.data(), sample.value().data.size());
-            gst_buffer_unmap(buffer, &map);
+            auto output_buffer = r_gst_buffer(gst_buffer_copy(sample.value().buffer.get()));
+            GST_BUFFER_PTS(output_buffer.get()) = sample.value().gst_pts;
+            GST_BUFFER_DTS(output_buffer.get()) = sample.value().gst_dts;
+            int ret;
+            g_signal_emit_by_name(appsrc, "push-buffer", output_buffer.get(), &ret);
         }
     }
     else
@@ -278,22 +282,12 @@ void r_recording_context::need_data(GstElement* appsrc, guint unused)
         auto sample = _audio_samples.poll(chrono::milliseconds(3000));
         if(!sample.is_null())
         {
-            buffer = gst_buffer_new_and_alloc(sample.value().data.size());
-            GST_BUFFER_PTS(buffer) = sample.value().gst_pts;
-            GST_BUFFER_DTS(buffer) = sample.value().gst_dts;
-            GstMapInfo map;
-            gst_buffer_map(buffer, &map, GST_MAP_WRITE);
-            memcpy(map.data, sample.value().data.data(), sample.value().data.size());
-            gst_buffer_unmap(buffer, &map);
+            auto output_buffer = r_gst_buffer(gst_buffer_copy(sample.value().buffer.get()));
+            GST_BUFFER_PTS(output_buffer.get()) = sample.value().gst_pts;
+            GST_BUFFER_DTS(output_buffer.get()) = sample.value().gst_dts;
+            int ret;
+            g_signal_emit_by_name(appsrc, "push-buffer", output_buffer.get(), &ret);
         }
-    }
-
-    if(buffer)
-    {
-        int ret;
-        g_signal_emit_by_name(appsrc, "push-buffer", buffer, &ret);
-
-        gst_buffer_unref(buffer);
     }
 }
 

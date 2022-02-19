@@ -44,7 +44,7 @@ map<string, r_sdp_media> r_pipeline::fetch_sdp_media(
     src.set_sdp_media_cb([&](const map<string, r_sdp_media>& sdp_medias){
         medias = sdp_medias;
     });
-    src.set_video_sample_cb([&](const sample_context& sc, const uint8_t*, size_t, bool key, int64_t pts){
+    src.set_video_sample_cb([&](const sample_context& sc, const r_gst_buffer&, bool key, int64_t pts){
         q.post(42);
     });
 
@@ -79,23 +79,25 @@ int64_t r_pipeline::fetch_bytes_per_second(
     bool done = false;
 
     int64_t audio_byte_total = 0;
-    src.set_audio_sample_cb([&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+    src.set_audio_sample_cb([&](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
+        auto mi = buffer.map(r_gst_buffer::MT_READ);
         if(!done)
-            audio_byte_total += sz;
+            audio_byte_total += mi.size();
     });
 
     bool stream_start_time_set = false;
     system_clock::time_point stream_start_time;    
 
     int64_t video_byte_total = 0;
-    src.set_video_sample_cb([&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+    src.set_video_sample_cb([&](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
+        auto mi = buffer.map(r_gst_buffer::MT_READ);
         if(!stream_start_time_set)
         {
             stream_start_time_set = true;
             stream_start_time = system_clock::now();
         }
         if(!done)
-            video_byte_total += sz;
+            video_byte_total += mi.size();
     });
 
     src.play();
@@ -137,9 +139,10 @@ r_camera_params r_pipeline::fetch_camera_params(
     });
 
     int64_t audio_byte_total = 0;
-    src.set_audio_sample_cb([&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+    src.set_audio_sample_cb([&](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
+        auto mi = buffer.map(r_gst_buffer::MT_READ);
         if(!done)
-            audio_byte_total += sz;
+            audio_byte_total += mi.size();
     });
 
     bool stream_start_time_set = false;
@@ -148,18 +151,19 @@ r_camera_params r_pipeline::fetch_camera_params(
     vector<uint8_t> video_key_frame;
 
     int64_t video_byte_total = 0;
-    src.set_video_sample_cb([&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+    src.set_video_sample_cb([&](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
+        auto mi = buffer.map(r_gst_buffer::MT_READ);
         if(!stream_start_time_set)
         {
             stream_start_time_set = true;
             stream_start_time = system_clock::now();
 
-            video_key_frame.resize(sz);
-            memcpy(&video_key_frame[0], p, sz);
+            video_key_frame.resize(mi.size());
+            memcpy(&video_key_frame[0], mi.data(), mi.size());
         }
 
         if(!done)
-            video_byte_total += sz;
+            video_byte_total += mi.size();
     });
 
     src.play();
@@ -855,24 +859,23 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
 
     GstSegment* seg = gst_sample_get_segment(sample.get());
 
-    auto buffer = gst_sample_get_buffer(sample.get());
-    if(!buffer)
-        return GST_FLOW_ERROR;
-
     auto result = GST_FLOW_OK;
 
-    GstMapInfo info;
-    if(!gst_buffer_map(buffer, &info, GST_MAP_READ))
-        result = GST_FLOW_ERROR;
-
-    if(result == GST_FLOW_OK)
+    try
     {
-        bool key = !GST_BUFFER_FLAG_IS_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT);
-        bool is_picture = (src->_h264_nal_parser)?src->_is_h264_picture(src->_h264_nal_parser, info.data, info.size):src->_is_h265_picture(src->_h265_nal_parser, info.data, info.size);
+        r_gst_buffer buffer(gst_sample_get_buffer(sample.get()));
 
-        auto sample_pts = GST_BUFFER_PTS(buffer);
+        auto info = buffer.map(r_gst_buffer::MT_READ);
+
+        uint32_t ft = (src->_h264_nal_parser)?src->_parse_h264(src->_h264_nal_parser, info.data(), info.size()):src->_parse_h265(src->_h265_nal_parser, info.data(), info.size());
+
+        bool is_picture = (src->_h264_nal_parser)?src->_is_h264_picture(ft):src->_is_h265_picture(ft);
+
+        bool key = is_picture && !GST_BUFFER_FLAG_IS_SET(buffer.get(), GST_BUFFER_FLAG_DELTA_UNIT);
+
+        auto sample_pts = GST_BUFFER_PTS(buffer.get());
         bool has_pts = (sample_pts != GST_CLOCK_TIME_NONE);
-        bool sample_dts = GST_BUFFER_DTS(buffer);
+        bool sample_dts = GST_BUFFER_DTS(buffer.get());
         bool has_dts = (sample_dts != GST_CLOCK_TIME_NONE);
 
         // OK, this is kind of a workaround for a specific axis camera. Basically, we see an
@@ -881,39 +884,43 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
         // that here and buffering the SEI timestamp... which we will re-use for the IDR. Its clear
         // to me that the intention of the camera was to have the SEI be in the same access unit as
         // the IDR, but gstreamer is not doing that.
-        src->_sei_ts_hack(buffer, has_pts, is_picture, sample_pts);
+        src->_sei_ts_hack(buffer.get(), has_pts, is_picture, sample_pts);
 
-        if(has_pts && is_picture)
+        // first, save gstreamers time info into the sample context...
+        gst_time_info ti;
+        ti.pts = sample_pts;
+        ti.pts_running_time = gst_segment_to_running_time(seg, GST_FORMAT_TIME, ti.pts);
+        ti.dts = sample_dts;
+        ti.dts_running_time = gst_segment_to_running_time(seg, GST_FORMAT_TIME, ti.dts);
+
+        src->_sample_context._gst_time_info = ti;
+
+        // now, do our pts work...
+        int64_t pts = 0;
+        if(has_pts)
+            pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
+        else if(src->_last_v_pts_valid)
+            pts = src->_last_v_pts + 1;
+
+        if(!src->_sample_sent)
+            src->_sample_context._stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
+        int64_t last_pts = (src->_last_v_pts_valid)?src->_last_v_pts:0;
+
+        if(!src->_video_sample_cb.is_null() && std::llabs(pts - last_pts) < MSECS_IN_TEN_MINUTES) // 10 minutes
         {
-            // first, save gstreamers time info into the sample context...
-            gst_time_info ti;
-            ti.pts = sample_pts;
-            ti.pts_running_time = gst_segment_to_running_time(seg, GST_FORMAT_TIME, ti.pts);
-            ti.dts = sample_dts;
-            ti.dts_running_time = gst_segment_to_running_time(seg, GST_FORMAT_TIME, ti.dts);
+            src->_video_sample_cb.value()(src->_sample_context, buffer, key, pts);
+            src->_sample_sent = true;
 
-            src->_sample_context._gst_time_info = ti;
-
-            // now, do our pts work...
-            auto pts = (int64_t)GST_TIME_AS_MSECONDS(sample_pts);
-
-            if(!src->_sample_sent)
-                src->_sample_context._stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-
-            int64_t last_pts = (src->_last_v_pts_valid)?src->_last_v_pts:0;
-
-            if(!src->_video_sample_cb.is_null() && std::llabs(pts - last_pts) < MSECS_IN_TEN_MINUTES) // 10 minutes
-            {
-                src->_video_sample_cb.value()(src->_sample_context, info.data, info.size, key, pts);
-                src->_sample_sent = true;
-
-                src->_last_v_pts = pts;
-                src->_last_v_pts_valid = true;
-            }
+            src->_last_v_pts = pts;
+            src->_last_v_pts_valid = true;
         }
     }
-
-    gst_buffer_unmap(buffer, &info);
+    catch(const r_exception& e)
+    {
+        R_LOG_ERROR("GST VIDEO SAMPLE ERROR: %s", e.what());
+        result = GST_FLOW_ERROR;
+    }
 
     return result;
 }
@@ -929,20 +936,16 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
 
     GstSegment* seg = gst_sample_get_segment(sample.get());
 
-    auto buffer = gst_sample_get_buffer(sample.get());
-    if(!buffer)
-        return GST_FLOW_ERROR;
-
     auto result = GST_FLOW_OK;
 
-    GstMapInfo info;
-    if(!gst_buffer_map(buffer, &info, GST_MAP_READ))
-        result = GST_FLOW_ERROR;
-
-    if(result == GST_FLOW_OK)
+    try
     {
-        auto sample_pts = GST_BUFFER_PTS(buffer);
-        bool sample_dts = GST_BUFFER_DTS(buffer);
+        r_gst_buffer buffer(gst_sample_get_buffer(sample.get()));
+
+        auto info = buffer.map(r_gst_buffer::MT_READ);
+
+        auto sample_pts = GST_BUFFER_PTS(buffer.get());
+        bool sample_dts = GST_BUFFER_DTS(buffer.get());
 
         if(sample_pts != GST_CLOCK_TIME_NONE)
         {
@@ -968,7 +971,7 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
 
             if(!src->_audio_sample_cb.is_null() && std::llabs(pts - last_pts) < MSECS_IN_TEN_MINUTES)
             {
-                src->_audio_sample_cb.value()(src->_sample_context, info.data, info.size, true, pts);
+                src->_audio_sample_cb.value()(src->_sample_context, buffer, true, pts);
                 src->_sample_sent = true;
 
                 src->_last_a_pts = pts;
@@ -976,8 +979,11 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
             }
         }
     }
-
-    gst_buffer_unmap(buffer, &info);
+    catch(const r_exception& e)
+    {
+        R_LOG_ERROR("GST VIDEO SAMPLE ERROR: %s", e.what());
+        result = GST_FLOW_ERROR;
+    }
 
     return result;
 }
@@ -1116,8 +1122,10 @@ void r_gst_source::_on_sdp_callback(GstElement* src, GstSDPMessage* sdp)
         _sdp_media_cb.value()(_sample_context._sdp_medias);
 }
 
-bool r_gst_source::_is_h264_picture(GstH264NalParser* parser, const uint8_t* p, size_t size)
+uint32_t r_gst_source::_parse_h264(GstH264NalParser* parser, const uint8_t* p, size_t size)
 {
+    uint32_t elements = 0;
+
     size_t pos = 0;
 
     GstH264NalUnit nal_unit;
@@ -1125,18 +1133,58 @@ bool r_gst_source::_is_h264_picture(GstH264NalParser* parser, const uint8_t* p, 
     {
         gst_h264_parser_identify_nalu(parser, p, (guint)pos, (guint)size, &nal_unit);
 
-        if(nal_unit.type >= GST_H264_NAL_SLICE && nal_unit.type <= GST_H264_NAL_SLICE_IDR)
-            return true;
-        else gst_h264_parser_parse_nal(parser, &nal_unit);
+        if(nal_unit.type == GST_H264_NAL_UNKNOWN)
+            elements |= (uint32_t)H264_NT::UNKNOWN;
+        else if(nal_unit.type == GST_H264_NAL_SLICE)
+            elements |= (uint32_t)H264_NT::SLICE;
+        else if(nal_unit.type == GST_H264_NAL_SLICE_DPA)
+            elements |= (uint32_t)H264_NT::SLICE_DPA;
+        else if(nal_unit.type == GST_H264_NAL_SLICE_DPB)
+            elements |= (uint32_t)H264_NT::SLICE_DPB;
+        else if(nal_unit.type == GST_H264_NAL_SLICE_DPC)
+            elements |= (uint32_t)H264_NT::SLICE_DPC;
+        else if(nal_unit.type == GST_H264_NAL_SLICE_IDR)
+            elements |= (uint32_t)H264_NT::SLICE_IDR;
+        else if(nal_unit.type == GST_H264_NAL_SEI)
+            elements |= (uint32_t)H264_NT::SEI;
+        else if(nal_unit.type == GST_H264_NAL_SPS)
+            elements |= (uint32_t)H264_NT::SPS;
+        else if(nal_unit.type == GST_H264_NAL_PPS)
+            elements |= (uint32_t)H264_NT::PPS;
+        else if(nal_unit.type == GST_H264_NAL_AU_DELIMITER)
+            elements |= (uint32_t)H264_NT::AU_DELIMITER;
+        else if(nal_unit.type == GST_H264_NAL_SEQ_END)
+            elements |= (uint32_t)H264_NT::SEQ_END;
+        else if(nal_unit.type == GST_H264_NAL_STREAM_END)
+            elements |= (uint32_t)H264_NT::STREAM_END;
+        else if(nal_unit.type == GST_H264_NAL_FILLER_DATA)
+            elements |= (uint32_t)H264_NT::FILLER_DATA;
+        else if(nal_unit.type == GST_H264_NAL_SPS_EXT)
+            elements |= (uint32_t)H264_NT::SPS_EXT;
+        else if(nal_unit.type == GST_H264_NAL_PREFIX_UNIT)
+            elements |= (uint32_t)H264_NT::PREFIX_UNIT;
+        else if(nal_unit.type == GST_H264_NAL_SUBSET_SPS)
+            elements |= (uint32_t)H264_NT::SUBSET_SPS;
+        else if(nal_unit.type == GST_H264_NAL_DEPTH_SPS)
+            elements |= (uint32_t)H264_NT::DEPTH_SPS;
+        else if(nal_unit.type == GST_H264_NAL_SLICE_AUX)
+            elements |= (uint32_t)H264_NT::SLICE_AUX;
+        else if(nal_unit.type == GST_H264_NAL_SLICE_EXT)
+            elements |= (uint32_t)H264_NT::SLICE_EXT;
+        else if(nal_unit.type == GST_H264_NAL_SLICE_DEPTH)
+            elements |= (uint32_t)H264_NT::SLICE_DEPTH;
+
+        gst_h264_parser_parse_nal(parser, &nal_unit);
 
         pos = nal_unit.offset + nal_unit.size;
     }
 
-    return false;
+    return elements;
 }
 
-bool r_gst_source::_is_h265_picture(GstH265Parser* parser, const uint8_t* p, size_t size)
+uint32_t r_gst_source::_parse_h265(GstH265Parser* parser, const uint8_t* p, size_t size)
 {
+    uint32_t elements = 0;
     size_t pos = 0;
 
     GstH265NalUnit nal_unit;
@@ -1144,14 +1192,107 @@ bool r_gst_source::_is_h265_picture(GstH265Parser* parser, const uint8_t* p, siz
     {
         gst_h265_parser_identify_nalu(parser, p, (guint)pos, (guint)size, &nal_unit);
 
-        if(nal_unit.type >= GST_H265_NAL_SLICE_TRAIL_N && nal_unit.type <= GST_H265_NAL_SLICE_CRA_NUT)
-            return true;
-        else gst_h265_parser_parse_nal(parser, &nal_unit);
+        if(nal_unit.type == GST_H265_NAL_SLICE_TRAIL_N)
+            elements |= (uint32_t)H265_NT::SLICE_TRAIL_N;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_TRAIL_R)
+            elements |= (uint32_t)H265_NT::SLICE_TRAIL_R;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_TSA_N)
+            elements |= (uint32_t)H265_NT::SLICE_TSA_N;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_TSA_R)
+            elements |= (uint32_t)H265_NT::SLICE_TSA_R;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_STSA_N)
+            elements |= (uint32_t)H265_NT::SLICE_STSA_N;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_STSA_R)
+            elements |= (uint32_t)H265_NT::SLICE_STSA_R;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_RADL_N)
+            elements |= (uint32_t)H265_NT::SLICE_RADL_N;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_RADL_R)
+            elements |= (uint32_t)H265_NT::SLICE_RADL_R;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_RASL_N)
+            elements |= (uint32_t)H265_NT::SLICE_RASL_N;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_RASL_R)
+            elements |= (uint32_t)H265_NT::SLICE_RASL_R;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_BLA_W_LP)
+            elements |= (uint32_t)H265_NT::SLICE_BLA_W_LP;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_BLA_W_RADL)
+            elements |= (uint32_t)H265_NT::SLICE_BLA_W_RADL;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_BLA_N_LP)
+            elements |= (uint32_t)H265_NT::SLICE_BLA_N_LP;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_IDR_W_RADL)
+            elements |= (uint32_t)H265_NT::SLICE_IDR_W_RADL;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_IDR_N_LP)
+            elements |= (uint32_t)H265_NT::SLICE_IDR_N_LP;
+        else if(nal_unit.type == GST_H265_NAL_SLICE_CRA_NUT)
+            elements |= (uint32_t)H265_NT::SLICE_CRA_NUT;
+        else if(nal_unit.type == GST_H265_NAL_VPS)
+            elements |= (uint32_t)H265_NT::VPS;
+        else if(nal_unit.type == GST_H265_NAL_SPS)
+            elements |= (uint32_t)H265_NT::SPS;
+        else if(nal_unit.type == GST_H265_NAL_PPS)
+            elements |= (uint32_t)H265_NT::PPS;
+        else if(nal_unit.type == GST_H265_NAL_AUD)
+            elements |= (uint32_t)H265_NT::AUD;
+        else if(nal_unit.type == GST_H265_NAL_EOS)
+            elements |= (uint32_t)H265_NT::EOS;
+        else if(nal_unit.type == GST_H265_NAL_EOB)
+            elements |= (uint32_t)H265_NT::EOB;
+        else if(nal_unit.type == GST_H265_NAL_FD)
+            elements |= (uint32_t)H265_NT::FD;
+        else if(nal_unit.type == GST_H265_NAL_PREFIX_SEI)
+            elements |= (uint32_t)H265_NT::PREFIX_SEI;
+        else if(nal_unit.type == GST_H265_NAL_SUFFIX_SEI)
+            elements |= (uint32_t)H265_NT::SUFFIX_SEI;
+
+        gst_h265_parser_parse_nal(parser, &nal_unit);
 
         pos = nal_unit.offset + nal_unit.size;
     }
 
+    return elements;
+}
+
+bool r_gst_source::_is_h264_picture(uint32_t ft)
+{
+#if 0
+    if(ft & (uint32_t)H264_NT::SLICE)
+        return true;
+    else if(ft & (uint32_t)H264_NT::SLICE_DPA)
+        return true;
+    else if(ft & (uint32_t)H264_NT::SLICE_DPB)
+        return true;
+    else if(ft & (uint32_t)H264_NT::SLICE_DPC)
+        return true;
+    else if(ft & (uint32_t)H264_NT::SLICE_IDR)
+        return true;
+    
     return false;
+#endif
+
+    return (ft & (uint32_t)H264_NT::SLICE) ||
+           (ft & (uint32_t)H264_NT::SLICE_DPA) ||
+           (ft & (uint32_t)H264_NT::SLICE_DPB) ||
+           (ft & (uint32_t)H264_NT::SLICE_DPC) ||
+           (ft & (uint32_t)H264_NT::SLICE_IDR);
+}
+
+bool r_gst_source::_is_h265_picture(uint32_t ft)
+{
+    return (ft & (uint32_t)H265_NT::SLICE_TRAIL_N) ||
+           (ft & (uint32_t)H265_NT::SLICE_TRAIL_R) ||
+           (ft & (uint32_t)H265_NT::SLICE_TSA_N) ||
+           (ft & (uint32_t)H265_NT::SLICE_TSA_R) ||
+           (ft & (uint32_t)H265_NT::SLICE_STSA_N) ||
+           (ft & (uint32_t)H265_NT::SLICE_STSA_R) ||
+           (ft & (uint32_t)H265_NT::SLICE_RADL_N) ||
+           (ft & (uint32_t)H265_NT::SLICE_RADL_R) ||
+           (ft & (uint32_t)H265_NT::SLICE_RASL_N) ||
+           (ft & (uint32_t)H265_NT::SLICE_RASL_R) ||
+           (ft & (uint32_t)H265_NT::SLICE_BLA_W_LP) ||
+           (ft & (uint32_t)H265_NT::SLICE_BLA_W_RADL) ||
+           (ft & (uint32_t)H265_NT::SLICE_BLA_N_LP) ||
+           (ft & (uint32_t)H265_NT::SLICE_IDR_W_RADL) ||
+           (ft & (uint32_t)H265_NT::SLICE_IDR_N_LP) ||
+           (ft & (uint32_t)H265_NT::SLICE_CRA_NUT);
 }
 
 void r_gst_source::_parse_audio_sink_caps()

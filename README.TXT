@@ -17,20 +17,6 @@ What exists
    - basic recording GUI
 
 TODO SOON
-   - r_codec
-       - r_audio_encoder
-       - r_audio_decoder
-   - HTTP server infrastructure
-       - Use r_http, setup server (in r_vss?)
-   - Contents Queries
-       - Use r_storage::key_frame_start_times() to query available chunks
-       - Return JSON
-       - Support video and/or audio Queries
-       - Support localtime or UTC Queries
-   - Thumbnail Queries
-       - allow resolution argument
-       - return jpg and possibly others
-       - Support localtime or UTC Queries
    - Exports
        - mov, mp4, mkv (some audio + container combinations may not be supported)
        - export to disk, then upload (to support files larger than available memory)
@@ -38,24 +24,29 @@ TODO SOON
        - Use http chunked transfer encoding to support large files
        - Support localtime or UTC Queries
    - Analytics
+       - Add r_camera flag "do_motion"
+       - Add r_camera "motion_sensitivity"
        - Need motion_processor thread
-           - Wake up, query last 5 seconds worth of key frames from all cameras we need analytics
-           - Keep state for each camera (create for first encounter, expire state if no motion for
-             a while)
            - Decode keys
            - Run through r_motion
            - Write to new motion.db
              - create motion.db if not exists
              - schema upgrades?
              - write motion
+       - Analytic Storage
+           - We need 192 bytes to store 3 64 bit values (motion, avg_motion, stddev)
+           - If we store one of those per second then we need 192*86400=1,658,8800 bytes to store one day
+           - 1,658,000 * 30 (days) = 497,664,000
+           - When we do camera setup, lets ask if they want to do motion detection. If they do:
+               - divide the storage file size they choose by the byterate to get the number of seconds of retention they want
+               - multiply that number by 192, that is your motion db file size (+header).
    - Viewer
        - Cross platform QT Viewer
        - CRAZY fast + tons of keyboard shortcuts + super minimal UI
        - Pop up analytic event notifications
-   - Advanced Analytics
-       - Triggers blob Tracking
-       - Triggers object detection
-       - Schedule aware analytic triggers (txt messages, UI notifications, etc)
+   - r_codec
+       - r_audio_encoder
+       - r_audio_decoder
 
 Compiling on Linux
 

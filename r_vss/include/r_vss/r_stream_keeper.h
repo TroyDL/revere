@@ -2,15 +2,18 @@
 #ifndef __r_vss_r_stream_keeper_h
 #define __r_vss_r_stream_keeper_h
 
-#include "r_vss/r_recording_context.h"
+//#include "r_vss/r_recording_context.h"
+#include "r_vss/r_motion_engine.h"
 #include "r_disco/r_devices.h"
 #include "r_disco/r_camera.h"
 #include "r_utils/r_nullable.h"
 #include "r_utils/r_work_q.h"
+#include "r_pipeline/r_stream_info.h"
 #include <map>
 #include <vector>
 #include <thread>
 #include <memory>
+#include <functional>
 
 struct _GMainLoop;
 typedef struct _GMainLoop GMainLoop;
@@ -20,6 +23,8 @@ struct _GstRTSPMountPoints;
 typedef struct _GstRTSPMountPoints GstRTSPMountPoints;
 struct _GstRTSPMediaFactory;
 typedef struct _GstRTSPMediaFactory GstRTSPMediaFactory;
+struct _GstRTSPMedia;
+typedef _GstRTSPMedia GstRTSPMedia;
 
 namespace r_vss
 {
@@ -48,36 +53,7 @@ struct r_stream_keeper_result
     std::vector<r_stream_status> stream_infos;
 };
 
-// How to add RTSP server:
-// Example: https://github.com/GStreamer/gst-rtsp-server/blob/master/examples/test-appsrc2.c
-//
-//   1. add rtsp server stuff to r_stream_keeper.
-//   2. add r_stream_keeper back pointers to r_recording_context.
-//   3. modify r_recording_context to have callbacks on sdp and ready
-//       sdp callback should cache sdp
-//       ready callback should add the egress mount and since it has the sdp it can build the right string
-//       with the correct payloaders. it will do this with a call to to r_stream_keeper
-//   2. factory launch strings should look like this:
-//      gst_rtsp_media_factory_set_launch (factory,
-//           "( appsrc name=videosrc ! h264parse ! rtph264pay name=pay0 pt=96 "
-//           "  appsrc name=audiosrc ! audioconvert ! rtpL24pay name=pay1 pt=97 )");
-//      note the appsrc's.
-//   3. Connection "media-configure" callback.
-//       g_signal_connect (factory, "media-configure", (GCallback) media_configure, recording_context_ptr);
-//   4. In media_configure:
-//      media will come from sample callbacks of r_gst_source member of r_recording_context
-//      get the caps on on the r_gst_source appsink
-//      set the caps on the appsrc
-//         for both audio and video
-//   5. attach need-data callback
-//   6. need-data callback should get most recent buffers.
-//      need-data is called sometimes with the video appsrc and sometimes with the audio appsrc (whichever needs data)
-//      convert the pts's to running times with gst_segment_to_running_time()
-//      emit the buffer with g_signal_emit_by_name("push-buffer")
-//
-//      r_utils needs a new data queue?
-//          - readers should be able to block (with a timeout)
-//          - writers should not block
+class r_recording_context;
 
 class r_stream_keeper final
 {
@@ -94,6 +70,8 @@ public:
 
     std::string add_restream_mount(const std::map<std::string, r_pipeline::r_sdp_media>& sdp_medias, const r_disco::r_camera& camera, r_recording_context* rc);
     void remove_restream_mount(const std::string& path);
+
+    void post_key_frame_to_motion_engine(r_pipeline::r_gst_buffer buffer, int64_t ts, const std::string& video_codec_name, const std::string& video_codec_params, const std::string& camera_id);
 
 private:
     void _entry_point();
@@ -115,6 +93,7 @@ private:
     GstRTSPServer* _server;
     GstRTSPMountPoints* _mounts;
     std::vector<GstRTSPMediaFactory*> _factories;
+    r_motion_engine _motionEngine;
 };
 
 }

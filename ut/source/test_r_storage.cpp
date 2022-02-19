@@ -754,12 +754,13 @@ void test_r_storage::test_r_storage_file_fake_camera()
     });
 
     src.set_video_sample_cb(
-        [&](const sample_context& sc, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
+            auto mi = buffer.map(r_gst_buffer::MT_READ);
             sf.write_frame(
                 ctx,
                 R_STORAGE_MEDIA_TYPE_VIDEO,
-                p,
-                sz,
+                mi.data(),
+                mi.size(),
                 key,
                 sc.stream_start_ts() + pts,
                 pts

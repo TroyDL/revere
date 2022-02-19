@@ -9,6 +9,8 @@ add_library(
     source/r_stream_info.cpp
     include/r_pipeline/r_sample_context.h
     source/r_sample_context.cpp
+    include/r_pipeline/r_gst_buffer.h
+    source/r_gst_buffer.cpp
 )
 
 target_include_directories(

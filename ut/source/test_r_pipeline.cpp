@@ -62,7 +62,7 @@ void test_r_pipeline::test_gst_source_h264_aac()
     r_gst_source src;
     src.set_args(arguments);
     src.set_video_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             got_video = true;
         }
     );
@@ -70,7 +70,7 @@ void test_r_pipeline::test_gst_source_h264_aac()
     uint8_t audio_channels;
     uint32_t audio_sample_rate;
     src.set_audio_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key,int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key,int64_t pts){
             got_audio = true;
             audio_channels = ctx.audio_channels().value();
             audio_sample_rate = ctx.audio_sample_rate().value();
@@ -112,12 +112,12 @@ void test_r_pipeline::test_gst_source_h265_aac()
     r_gst_source src;
     src.set_args(arguments);
     src.set_video_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             got_video = true;
         }
     );
     src.set_audio_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             got_audio = true;
         }
     );
@@ -157,12 +157,12 @@ void test_r_pipeline::test_gst_source_h264_mulaw()
     r_gst_source src;
     src.set_args(arguments);
     src.set_video_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             got_video = true;
         }
     );
     src.set_audio_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             got_audio = true;
         }
     );
@@ -201,12 +201,12 @@ void test_r_pipeline::test_gst_source_h265_mulaw()
     r_gst_source src;
     src.set_args(arguments);
     src.set_video_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             got_video = true;
         }
     );
     src.set_audio_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             got_audio = true;
         }
     );
@@ -259,7 +259,6 @@ void test_r_pipeline::test_gst_source_fetch_sdp()
 
 void test_r_pipeline::test_gst_source_pull_real()
 {
-#if 1
     vector<r_arg> arguments;
     add_argument(arguments, "url", "rtsp://192.168.1.20/h265Preview_01_main");
     //add_argument(arguments, "url", "rtsp://192.168.1.20/h264Preview_01_sub");
@@ -278,8 +277,9 @@ void test_r_pipeline::test_gst_source_pull_real()
     });
 
     src.set_video_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
-            printf("bframes pts = %ld, key = %s, size = %lu\n", pts, (key)?"true":"false", sz);
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
+            auto mi = buffer.map(r_gst_buffer::MT_READ);
+            printf("bframes pts = %ld, key = %s, size = %lu\n", pts, (key)?"true":"false", mi.size());
         }
     );
 
@@ -288,7 +288,6 @@ void test_r_pipeline::test_gst_source_pull_real()
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
     src.stop();
-#endif
 }
 
 void test_r_pipeline::test_gst_source_bframes()
@@ -308,7 +307,7 @@ void test_r_pipeline::test_gst_source_bframes()
     r_gst_source src;
     src.set_args(arguments);
     src.set_video_sample_cb(
-        [&](const sample_context& ctx, const uint8_t* p, size_t sz, bool key, int64_t pts){
+        [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             //printf("bframes ts = %s, pts = %s, key = %s, size = %s\n", r_string_utils::int64_to_s(ts).c_str(), r_string_utils::int64_to_s(pts).c_str(), (key)?"true":"false", r_string_utils::size_t_to_s(sz).c_str());
         }
     );

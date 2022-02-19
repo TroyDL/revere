@@ -1,6 +1,7 @@
 
 
 #include "r_vss/r_stream_keeper.h"
+#include "r_vss/r_recording_context.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_std_utils.h"
 #include "r_utils/r_functional.h"
@@ -43,7 +44,8 @@ r_stream_keeper::r_stream_keeper(r_devices& devices, const string& top_dir) :
     _loop(g_main_loop_new(NULL, FALSE)),
     _server(gst_rtsp_onvif_server_new()),
     _mounts(nullptr),
-    _factories()
+    _factories(),
+    _motionEngine(top_dir)
 {
     auto video_path = top_dir + r_fs::PATH_SLASH + "video";
 
@@ -55,12 +57,16 @@ r_stream_keeper::r_stream_keeper(r_devices& devices, const string& top_dir) :
     _mounts = gst_rtsp_server_get_mount_points(_server);
 
     gst_rtsp_server_attach(_server, NULL);
+
+    _motionEngine.start();
 }
 
 r_stream_keeper::~r_stream_keeper() noexcept
 {
     if(_running)
         stop();
+
+    _motionEngine.stop();
 
     for(auto f : _factories)
         g_object_unref(f);
@@ -217,6 +223,11 @@ std::string r_stream_keeper::add_restream_mount(const std::map<std::string, r_pi
 void r_stream_keeper::remove_restream_mount(const string& mount_path)
 {
     gst_rtsp_mount_points_remove_factory(_mounts, mount_path.c_str());
+}
+
+void r_stream_keeper::post_key_frame_to_motion_engine(r_pipeline::r_gst_buffer buffer, int64_t ts, const std::string& video_codec_name, const std::string& video_codec_params, const std::string& camera_id)
+{
+    _motionEngine.post_frame(buffer, ts, video_codec_name, video_codec_params, camera_id);
 }
 
 void r_stream_keeper::_entry_point()

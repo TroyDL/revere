@@ -54,6 +54,7 @@ target_link_directories(
 )
 target_link_libraries(
     revere_ut LINK_PUBLIC 
+    r_motion
     r_http
     r_db
     r_utils

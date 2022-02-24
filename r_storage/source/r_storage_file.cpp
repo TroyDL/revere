@@ -101,8 +101,9 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
         g.ts = ts;
         g.data.resize(size + r_rel_block::PER_FRAME_OVERHEAD);
         g.media_type = media_type;
-        r_rel_block::append(g.data.data(), p, size, pts, 1);
-        _gop_buffer.insert(lower_bound(_gop_buffer.begin(), _gop_buffer.end(), g, [](const _gop& a, const _gop& b){return a.ts < b.ts;}), g);
+        r_rel_block::append(g.data.data(), p, size, ts, 1);
+        // We use upper_bound() here because if a gop with the same ts already exists we want to go after it (so, first gop in wins)
+        _gop_buffer.insert(upper_bound(_gop_buffer.begin(), _gop_buffer.end(), g, [](const _gop& a, const _gop& b){return a.ts < b.ts;}), g);
     }
     else
     {
@@ -126,18 +127,22 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
 
         found->data.resize(new_size);
 
-        r_rel_block::append(&found->data[current_size], p, size, pts, 0);
+        r_rel_block::append(&found->data[current_size], p, size, ts, 0);
     }
 
-    while(_buffer_full() && _gop_buffer.front().complete)
+    while(_buffer_full())
     {
         _gop g = _gop_buffer.front();
-        _gop_buffer.pop_front();
 
-        if(_current_block.is_null() || !_current_block.value().fits(g.data.size()))
-            _current_block.assign(_get_index_block(ctx, _block_index.insert(g.ts), g.ts, _h.block_size / g.data.size()));
+        if(g.complete)
+        {
+            _gop_buffer.pop_front();
 
-        _current_block.raw().append(g.data.data(), g.data.size(), g.media_type, 0, g.ts);
+            if(_current_block.is_null() || !_current_block.value().fits(g.data.size()))
+                _current_block.assign(_initialize_ind_block(ctx, _block_index.insert(g.ts), g.ts, _h.block_size / g.data.size()));
+
+            _current_block.raw().append(g.data.data(), g.data.size(), g.media_type, 0, g.ts);
+        }
     }
 }
 
@@ -149,7 +154,7 @@ void r_storage_file::finalize(const r_storage_write_context& ctx)
         _gop_buffer.pop_front();
 
         if(_current_block.is_null() || !_current_block.value().fits(g.data.size()))
-            _current_block.assign(_get_index_block(ctx, _block_index.insert(g.ts), g.ts, _h.block_size / g.data.size()));
+            _current_block.assign(_initialize_ind_block(ctx, _block_index.insert(g.ts), g.ts, _h.block_size / g.data.size()));
     
         _current_block.raw().append(g.data.data(), g.data.size(), g.media_type, 0, g.ts);
     }
@@ -166,17 +171,36 @@ vector<uint8_t> r_storage_file::query(r_storage_media_type media_type, int64_t s
 {
     r_blob_tree bt;
 
+    bool has_audio = false;
+
     size_t fi = 0;
+
+    r_nullable<string> video_codec_name;
+    r_nullable<string> video_codec_parameters;
+    r_nullable<string> audio_codec_name;
+    r_nullable<string> audio_codec_parameters;
 
     _visit_ind_blocks(
         media_type,
         start_ts,
         end_ts,
         [&](r_ind_block_info& ibii) {
-            bt["video_codec_name"] = ibii.video_codec_name;
-            bt["video_codec_parameters"] = ibii.video_codec_parameters;
-            bt["audio_codec_name"] = ibii.audio_codec_name;
-            bt["audio_codec_parameters"] = ibii.audio_codec_parameters;
+
+            if(ibii.stream_id == R_STORAGE_MEDIA_TYPE_AUDIO)
+            {
+                has_audio = true;
+                if(audio_codec_name.is_null())
+                    audio_codec_name.set_value(ibii.audio_codec_name);
+                if(audio_codec_parameters.is_null())
+                    audio_codec_parameters.set_value(ibii.audio_codec_parameters);
+            }
+            else if(ibii.stream_id == R_STORAGE_MEDIA_TYPE_VIDEO)
+            {
+                if(video_codec_name.is_null())
+                    video_codec_name.set_value(ibii.video_codec_name);
+                if(video_codec_parameters.is_null())
+                    video_codec_parameters.set_value(ibii.video_codec_parameters);
+            }
 
             r_rel_block rel_block(ibii.block, ibii.block_size);
 
@@ -191,7 +215,7 @@ vector<uint8_t> r_storage_file::query(r_storage_media_type media_type, int64_t s
 
                 bt["frames"][fi]["ind_block_ts"] = r_string_utils::int64_to_s(ibii.ts);
                 bt["frames"][fi]["data"] = frame_buffer;
-                bt["frames"][fi]["pts"] = r_string_utils::int64_to_s(frame_info.pts);
+                bt["frames"][fi]["ts"] = r_string_utils::int64_to_s(frame_info.ts);
                 bt["frames"][fi]["key"] = (frame_info.flags>0)?string("true"):string("false");
                 bt["frames"][fi]["stream_id"] = r_string_utils::uint8_to_s(ibii.stream_id);
 
@@ -201,6 +225,13 @@ vector<uint8_t> r_storage_file::query(r_storage_media_type media_type, int64_t s
         }
     );
 
+    bt["video_codec_name"] = video_codec_name.value();
+    bt["video_codec_parameters"] = video_codec_parameters.value();
+    bt["audio_codec_name"] = (has_audio)?audio_codec_name.value():string("");
+    bt["audio_codec_parameters"] = (has_audio)?audio_codec_parameters.value():string("");
+
+    bt["has_audio"] = (has_audio)?string("true"):string("false");
+
     return r_blob_tree::serialize(bt, 1);
 }
 
@@ -208,14 +239,30 @@ vector<uint8_t> r_storage_file::query_key(r_storage_media_type media_type, int64
 {
     r_blob_tree bt;
 
+    r_nullable<string> video_codec_name;
+    r_nullable<string> video_codec_parameters;
+    r_nullable<string> audio_codec_name;
+    r_nullable<string> audio_codec_parameters;
+
     _visit_ind_block(
         media_type,
         ts,
         [&](r_ind_block_info& ibii) {
-            bt["video_codec_name"] = ibii.video_codec_name;
-            bt["video_codec_parameters"] = ibii.video_codec_parameters;
-            bt["audio_codec_name"] = ibii.audio_codec_name;
-            bt["audio_codec_parameters"] = ibii.audio_codec_parameters;
+
+            if(ibii.stream_id == R_STORAGE_MEDIA_TYPE_AUDIO)
+            {
+                if(audio_codec_name.is_null())
+                    audio_codec_name.set_value(ibii.audio_codec_name);
+                if(audio_codec_parameters.is_null())
+                    audio_codec_parameters.set_value(ibii.audio_codec_parameters);
+            }
+            else if(ibii.stream_id == R_STORAGE_MEDIA_TYPE_VIDEO)
+            {
+                if(video_codec_name.is_null())
+                    video_codec_name.set_value(ibii.video_codec_name);
+                if(video_codec_parameters.is_null())
+                    video_codec_parameters.set_value(ibii.video_codec_parameters);
+            }
 
             r_rel_block rel_block(ibii.block, ibii.block_size);
 
@@ -230,12 +277,17 @@ vector<uint8_t> r_storage_file::query_key(r_storage_media_type media_type, int64
 
                 bt["frames"][0]["ind_block_ts"] = r_string_utils::int64_to_s(ibii.ts);
                 bt["frames"][0]["data"] = frame_buffer;
-                bt["frames"][0]["pts"] = r_string_utils::int64_to_s(frame_info.pts);
+                bt["frames"][0]["ts"] = r_string_utils::int64_to_s(frame_info.ts);
                 bt["frames"][0]["key"] = (frame_info.flags>0)?string("true"):string("false");
                 bt["frames"][0]["stream_id"] = r_string_utils::uint8_to_s(ibii.stream_id);
             }
         }
     );
+
+    bt["video_codec_name"] = video_codec_name.value();
+    bt["video_codec_parameters"] = video_codec_parameters.value();
+    bt["audio_codec_name"] = (!audio_codec_name.is_null())?audio_codec_name.value():string("");
+    bt["audio_codec_parameters"] = (!audio_codec_parameters.is_null())?audio_codec_parameters.value():string("");
 
     return r_blob_tree::serialize(bt, 1);
 }
@@ -382,11 +434,32 @@ void r_storage_file::_visit_ind_blocks(r_storage_media_type media_type, int64_t 
 
     int64_t current_ts = start_ts;
 
-    auto di = _block_index.find_lower_bound(current_ts);
-    if(!di.valid())
-        R_THROW(("Query start not found."));
+    // 1) By the nature of lower_bound() unless we have an exact match we're going to need to move back one
+    // to find the actual query start (general case) (because the blocks are sorted by the ts of the first
+    // frame in them)
+    // 2) If there is only 1 block, most likely find will return end() (unless there is an exact match).
+    // 3) If we move back a block because find returned end, then we don't want to also move back a block for
+    // the general case.
 
-    auto dumbdex_index_entry = *di;
+    auto fi = _block_index.find_lower_bound(current_ts);
+
+    bool moved = false;
+    if(fi == _block_index.end())
+        moved = fi.prev();
+    
+    if(!fi.valid())
+        R_THROW(("Unable to locate query start."));
+
+    auto dumbdex_index_entry = *fi;
+
+    if(!moved)
+    {
+        if(dumbdex_index_entry.first != current_ts)
+        {
+            if(fi.prev())
+                dumbdex_index_entry = *fi;
+        }
+    }
 
     auto ind_block_map = _map_block(dumbdex_index_entry.second);
     r_ind_block ind_block((uint8_t*)ind_block_map.map(), _h.block_size);
@@ -394,7 +467,7 @@ void r_storage_file::_visit_ind_blocks(r_storage_media_type media_type, int64_t 
     auto ibi = ind_block.find_lower_bound(current_ts);
 
     bool done = false;
-    while(!done && current_ts < end_ts && di.valid())
+    while(!done && current_ts < end_ts && fi.valid())
     {
         if(ibi.valid())
         {
@@ -412,12 +485,12 @@ void r_storage_file::_visit_ind_blocks(r_storage_media_type media_type, int64_t 
         }
         else
         {
-            di.next();
-            if(!di.valid())
+            fi.next();
+            if(!fi.valid())
                 done = true;
             else
             {
-                dumbdex_index_entry = *di;
+                dumbdex_index_entry = *fi;
                 ind_block_map = _map_block(dumbdex_index_entry.second);
                 ind_block = r_ind_block((uint8_t*)ind_block_map.map(), _h.block_size);
                 ibi = ind_block.begin();
@@ -434,11 +507,25 @@ void r_storage_file::_visit_ind_block(r_storage_media_type media_type, int64_t t
 
     int64_t current_ts = ts;
 
-    auto di = _block_index.find_lower_bound(current_ts);
-    if(!di.valid())
-        R_THROW(("Query start not found."));
+    auto fi = _block_index.find_lower_bound(current_ts);
 
-    auto dumbdex_index_entry = *di;
+    bool moved = false;
+    if(fi == _block_index.end())
+        moved = fi.prev();
+    
+    if(!fi.valid())
+        R_THROW(("Unable to locate query start."));
+
+    auto dumbdex_index_entry = *fi;
+
+    if(!moved)
+    {
+        if(dumbdex_index_entry.first != current_ts)
+        {
+            if(fi.prev())
+                dumbdex_index_entry = *fi;
+        }
+    }
 
     auto ind_block_map = _map_block(dumbdex_index_entry.second);
     r_ind_block ind_block((uint8_t*)ind_block_map.map(), _h.block_size);
@@ -468,7 +555,7 @@ r_memory_map r_storage_file::_map_block(uint16_t block)
     );
 }
 
-r_ind_block r_storage_file::_get_index_block(const r_storage_write_context& ctx, uint16_t block, int64_t ts, size_t n_indexes)
+r_ind_block r_storage_file::_initialize_ind_block(const r_storage_write_context& ctx, uint16_t block, int64_t ts, size_t n_indexes)
 {
     _ind_map = _map_block(block);
 
@@ -493,5 +580,5 @@ bool r_storage_file::_buffer_full() const
     if(_gop_buffer.size() < 2)
         return false;
 
-    return (_gop_buffer.back().ts - _gop_buffer.front().ts) > 10000;
+    return (_gop_buffer.back().ts - _gop_buffer.front().ts) > 20000;
 }

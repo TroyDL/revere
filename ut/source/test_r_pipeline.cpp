@@ -352,7 +352,9 @@ void test_r_pipeline::test_stream_info_get_info_frames()
 
     auto medias = fetch_sdp_media(r_string_utils::format("rtsp://127.0.0.1:%d/true_north_h264_aac.mkv", port));
 
-    auto h264_codec_parameters = sdp_media_to_s(VIDEO_MEDIA, medias).second;
+    string video_codec_name, h264_codec_parameters;
+    int video_timebase;
+    tie(video_codec_name, h264_codec_parameters, video_timebase) = sdp_media_to_s(VIDEO_MEDIA, medias);
 
     auto h264_sps_b = get_h264_sps(h264_codec_parameters);
     RTF_ASSERT(!h264_sps_b.value().empty());
@@ -361,7 +363,9 @@ void test_r_pipeline::test_stream_info_get_info_frames()
 
     medias = fetch_sdp_media(r_string_utils::format("rtsp://127.0.0.1:%d/true_north_h265_aac.mkv", port));
 
-    auto h265_codec_parameters = sdp_media_to_s(VIDEO_MEDIA, medias).second;
+    string h265_codec_parameters;
+    tie(video_codec_name, h265_codec_parameters, video_timebase) = sdp_media_to_s(VIDEO_MEDIA, medias);
+
     auto h265_vps_b = get_h265_vps(h265_codec_parameters);
     RTF_ASSERT(!h265_vps_b.value().empty());
     auto h265_sps_b = get_h265_sps(h265_codec_parameters);
@@ -385,7 +389,9 @@ void test_r_pipeline::test_stream_info_make_extradata()
 
     auto medias = fetch_sdp_media(r_string_utils::format("rtsp://127.0.0.1:%d/true_north_h264_aac.mkv", port));
 
-    auto h264_codec_parameters = sdp_media_to_s(VIDEO_MEDIA, medias).second;
+    string video_codec_name, h264_codec_parameters;
+    int video_timebase;
+    tie(video_codec_name, h264_codec_parameters, video_timebase) = sdp_media_to_s(VIDEO_MEDIA, medias);
 
     auto h264_sps_b = get_h264_sps(h264_codec_parameters);
     auto h264_pps_b = get_h264_pps(h264_codec_parameters);
@@ -395,7 +401,9 @@ void test_r_pipeline::test_stream_info_make_extradata()
 
     medias = fetch_sdp_media(r_string_utils::format("rtsp://127.0.0.1:%d/true_north_h265_aac.mkv", port));
 
-    auto h265_codec_parameters = sdp_media_to_s(VIDEO_MEDIA, medias).second;
+    string h265_codec_parameters;
+    tie(video_codec_name, h265_codec_parameters, video_timebase) = sdp_media_to_s(VIDEO_MEDIA, medias);
+
     auto h265_vps_b = get_h265_vps(h265_codec_parameters);
     auto h265_sps_b = get_h265_sps(h265_codec_parameters);
     auto h265_pps_b = get_h265_pps(h265_codec_parameters);
@@ -419,7 +427,9 @@ void test_r_pipeline::test_stream_info_parse_h264_sps()
 
     auto medias = fetch_sdp_media(r_string_utils::format("rtsp://127.0.0.1:%d/true_north_h264_aac.mkv", port));
 
-    auto h264_codec_parameters = sdp_media_to_s(VIDEO_MEDIA, medias).second;
+    string video_codec_name, h264_codec_parameters;
+    int video_timebase;
+    tie(video_codec_name, h264_codec_parameters, video_timebase) = sdp_media_to_s(VIDEO_MEDIA, medias);
 
     auto h264_sps_b = get_h264_sps(h264_codec_parameters);
 
@@ -446,7 +456,9 @@ void test_r_pipeline::test_stream_info_parse_h265_sps()
 
     auto medias = fetch_sdp_media(r_string_utils::format("rtsp://127.0.0.1:%d/true_north_h265_aac.mkv", port));
 
-    auto h265_codec_parameters = sdp_media_to_s(VIDEO_MEDIA, medias).second;
+    string video_codec_name, h265_codec_parameters;
+    int video_timebase;
+    tie(video_codec_name, h265_codec_parameters, video_timebase) = sdp_media_to_s(VIDEO_MEDIA, medias);
 
     auto h265_sps_b = get_h265_sps(h265_codec_parameters);
 

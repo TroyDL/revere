@@ -2,6 +2,7 @@
 #include "r_disco/providers/r_onvif_provider.h"
 #include "r_disco/r_agent.h"
 #include "r_pipeline/r_gst_source.h"
+#include "r_pipeline/r_stream_info.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_string_utils.h"
 #include "r_utils/r_md5.h"
@@ -92,49 +93,21 @@ r_utils::r_nullable<r_stream_config> r_onvif_provider::interrogate_camera(
                 if(sdp_media.find("video") == sdp_media.end())
                     R_THROW(("Unable to fetch video stream information for r_onvif_provider."));
 
-                auto video_media = sdp_media["video"];
-                if(video_media.type != VIDEO_MEDIA)
-                    R_THROW(("Unknown media type."));
-                
-                if(video_media.formats.size() == 0)
-                    R_THROW(("video media format not found."));
+                string codec_name, codec_parameters;
+                int timebase;
+                tie(codec_name, codec_parameters, timebase) = sdp_media_to_s(VIDEO_MEDIA, sdp_media);
 
-                auto fmt = video_media.formats.front();
-
-                auto rtp_map = video_media.rtpmaps.find(fmt);
-                if(rtp_map == video_media.rtpmaps.end())
-                    R_THROW(("Unable to find rtp map."));
-            
-                config.video_codec = encoding_to_str(rtp_map->second.encoding);
-                config.video_timebase = rtp_map->second.time_base;
-
-                string video_attributes;
-                for(auto b = begin(video_media.attributes), e = end(video_media.attributes); b != e; ++b)
-                    video_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
-                config.video_codec_parameters.set_value(video_attributes);
+                config.video_codec = codec_name;
+                config.video_timebase = timebase;
+                config.video_codec_parameters.set_value(codec_parameters);
 
                 if(sdp_media.find("audio") != sdp_media.end())
                 {
-                    auto audio_media = sdp_media["audio"];
-                    if(audio_media.type != AUDIO_MEDIA)
-                        R_THROW(("Unknown media type."));
-                    
-                    if(audio_media.formats.size() == 0)
-                        R_THROW(("audio media format not found."));
+                    tie(codec_name, codec_parameters, timebase) = sdp_media_to_s(AUDIO_MEDIA, sdp_media);
 
-                    auto fmt = audio_media.formats.front();
-
-                    auto rtp_map = audio_media.rtpmaps.find(fmt);
-                    if(rtp_map == audio_media.rtpmaps.end())
-                        R_THROW(("Unable to find audio rtp map."));
-
-                    config.audio_codec = encoding_to_str(rtp_map->second.encoding);
-                    config.audio_timebase = rtp_map->second.time_base;
-
-                    string audio_attributes;
-                    for(auto b = begin(audio_media.attributes), e = end(audio_media.attributes); b != e; ++b)
-                        audio_attributes += b->first + "=" + join(split(b->second, " "), ";") + string((next(b) != e)?";":"");
-                    config.audio_codec_parameters.set_value(audio_attributes);
+                    config.audio_codec = codec_name;
+                    config.audio_timebase = timebase;
+                    config.audio_codec_parameters = codec_parameters;
                 }
 
                 _r_onvif_provider_cache_entry cache_entry;

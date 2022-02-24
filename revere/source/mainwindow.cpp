@@ -167,6 +167,8 @@ MainWindow::~MainWindow()
     delete _trayIcon;
 
     delete _ui;
+
+    r_pipeline::gstreamer_deinit();
 }
 
 void MainWindow::setVisible(bool visible)

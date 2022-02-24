@@ -102,7 +102,7 @@ private:
     void _visit_ind_block(r_storage_media_type media_type, int64_t ts, CB cb);
 
     r_utils::r_memory_map _map_block(uint16_t block);
-    r_ind_block _get_index_block(const r_storage_write_context& ctx, uint16_t block, int64_t ts, size_t n_indexes);
+    r_ind_block _initialize_ind_block(const r_storage_write_context& ctx, uint16_t block, int64_t ts, size_t n_indexes);
 
     bool _buffer_full() const;
 

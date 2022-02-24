@@ -31,6 +31,7 @@ namespace r_pipeline
 {
 
 void gstreamer_init();
+void gstreamer_deinit();
 
 typedef std::function<void()> r_ready_cb;
 typedef std::function<void(const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts)> r_sample_cb;
@@ -243,6 +244,8 @@ private:
 
     sample_context _sample_context;
     bool _sample_sent;
+    bool _video_sample_sent;
+    bool _audio_sample_sent;
 
     bool _buffered_ts;
     uint64_t _buffered_ts_value;

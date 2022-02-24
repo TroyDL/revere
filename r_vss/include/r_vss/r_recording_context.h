@@ -5,6 +5,7 @@
 #include "r_vss/r_stream_keeper.h"
 #include "r_disco/r_camera.h"
 #include "r_pipeline/r_gst_source.h"
+#include "r_pipeline/r_sample_context.h"
 #include "r_pipeline/r_gst_buffer.h"
 #include "r_pipeline/r_stream_info.h"
 #include "r_storage/r_storage_file.h"
@@ -57,6 +58,9 @@ private:
 
     static void _restream_cleanup(r_recording_context* rc);
 
+    void _final_storage_writer_audio_config(const r_pipeline::sample_context& sc);
+    void _final_storage_writer_video_config(const r_pipeline::sample_context& sc);
+
     r_stream_keeper* _sk;
     r_disco::r_camera _camera;
     std::string _top_dir;
@@ -85,6 +89,8 @@ private:
     bool _first_restream_a_times_set;
     uint64_t _first_restream_a_pts;
     uint64_t _first_restream_a_dts;
+    bool _got_first_audio_sample;
+    bool _got_first_video_sample;
 };
 
 }

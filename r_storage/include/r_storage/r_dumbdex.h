@@ -23,7 +23,7 @@ public:
     {
     public:
         iterator(
-            const r_dumbdex& dex,
+            const r_dumbdex* dex,
             const uint8_t* iter
         ) :
             _dex(dex),
@@ -31,9 +31,35 @@ public:
         {
         }
 
+        iterator(const iterator& obj) :
+            _dex(obj._dex),
+            _iter(obj._iter)
+        {
+        }
+
+        iterator(iterator&& obj) :
+            _dex(std::move(obj._dex)),
+            _iter(std::move(obj._iter))
+        {
+        }
+
+        iterator& operator=(const iterator& obj)
+        {
+            _dex = obj._dex;
+            _iter = obj._iter;
+            return *this;
+        }
+
+        iterator& operator=(iterator&& obj)
+        {
+            _dex = std::move(obj._dex);
+            _iter = std::move(obj._iter);
+            return *this;
+        }
+
         std::pair<uint64_t, uint16_t> operator*() const
         {
-            return _dex._read_index(_iter);
+            return _dex->_read_index(_iter);
         }
 
         bool operator==(const iterator& other) const
@@ -43,7 +69,7 @@ public:
 
         bool next()
         {
-            auto e = _dex._index + (*_dex._n_indexes * INDEX_ELEMENT_SIZE);
+            auto e = _dex->_index + (*_dex->_n_indexes * INDEX_ELEMENT_SIZE);
             if(_iter != e)
             {
                 _iter += INDEX_ELEMENT_SIZE;
@@ -54,7 +80,7 @@ public:
 
         bool prev()
         {
-            if(_iter != _dex._index)
+            if(_iter != _dex->_index)
             {
                 _iter -= INDEX_ELEMENT_SIZE;
                 return true;
@@ -65,12 +91,12 @@ public:
 
         bool valid() const
         {
-            auto e = _dex._index + (*_dex._n_indexes * INDEX_ELEMENT_SIZE);
+            auto e = _dex->_index + (*_dex->_n_indexes * INDEX_ELEMENT_SIZE);
             return _iter != e;
         }
 
     private:
-        const r_dumbdex& _dex;
+        const r_dumbdex* _dex;
         const uint8_t* _iter;
     };
 
@@ -84,8 +110,8 @@ public:
     r_dumbdex& operator=(const r_dumbdex&) = delete;
     r_dumbdex& operator=(r_dumbdex&& other) noexcept;
 
-    iterator begin() const {return iterator(*this, _index);}
-    iterator end() const {return iterator(*this, _index + (*_n_indexes * INDEX_ELEMENT_SIZE));}
+    iterator begin() const {return iterator(this, _index);}
+    iterator end() const {return iterator(this, _index + (*_n_indexes * INDEX_ELEMENT_SIZE));}
 
     iterator find_lower_bound(int64_t ts) const;
 

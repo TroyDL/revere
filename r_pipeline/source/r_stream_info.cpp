@@ -81,14 +81,16 @@ string r_pipeline::encoding_to_str(r_encoding encoding)
     R_THROW(("Unknown encoding: %d",encoding));
 }
 
-pair<string, string> r_pipeline::sdp_media_to_s(r_media m, const map<string, r_sdp_media>& sdp_media)
+tuple<string, string, int> r_pipeline::sdp_media_to_s(r_media m, const map<string, r_sdp_media>& sdp_media)
 {
     auto sdp_m = sdp_media.at((m==VIDEO_MEDIA)?"video":"audio");
+    if(sdp_m.formats.empty())
+        R_THROW(("No formats in sdp media!"));
     auto codec_name = encoding_to_str(sdp_m.rtpmaps[sdp_m.formats.front()].encoding);
     string codec_parameters;
     for(auto i = begin(sdp_m.attributes), e = end(sdp_m.attributes); i != e; ++i)
         codec_parameters += i->first + "=" + i->second + ((next(i) != e)?", ":"");
-    return make_pair(codec_name, codec_parameters);
+    return make_tuple(codec_name, codec_parameters, sdp_m.rtpmaps[sdp_m.formats.front()].time_base);
 }
 
 r_nullable<vector<uint8_t>> r_pipeline::get_h264_sps(const string& video_codec_parameters)

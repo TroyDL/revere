@@ -3,9 +3,9 @@
 
 using namespace r_storage;
 
-uint8_t* r_rel_block::append(uint8_t* dst, const uint8_t* src, size_t size, int64_t pts, uint8_t flags)
+uint8_t* r_rel_block::append(uint8_t* dst, const uint8_t* src, size_t size, int64_t ts, uint8_t flags)
 {
-    *(int64_t*)dst = pts;
+    *(int64_t*)dst = ts;
     dst += sizeof(int64_t);
 
     *dst = flags;

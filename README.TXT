@@ -18,17 +18,13 @@ What exists
 
 TODO SOON
    - Exports
-       - mov, mp4, mkv (some audio + container combinations may not be supported)
-       - export to disk, then upload (to support files larger than available memory)
-       - Use r_stoage::query()
-       - Use http chunked transfer encoding to support large files
        - Support localtime or UTC Queries
+       - Use http chunked transfer encoding to support large files
    - Analytics
        - Add r_camera flag "do_motion"
        - Add r_camera "motion_sensitivity"
+           - 0.5 
        - Need motion_processor thread
-           - Decode keys
-           - Run through r_motion
            - Write to new motion.db
              - create motion.db if not exists
              - schema upgrades?

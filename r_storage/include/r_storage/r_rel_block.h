@@ -11,7 +11,7 @@ namespace r_storage
 
 struct r_rel_block_info
 {
-    int64_t pts;
+    int64_t ts;
     uint8_t flags;
     const uint8_t* data;
     size_t size;
@@ -44,7 +44,7 @@ public:
         r_rel_block_info operator*() const
         {
             r_rel_block_info info;
-            info.pts = *(int64_t*)_pos;
+            info.ts = *(int64_t*)_pos;
             info.flags = *(uint8_t*)(_pos + 8);
             info.size = *(uint32_t*)(_pos + 9);
             info.data = _pos + 13;
@@ -110,7 +110,7 @@ public:
         return iterator(_block, _size, _block + _size);
     }
 
-    static uint8_t* append(uint8_t* dst, const uint8_t* src, size_t size, int64_t pts, uint8_t flags);
+    static uint8_t* append(uint8_t* dst, const uint8_t* src, size_t size, int64_t ts, uint8_t flags);
 
 private:
     const uint8_t* _block;

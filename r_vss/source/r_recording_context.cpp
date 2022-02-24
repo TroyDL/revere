@@ -38,7 +38,7 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     _top_dir(top_dir),
     _source(),
     _storage_file(top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + camera.record_file_path.value()),
-    _storage_write_context(_storage_file.create_write_context(camera.video_codec.value(), camera.video_codec_parameters.value(), camera.audio_codec.value(), camera.audio_codec_parameters.value())),
+    _storage_write_context(),
     _sample_write_lock(),
     _last_v_time(system_clock::now()),
     _last_a_time(system_clock::now()),
@@ -60,7 +60,9 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     _first_restream_v_dts(0),
     _first_restream_a_times_set(false),
     _first_restream_a_pts(0),
-    _first_restream_a_dts(0)
+    _first_restream_a_dts(0),
+    _got_first_audio_sample(false),
+    _got_first_video_sample(false)
 {
     vector<r_arg> arguments;
     add_argument(arguments, "url", _camera.rtsp_url.value());
@@ -76,7 +78,12 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
         // Record the frame...
 
         {
-            _has_audio = true;
+            if(!this->_got_first_audio_sample)
+            {
+                this->_got_first_audio_sample = true;
+                _final_storage_writer_audio_config(sc);
+            }
+
             _last_a_time = system_clock::now();
             auto mi = buffer.map(r_gst_buffer::MT_READ);
             _a_bytes_received += mi.size();
@@ -124,6 +131,12 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
 
     _source.set_video_sample_cb([this](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
         {
+            if(!this->_got_first_video_sample)
+            {
+                this->_got_first_video_sample = true;
+                _final_storage_writer_video_config(sc);
+            }
+
             _last_v_time = system_clock::now();
             auto mi = buffer.map(r_gst_buffer::MT_READ);
             _v_bytes_received += mi.size();
@@ -185,6 +198,16 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
         this->_sdp_medias = sdp_medias;
         if(this->_sdp_medias.find("audio") != this->_sdp_medias.end())
             this->_has_audio = true;
+
+        string video_codec_name, video_codec_parameters;
+        int video_timebase;
+        tie(video_codec_name, video_codec_parameters, video_timebase) = sdp_media_to_s(VIDEO_MEDIA, this->_sdp_medias);
+
+        string audio_codec_name, audio_codec_parameters;
+        int audio_timebase;
+        tie(audio_codec_name, audio_codec_parameters, audio_timebase) = sdp_media_to_s(AUDIO_MEDIA, this->_sdp_medias);
+
+        this->_storage_write_context = this->_storage_file.create_write_context(video_codec_name, video_codec_parameters, audio_codec_name, audio_codec_parameters);
     });
 
     R_LOG_INFO("recording: camera.id=%s, file=%s, rtsp_url=%s", _camera.id.c_str(), _camera.record_file_path.value().c_str(), _camera.rtsp_url.value().c_str());
@@ -303,4 +326,18 @@ void r_recording_context::_restream_cleanup(r_recording_context* rc)
     rc->_first_restream_v_dts = 0;
     rc->_first_restream_a_pts = 0;
     rc->_first_restream_a_dts = 0;
+}
+
+void r_recording_context::_final_storage_writer_audio_config(const r_pipeline::sample_context& sc)
+{
+    if(!sc.audio_sample_rate().is_null())
+        this->_storage_write_context.audio_codec_parameters += ", sc_audio_rate=" + r_string_utils::uint32_to_s(sc.audio_sample_rate().value());
+    if(!sc.audio_channels().is_null())
+        this->_storage_write_context.audio_codec_parameters += ", sc_audio_channels=" + r_string_utils::uint32_to_s(sc.audio_channels().value());
+}
+
+void r_recording_context::_final_storage_writer_video_config(const r_pipeline::sample_context& sc)
+{
+    if(!sc.framerate().is_null())
+        this->_storage_write_context.video_codec_parameters += ", sc_framerate=" + r_string_utils::double_to_s(sc.framerate().value());
 }

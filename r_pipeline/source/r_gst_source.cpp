@@ -21,6 +21,11 @@ void r_pipeline::gstreamer_init()
     gst_init(NULL, NULL);
 }
 
+void r_pipeline::gstreamer_deinit()
+{
+    gst_deinit();
+}
+
 map<string, r_sdp_media> r_pipeline::fetch_sdp_media(
     const string& rtsp_url,
     const r_nullable<string>& username,
@@ -203,6 +208,8 @@ r_gst_source::r_gst_source() :
     _h265_nal_parser(nullptr),
     _sample_context(),
     _sample_sent(false),
+    _video_sample_sent(false),
+    _audio_sample_sent(false),
     _buffered_ts(false),
     _buffered_ts_value(0),
     _last_v_pts_valid(false),
@@ -911,6 +918,7 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
         {
             src->_video_sample_cb.value()(src->_sample_context, buffer, key, pts);
             src->_sample_sent = true;
+            src->_video_sample_sent = true;
 
             src->_last_v_pts = pts;
             src->_last_v_pts_valid = true;
@@ -963,9 +971,11 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
 
             if(!src->_sample_sent)
             {
-                src->_parse_audio_sink_caps();
                 src->_sample_context._stream_start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
             }
+
+            if(!src->_audio_sample_sent)
+                src->_parse_audio_sink_caps();
 
             int64_t last_pts = (src->_last_a_pts_valid)?src->_last_a_pts:0;
 
@@ -973,6 +983,7 @@ GstFlowReturn r_gst_source::_new_audio_sample(GstElement* elt, r_gst_source* src
             {
                 src->_audio_sample_cb.value()(src->_sample_context, buffer, true, pts);
                 src->_sample_sent = true;
+                src->_audio_sample_sent = true;
 
                 src->_last_a_pts = pts;
                 src->_last_a_pts_valid = true;
@@ -1253,21 +1264,6 @@ uint32_t r_gst_source::_parse_h265(GstH265Parser* parser, const uint8_t* p, size
 
 bool r_gst_source::_is_h264_picture(uint32_t ft)
 {
-#if 0
-    if(ft & (uint32_t)H264_NT::SLICE)
-        return true;
-    else if(ft & (uint32_t)H264_NT::SLICE_DPA)
-        return true;
-    else if(ft & (uint32_t)H264_NT::SLICE_DPB)
-        return true;
-    else if(ft & (uint32_t)H264_NT::SLICE_DPC)
-        return true;
-    else if(ft & (uint32_t)H264_NT::SLICE_IDR)
-        return true;
-    
-    return false;
-#endif
-
     return (ft & (uint32_t)H264_NT::SLICE) ||
            (ft & (uint32_t)H264_NT::SLICE_DPA) ||
            (ft & (uint32_t)H264_NT::SLICE_DPB) ||

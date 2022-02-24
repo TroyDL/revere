@@ -72,11 +72,7 @@ void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, ui
         if(big_offset_time > 86400000)
             R_THROW(("Too much time in block!"));
         if(big_offset_time < 0)
-        {
-            printf("ts=%ld\n",ts);
-            printf("base_time=%ld\n",base_time);
-            R_THROW(("Negative time in block!"));
-        }
+            R_THROW(("Negative time in block! ts=%ld base_time=%ld\n", ts, base_time));
 
         uint32_t offset_time = static_cast<uint32_t>(big_offset_time);
 

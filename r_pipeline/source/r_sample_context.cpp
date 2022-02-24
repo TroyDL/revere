@@ -7,7 +7,13 @@ using namespace std;
 
 r_nullable<double> sample_context::framerate() const
 {
-    return _src_pad_info.at(VIDEO_MEDIA).framerate;
+    r_nullable<double> value;
+    if(_src_pad_info.find(VIDEO_MEDIA) != _src_pad_info.end())
+    {
+        if(!_src_pad_info.at(VIDEO_MEDIA).framerate.is_null())
+            value.set_value(_src_pad_info.at(VIDEO_MEDIA).framerate.value());
+    }
+    return value;
 }
 
 r_nullable<uint8_t> sample_context::audio_channels() const

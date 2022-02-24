@@ -1,5 +1,6 @@
 
 #include "r_mux/r_muxer.h"
+#include "r_mux/r_format_utils.h"
 #include "r_utils/r_string_utils.h"
 #include "r_utils/r_exception.h"
 #include <stdexcept>
@@ -83,7 +84,6 @@ void r_muxer::add_audio_stream(AVCodecID codec_id, uint8_t channels, uint32_t sa
 
     _audio_stream->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
     _audio_stream->codecpar->codec_id = codec_id;
-    //_audio_stream->codecpar->bits_per_raw_sample = bits_per_raw_sample;
     _audio_stream->codecpar->channels = channels;
     _audio_stream->codecpar->sample_rate = sample_rate;
     _audio_stream->time_base.num = 1;
@@ -123,14 +123,20 @@ void r_muxer::open()
 
     if(_output_to_buffer)
     {
-        if(avio_open_dyn_buf(&_fc.get()->pb) < 0)
-            R_THROW(("Unable to allocate a memory IO object."));
+        int res = avio_open_dyn_buf(&_fc.get()->pb);
+        if(res < 0)
+            R_THROW(("Unable to allocate a memory IO object: %s", ff_rc_to_msg(res).c_str()));
     }
-    else if(avio_open(&_fc.get()->pb, _path.c_str(), AVIO_FLAG_WRITE) < 0)
-        R_THROW(("Unable to open output io context."));
+    else
+    {
+        int res = avio_open(&_fc.get()->pb, _path.c_str(), AVIO_FLAG_WRITE);
+        if(res < 0)
+            R_THROW(("Unable to open output io context: %s", ff_rc_to_msg(res).c_str()));
+    }
 
-    if(avformat_write_header(_fc.get(), NULL) < 0)
-        R_THROW(("Unable to write header to output file."));
+    int res = avformat_write_header(_fc.get(), NULL);
+    if(res < 0)
+        R_THROW(("Unable to write header to output file: %s", ff_rc_to_msg(res).c_str()));
 
     _needs_finalize = true;
 }
@@ -165,8 +171,9 @@ void r_muxer::write_video_frame(uint8_t* p, size_t size, int64_t input_pts, int6
     pkt.get()->dts = av_rescale_q(input_dts, input_time_base, _video_stream->time_base);
     pkt.get()->flags |= (key)?AV_PKT_FLAG_KEY:0;
 
-    if(av_interleaved_write_frame(_fc.get(), pkt.get()) < 0)
-        R_THROW(("Unable to write frame to output stream."));
+    int res = av_interleaved_write_frame(_fc.get(), pkt.get());
+    if(res < 0)
+        R_THROW(("Unable to write video frame to output file: %s", ff_rc_to_msg(res).c_str()));
 }
 
 void r_muxer::write_audio_frame(uint8_t* p, size_t size, int64_t input_pts, AVRational input_time_base)
@@ -184,8 +191,9 @@ void r_muxer::write_audio_frame(uint8_t* p, size_t size, int64_t input_pts, AVRa
     pkt.get()->dts = pkt.get()->pts;
     pkt.get()->flags = AV_PKT_FLAG_KEY;
 
-    if(av_interleaved_write_frame(_fc.get(), pkt.get()) < 0)
-        R_THROW(("Unable to write frame to output stream."));
+    int res = av_interleaved_write_frame(_fc.get(), pkt.get());
+    if(res < 0)
+        R_THROW(("Unable to write video frame to output file: %s", ff_rc_to_msg(res).c_str()));
 }
 
 uint8_t* r_muxer::extradata()
@@ -203,7 +211,9 @@ void r_muxer::finalize()
     if(_needs_finalize)
     {
         _needs_finalize = false;
-        av_write_trailer(_fc.get());
+        int res = av_write_trailer(_fc.get());
+        if(res < 0)
+            R_THROW(("Unable to write trailer to output file: %s", ff_rc_to_msg(res).c_str()));
 
         if(_output_to_buffer)
         {
@@ -212,7 +222,12 @@ void r_muxer::finalize()
             _buffer.resize(fileSize);
             memcpy(&_buffer[0], fileBytes.get(), fileSize);
         }
-        else avio_close(_fc.get()->pb);
+        else
+        {
+            int res = avio_close(_fc.get()->pb);
+            if(res < 0)
+                R_THROW(("Unable to close output io context: %s", ff_rc_to_msg(res).c_str()));
+        }
     }
 }
 

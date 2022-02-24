@@ -109,7 +109,7 @@ r_dumbdex::iterator r_dumbdex::find_lower_bound(int64_t ts) const
         }
     );
 
-    return r_dumbdex::iterator(*this, found);
+    return r_dumbdex::iterator(this, found);
 }
 
 uint16_t r_dumbdex::insert(uint64_t ts)

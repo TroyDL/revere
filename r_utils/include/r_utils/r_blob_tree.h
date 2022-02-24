@@ -9,6 +9,7 @@
 #include <vector>
 #include <stdexcept>
 #include <cstring>
+#include <sstream>
 
 class test_r_utils_r_blob_tree;
 
@@ -38,6 +39,20 @@ public:
         return _children[key];
     }
 
+    const r_blob_tree& at(const std::string& key) const
+    {
+        if(!_childrenByIndex.empty())
+            R_STHROW(r_internal_exception, ("r_blob_tree node cannot be both an array and an object."));
+        return _children.at(key);
+    }
+
+    bool has_key(const std::string& key) const
+    {
+        if(!_childrenByIndex.empty())
+            R_STHROW(r_internal_exception, ("r_blob_tree node cannot be both an array and an object."));
+        return _children.find(key) != _children.end();
+    }
+
     r_blob_tree& operator[](size_t index)
     {
         if(!_children.empty())
@@ -47,7 +62,21 @@ public:
         return _childrenByIndex[index];
     }
 
-    size_t size()
+    const r_blob_tree& at(size_t index) const
+    {
+        if(!_children.empty())
+            R_STHROW(r_internal_exception, ("r_blob_tree node cannot be both an object and an array."));
+        return _childrenByIndex.at(index);
+    }
+
+    bool has_index(size_t index) const
+    {
+        if(!_children.empty())
+            R_STHROW(r_internal_exception, ("r_blob_tree node cannot be both an object and an array."));
+        return _childrenByIndex.size() > index;
+    }
+
+    size_t size() const
     {
         if(!_children.empty())
             R_STHROW(r_internal_exception, ("r_blob_tree node cannot be both an object and an array."));
@@ -81,6 +110,15 @@ public:
             R_THROW(("Unable to fetch empty value."));
 
         return std::string((char*)&_payload_storage[0], _payload_storage.size());
+    }
+
+    template<typename T>
+    inline T get_value() const
+    {
+        std::stringstream convert(get_string());
+        T value;
+        convert >> value;
+        return value;
     }
 
 private:

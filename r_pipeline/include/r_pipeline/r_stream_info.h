@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <tuple>
 
 namespace r_pipeline
 {
@@ -103,7 +104,7 @@ struct r_sdp_media
     std::map<std::string, std::string> attributes;
 };
 
-std::pair<std::string, std::string> sdp_media_to_s(r_media m, const std::map<std::string, r_sdp_media>& sdp_media);
+std::tuple<std::string, std::string, int> sdp_media_to_s(r_media m, const std::map<std::string, r_sdp_media>& sdp_media);
 
 r_utils::r_nullable<std::vector<uint8_t>> get_h264_sps(const std::string& video_codec_parameters);
 r_utils::r_nullable<std::vector<uint8_t>> get_h264_pps(const std::string& video_codec_parameters);

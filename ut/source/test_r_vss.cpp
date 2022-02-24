@@ -165,10 +165,10 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     for(size_t fi = 0; fi < n_frames; ++fi)
     {
         auto sid = bt["frames"][fi]["stream_id"].get_string();
-        auto stream_id = r_string_utils::s_to_int(bt["frames"][fi]["stream_id"].get_string());
+        auto stream_id = bt["frames"][fi]["stream_id"].get_value<int>();
         auto key = (bt["frames"][fi]["key"].get_string() == "true");
         auto frame = bt["frames"][fi]["data"].get();
-        auto pts = r_string_utils::s_to_int64(bt["frames"][fi]["pts"].get_string());
+        auto pts = bt["frames"][fi]["ts"].get_value<int64_t>();
 
         if(stream_id == R_STORAGE_MEDIA_TYPE_VIDEO)
         {

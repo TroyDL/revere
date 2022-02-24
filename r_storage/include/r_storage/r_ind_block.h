@@ -255,8 +255,7 @@ public:
             [base_time](const uint8_t* a, const uint8_t* b) -> int {
                 int64_t ts_a = base_time + *(uint32_t*)a;
                 int64_t ts_b = base_time + *(uint32_t*)b;
-                int res = (ts_a < ts_b) ? -1 : ((ts_a > ts_b) ? 1 : 0);
-                return res;
+                return (ts_a < ts_b) ? -1 : ((ts_a == ts_b) ? 0 : 1);
             }
         );
 

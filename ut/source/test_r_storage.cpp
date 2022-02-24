@@ -588,7 +588,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     auto f1 = *i;
     RTF_ASSERT(f1.flags == 1);
-    RTF_ASSERT(f1.pts == 10);
+    RTF_ASSERT(f1.ts == 10);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -596,7 +596,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 0);
-    RTF_ASSERT(f1.pts == 20);
+    RTF_ASSERT(f1.ts == 20);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -604,7 +604,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 0);
-    RTF_ASSERT(f1.pts == 30);
+    RTF_ASSERT(f1.ts == 30);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -612,7 +612,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 0);
-    RTF_ASSERT(f1.pts == 40);
+    RTF_ASSERT(f1.ts == 40);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -620,7 +620,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 1);
-    RTF_ASSERT(f1.pts == 50);
+    RTF_ASSERT(f1.ts == 50);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -628,7 +628,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 0);
-    RTF_ASSERT(f1.pts == 60);
+    RTF_ASSERT(f1.ts == 60);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -636,7 +636,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 0);
-    RTF_ASSERT(f1.pts == 70);
+    RTF_ASSERT(f1.ts == 70);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -644,7 +644,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 0);
-    RTF_ASSERT(f1.pts == 80);
+    RTF_ASSERT(f1.ts == 80);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -652,7 +652,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 0);
-    RTF_ASSERT(f1.pts == 70);
+    RTF_ASSERT(f1.ts == 70);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -660,7 +660,7 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
     f1 = *i;
     RTF_ASSERT(f1.flags == 0);
-    RTF_ASSERT(f1.pts == 60);
+    RTF_ASSERT(f1.ts == 60);
     RTF_ASSERT(f1.size = 1024);
     RTF_ASSERT(f1.data != nullptr);
 
@@ -737,12 +737,12 @@ void test_r_storage::test_r_storage_file_fake_camera()
     r_storage_write_context ctx;
 
     src.set_sdp_media_cb([&](const map<string, r_sdp_media>& sdp_media){
-        auto v_info = sdp_media_to_s(VIDEO_MEDIA, sdp_media);
-        video_codec_name = v_info.first;
-        video_codec_parameters = v_info.second;
-        auto a_info = sdp_media_to_s(AUDIO_MEDIA, sdp_media);
-        audio_codec_name = a_info.first;
-        audio_codec_parameters = a_info.second;
+        int video_timebase;
+        tie(video_codec_name, video_codec_parameters, video_timebase) = sdp_media_to_s(VIDEO_MEDIA, sdp_media);
+
+        int audio_timebase;
+        tie(audio_codec_name, audio_codec_parameters, audio_timebase) = sdp_media_to_s(AUDIO_MEDIA, sdp_media);
+
         sf = r_storage_file("ten_mb_file");
         ctx = sf.create_write_context(video_codec_name, video_codec_parameters, audio_codec_name, audio_codec_parameters);
     });
@@ -813,7 +813,7 @@ void test_r_storage::test_r_storage_file_fake_camera()
     {
         auto key = (bt["frames"][fi]["key"].get_string() == "true");
         auto frame = bt["frames"][fi]["data"].get();
-        auto pts = r_string_utils::s_to_int64(bt["frames"][fi]["pts"].get_string());
+        auto pts = bt["frames"][fi]["ts"].get_value<int64_t>();
         
         muxer.write_video_frame(frame.data(), frame.size(), pts, dts, {1, 1000}, key);
         ++dts;

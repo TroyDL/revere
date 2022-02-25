@@ -34,7 +34,10 @@ r_muxer::r_muxer(const std::string& path, bool output_to_buffer) :
     _fc([](AVFormatContext* fc){avformat_free_context(fc);}),
     _video_stream(nullptr),
     _audio_stream(nullptr),
-    _needs_finalize(false)
+    _needs_finalize(false),
+    _video_bsf([](AVBSFContext* bsf){av_bsf_free(&bsf);}),
+    _audio_bsf([](AVBSFContext* bsf){av_bsf_free(&bsf);})
+
 {
     avformat_alloc_output_context2(&_fc.raw(), NULL, NULL, _path.c_str());
     if(!_fc)
@@ -88,6 +91,54 @@ void r_muxer::add_audio_stream(AVCodecID codec_id, uint8_t channels, uint32_t sa
     _audio_stream->codecpar->sample_rate = sample_rate;
     _audio_stream->time_base.num = 1;
     _audio_stream->time_base.den = sample_rate;
+}
+
+void r_muxer::set_video_bitstream_filter(const std::string& filter_name)
+{
+    const AVBitStreamFilter *filter = av_bsf_get_by_name(filter_name.c_str());
+
+    if(!filter)
+        R_THROW(("Unable to find bitstream filter."));
+
+    auto ret = av_bsf_alloc(filter, &_video_bsf.raw());
+    if(ret < 0)
+        R_STHROW(r_internal_exception, ("Unable to av_bsf_alloc()"));
+
+    ret = avcodec_parameters_copy(_video_bsf.get()->par_in, _video_stream->codecpar);
+    if (ret < 0)
+        R_STHROW(r_internal_exception, ("Unable to avcodec_parameters_copy()"));
+
+    ret = av_bsf_init(_video_bsf.get());
+    if(ret < 0)
+        R_STHROW(r_internal_exception, ("Unable to av_bsf_init()"));
+
+    ret = avcodec_parameters_copy(_video_stream->codecpar, _video_bsf.get()->par_out);
+    if (ret < 0)
+        R_STHROW(r_internal_exception, ("Unable to avcodec_parameters_copy()"));
+}
+
+void r_muxer::set_audio_bitstream_filter(const std::string& filter_name)
+{
+    const AVBitStreamFilter *filter = av_bsf_get_by_name(filter_name.c_str());
+
+    if(!filter)
+        R_THROW(("Unable to find bitstream filter."));
+
+    auto ret = av_bsf_alloc(filter, &_audio_bsf.raw());
+    if(ret < 0)
+        R_STHROW(r_internal_exception, ("Unable to av_bsf_alloc()"));
+
+    ret = avcodec_parameters_copy(_audio_bsf.get()->par_in, _audio_stream->codecpar);
+    if (ret < 0)
+        R_STHROW(r_internal_exception, ("Unable to avcodec_parameters_copy()"));
+
+    ret = av_bsf_init(_audio_bsf.get());
+    if(ret < 0)
+        R_STHROW(r_internal_exception, ("Unable to av_bsf_init()"));
+
+    ret = avcodec_parameters_copy(_audio_stream->codecpar, _audio_bsf.get()->par_out);
+    if (ret < 0)
+        R_STHROW(r_internal_exception, ("Unable to avcodec_parameters_copy()"));
 }
 
 void r_muxer::set_video_extradata(const std::vector<uint8_t>& ed)
@@ -161,19 +212,50 @@ void r_muxer::write_video_frame(uint8_t* p, size_t size, int64_t input_pts, int6
     if(_fc.get()->pb == nullptr)
         R_THROW(("Please call open() before writing frames."));
 
-    raii_ptr<AVPacket> pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
-    _get_packet_defaults(pkt.get());
+    raii_ptr<AVPacket> input_pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
+    _get_packet_defaults(input_pkt.get());
 
-    pkt.get()->stream_index = _video_stream->index;
-    pkt.get()->data = p;
-    pkt.get()->size = (int)size;
-    pkt.get()->pts = av_rescale_q(input_pts, input_time_base, _video_stream->time_base);
-    pkt.get()->dts = av_rescale_q(input_dts, input_time_base, _video_stream->time_base);
-    pkt.get()->flags |= (key)?AV_PKT_FLAG_KEY:0;
+    input_pkt.get()->stream_index = _video_stream->index;
+    input_pkt.get()->data = p;
+    input_pkt.get()->size = (int)size;
+    input_pkt.get()->pts = av_rescale_q(input_pts, input_time_base, _video_stream->time_base);
+    input_pkt.get()->dts = av_rescale_q(input_dts, input_time_base, _video_stream->time_base);
+    input_pkt.get()->flags |= (key)?AV_PKT_FLAG_KEY:0;
 
-    int res = av_interleaved_write_frame(_fc.get(), pkt.get());
-    if(res < 0)
-        R_THROW(("Unable to write video frame to output file: %s", ff_rc_to_msg(res).c_str()));
+    if(_video_bsf)
+    {
+        int res = av_bsf_send_packet(_video_bsf.get(), input_pkt.get());
+
+        if(res < 0)
+            R_THROW(("Unable to send packet to bitstream filter: %s", ff_rc_to_msg(res).c_str()));
+
+        while(res == 0)
+        {
+            raii_ptr<AVPacket> output_pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
+            _get_packet_defaults(output_pkt.get());
+
+            res = av_bsf_receive_packet(_video_bsf.get(), output_pkt.get());
+
+            if(res == 0)
+            {
+                res = av_interleaved_write_frame(_fc.get(), output_pkt.get());
+                if(res < 0)
+                    R_THROW(("Unable to write frame to output file: %s", ff_rc_to_msg(res).c_str()));
+            }
+            else if(res == AVERROR(EAGAIN))
+            {
+                // no output packet, needs more input
+                break;
+            }
+            else R_THROW(("Unable to receive packet from bitstream filter: %s", ff_rc_to_msg(res).c_str()));
+        }
+    }
+    else
+    {
+        int res = av_interleaved_write_frame(_fc.get(), input_pkt.get());
+        if(res < 0)
+            R_THROW(("Unable to write video frame to output file: %s", ff_rc_to_msg(res).c_str()));
+    }
 }
 
 void r_muxer::write_audio_frame(uint8_t* p, size_t size, int64_t input_pts, AVRational input_time_base)
@@ -181,29 +263,53 @@ void r_muxer::write_audio_frame(uint8_t* p, size_t size, int64_t input_pts, AVRa
     if(_fc.get()->pb == nullptr)
         R_THROW(("Please call open() before writing frames."));
 
-    raii_ptr<AVPacket> pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
-    _get_packet_defaults(pkt.get());
+    if(_fc.get()->pb == nullptr)
+        R_THROW(("Please call open() before writing frames."));
 
-    pkt.get()->stream_index = _audio_stream->index;
-    pkt.get()->data = p;
-    pkt.get()->size = (int)size;
-    pkt.get()->pts = av_rescale_q(input_pts, input_time_base, _audio_stream->time_base);
-    pkt.get()->dts = pkt.get()->pts;
-    pkt.get()->flags = AV_PKT_FLAG_KEY;
+    raii_ptr<AVPacket> input_pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
+    _get_packet_defaults(input_pkt.get());
 
-    int res = av_interleaved_write_frame(_fc.get(), pkt.get());
-    if(res < 0)
-        R_THROW(("Unable to write video frame to output file: %s", ff_rc_to_msg(res).c_str()));
-}
+    input_pkt.get()->stream_index = _audio_stream->index;
+    input_pkt.get()->data = p;
+    input_pkt.get()->size = (int)size;
+    input_pkt.get()->pts = av_rescale_q(input_pts, input_time_base, _audio_stream->time_base);
+    input_pkt.get()->dts = input_pkt.get()->pts;
+    input_pkt.get()->flags = AV_PKT_FLAG_KEY;
 
-uint8_t* r_muxer::extradata()
-{
-    return _video_stream->codecpar->extradata;
-}
+    if(_audio_bsf)
+    {
+        int res = av_bsf_send_packet(_audio_bsf.get(), input_pkt.get());
 
-int r_muxer::extradata_size()
-{
-    return _video_stream->codecpar->extradata_size;
+        if(res < 0)
+            R_THROW(("Unable to send packet to bitstream filter: %s", ff_rc_to_msg(res).c_str()));
+
+        while(res == 0)
+        {
+            raii_ptr<AVPacket> output_pkt(av_packet_alloc(), [](AVPacket* pkt){av_packet_free(&pkt);});
+            _get_packet_defaults(output_pkt.get());
+
+            res = av_bsf_receive_packet(_audio_bsf.get(), output_pkt.get());
+
+            if(res == 0)
+            {
+                res = av_interleaved_write_frame(_fc.get(), output_pkt.get());
+                if(res < 0)
+                    R_THROW(("Unable to write frame to output file: %s", ff_rc_to_msg(res).c_str()));
+            }
+            else if(res == AVERROR(EAGAIN))
+            {
+                // no output packet, needs more input
+                break;
+            }
+            else R_THROW(("Unable to receive packet from bitstream filter: %s", ff_rc_to_msg(res).c_str()));
+        }
+    }
+    else
+    {
+        int res = av_interleaved_write_frame(_fc.get(), input_pkt.get());
+        if(res < 0)
+            R_THROW(("Unable to write audio frame to output file: %s", ff_rc_to_msg(res).c_str()));
+    }
 }
 
 void r_muxer::finalize()

@@ -345,188 +345,228 @@ r_http::r_server_response ws::_get_export(const r_http::r_web_server<r_utils::r_
         
         auto end_time_s = args["end_time"];
 
-        auto key_bt = sf.query(
-            R_STORAGE_MEDIA_TYPE_ALL,
-            duration_cast<std::chrono::milliseconds>(r_time_utils::iso_8601_to_tp(start_time_s).time_since_epoch()).count(),
-            duration_cast<std::chrono::milliseconds>(r_time_utils::iso_8601_to_tp(end_time_s).time_since_epoch()).count()
-        );
-
-        uint32_t version = 0;
-        auto bt = r_blob_tree::deserialize(&key_bt[0], key_bt.size(), version);
-
-        _check_timestamps(bt);
-
-        if(!bt.has_key("has_audio"))
-            R_THROW(("Blob tree missing audio indicator."));
-
-        bool has_audio = (bt["has_audio"].get_string() == "true")?true:false;
-
-        if(!bt.has_key("video_codec_name"))
-            R_THROW(("Blob tree missing video codec name."));
-
-        auto video_codec_name = bt["video_codec_name"].get_string();
-
-        if(!bt.has_key("video_codec_parameters"))
-            R_THROW(("Blob tree missing video codec parameters."));
-
-        auto video_codec_parameters = bt["video_codec_parameters"].get_string();
-
-        string audio_codec_name, audio_codec_parameters;
-        if(has_audio)
-        {
-            if(!bt.has_key("audio_codec_name"))
-                R_THROW(("Blob tree missing audio codec name but has audio!"));
-            audio_codec_name = bt["audio_codec_name"].get_string();
-
-            if(!bt.has_key("audio_codec_parameters"))
-                R_THROW(("Blob tree missing audio codec parameters but has audio!"));
-            audio_codec_parameters = bt["audio_codec_parameters"].get_string();
-        }
-
         if(args.find("file_name") == args.end())
             R_THROW(("Missing file name."));
 
         r_muxer muxer(exports_path + r_fs::PATH_SLASH + args["file_name"]);
 
-        r_nullable<float> fr;
+        auto qs = r_time_utils::iso_8601_to_tp(start_time_s);
 
-        auto parts = r_string_utils::split(video_codec_parameters, ",");
-        for(auto part : parts)
+        auto qe = r_time_utils::iso_8601_to_tp(end_time_s);
+
+        bool muxer_opened = false;
+
+        int64_t ts_first_frame = 0;
+
+        bool done = false;
+
+        while(!done)
         {
-            auto inner_parts = r_string_utils::split(part, "=");
-            if(inner_parts.size() == 2)
+            auto rs = qs;
+            auto re = rs;
+            if(rs +  std::chrono::minutes(5) > qe)
             {
-                if(r_string_utils::strip(inner_parts[0]) == "sc_framerate")
-                    fr.set_value(r_string_utils::s_to_float(inner_parts[1]));
+                re = qe;
+                done = true;
             }
-        }
+            else re = rs + std::chrono::minutes(5);
 
-        if(fr.is_null())
-            fr.set_value(_compute_framerate(bt));
-
-        auto video_codec_id = r_mux::encoding_to_av_codec_id(video_codec_name);
-
-        if(video_codec_id == AV_CODEC_ID_H264)
-        {
-            auto maybe_sps = r_pipeline::get_h264_sps(video_codec_parameters);
-            if(!maybe_sps.is_null())
-            {
-                auto sps_info = r_pipeline::parse_h264_sps(maybe_sps.value());
-
-                muxer.add_video_stream(
-                    av_d2q(fr, 10000),
-                    video_codec_id,
-                    sps_info.width,
-                    sps_info.height,
-                    sps_info.profile_idc,
-                    sps_info.level_idc
-                );
-            }
-            auto maybe_pps = r_pipeline::get_h264_pps(video_codec_parameters);
-            muxer.set_video_extradata(r_pipeline::make_h264_extradata(maybe_sps, maybe_pps));
-        }
-        else if(video_codec_id == AV_CODEC_ID_HEVC)
-        {
-            auto maybe_vps = r_pipeline::get_h265_vps(video_codec_parameters);
-            auto maybe_sps = r_pipeline::get_h265_sps(video_codec_parameters);
-            if(!maybe_sps.is_null())
-            {
-                auto sps_info = r_pipeline::parse_h265_sps(maybe_sps.value());
-
-                muxer.add_video_stream(
-                    av_d2q(fr, 10000),
-                    video_codec_id,
-                    sps_info.width,
-                    sps_info.height,
-                    sps_info.profile_idc,
-                    sps_info.level_idc
-                );
-            }
-            auto maybe_pps = r_pipeline::get_h265_pps(video_codec_parameters);
-            muxer.set_video_extradata(r_pipeline::make_h264_extradata(maybe_sps, maybe_pps));
-        }
-
-        if(has_audio)
-        {
-            r_nullable<int> audio_rate, audio_channels;
-            auto parts = r_string_utils::split(audio_codec_parameters, ",");
-            for(auto part : parts)
-            {
-                auto inner_parts = r_string_utils::split(part, "=");
-                if(inner_parts.size() == 2)
-                {
-                    if(r_string_utils::strip(inner_parts[0]) == "sc_audio_rate")
-                        audio_rate.set_value(r_string_utils::s_to_int(inner_parts[1]));
-                    if(r_string_utils::strip(inner_parts[0]) == "sc_audio_channels")
-                        audio_channels.set_value(r_string_utils::s_to_int(inner_parts[1]));
-                }
-            }
-
-            auto audio_codec_id = r_mux::encoding_to_av_codec_id(audio_codec_name);
-
-            if(audio_channels.is_null())
-                audio_channels.set_value(1);
-
-            if(audio_rate.is_null())
-            {
-                if(audio_codec_id == AV_CODEC_ID_PCM_MULAW)
-                    audio_rate.set_value(8000);
-                else if(audio_codec_id == AV_CODEC_ID_PCM_ALAW)
-                    audio_rate.set_value(8000);
-            }
-
-            if(audio_rate.is_null())
-                R_THROW(("Missing audio rate."));
-
-            muxer.add_audio_stream(
-                audio_codec_id,
-                audio_channels.value(),
-                audio_rate.value()
+            auto qr_buffer = sf.query(
+                R_STORAGE_MEDIA_TYPE_ALL,
+                duration_cast<std::chrono::milliseconds>(rs.time_since_epoch()).count(),
+                duration_cast<std::chrono::milliseconds>(re.time_since_epoch()).count()
             );
-        }
 
-        muxer.open();
+            qs = re;
 
-        if(!bt.has_key("frames"))
-            R_THROW(("Blob tree missing frames."));
+            uint32_t version = 0;
+            auto bt = r_blob_tree::deserialize(qr_buffer.data(), qr_buffer.size(), version);
 
-        auto n_frames = bt["frames"].size();
+            _check_timestamps(bt);
 
-        printf("N_FRAMES=%ld\n", n_frames);
+            if(!muxer_opened)
+            {
+                muxer_opened = true;
 
-        int64_t first_ts = 0;
-        for(size_t fi = 0; fi < n_frames; ++fi)
-        {
-            if(!bt["frames"].has_index(fi))
-                R_THROW(("Blob tree missing frame."));
+                // first extract metadata from the blob tree
 
-            if(!bt["frames"][fi].has_key("stream_id"))
-                R_THROW(("Blob tree missing stream id."));
+                if(!bt.has_key("has_audio"))
+                    R_THROW(("Blob tree missing audio indicator."));
 
-            auto sid = bt["frames"][fi]["stream_id"].get_value<int>();
+                bool has_audio = (bt["has_audio"].get_string() == "true")?true:false;
 
-            if(!bt["frames"][fi].has_key("key"))
-                R_THROW(("Blob tree missing key."));
+                if(!bt.has_key("video_codec_name"))
+                    R_THROW(("Blob tree missing video codec name."));
 
-            auto key = (bt["frames"][fi]["key"].get_string() == "true");
+                auto video_codec_name = bt["video_codec_name"].get_string();
 
-            if(!bt["frames"][fi].has_key("data"))
-                R_THROW(("Blob tree missing data."));
+                if(!bt.has_key("video_codec_parameters"))
+                    R_THROW(("Blob tree missing video codec parameters."));
 
-            auto frame = bt["frames"][fi]["data"].get();
+                auto video_codec_parameters = bt["video_codec_parameters"].get_string();
 
-            if(!bt["frames"][fi].has_key("ts"))
-                R_THROW(("Blob tree missing ts."));
+                string audio_codec_name, audio_codec_parameters;
+                if(has_audio)
+                {
+                    if(!bt.has_key("audio_codec_name"))
+                        R_THROW(("Blob tree missing audio codec name but has audio!"));
+                    audio_codec_name = bt["audio_codec_name"].get_string();
 
-            auto ts = bt["frames"][fi]["ts"].get_value<int64_t>();
+                    if(!bt.has_key("audio_codec_parameters"))
+                        R_THROW(("Blob tree missing audio codec parameters but has audio!"));
+                    audio_codec_parameters = bt["audio_codec_parameters"].get_string();
+                }
 
-            if(first_ts == 0)
-                first_ts = ts;
+                // now, look for the sc_framerate or estimate it...
 
-            if(sid == R_STORAGE_MEDIA_TYPE_VIDEO)
-                muxer.write_video_frame(frame.data(), frame.size(), ts-first_ts, ts-first_ts, {1, 1000}, key);
-            else if(sid == R_STORAGE_MEDIA_TYPE_AUDIO)
-                muxer.write_audio_frame(frame.data(), frame.size(), ts-first_ts, {1, 1000});
+                r_nullable<float> fr;
+
+                auto parts = r_string_utils::split(video_codec_parameters, ",");
+                for(auto part : parts)
+                {
+                    auto inner_parts = r_string_utils::split(part, "=");
+                    if(inner_parts.size() == 2)
+                    {
+                        if(r_string_utils::strip(inner_parts[0]) == "sc_framerate")
+                            fr.set_value(r_string_utils::s_to_float(inner_parts[1]));
+                    }
+                }
+
+                if(fr.is_null())
+                    fr.set_value(_compute_framerate(bt));
+
+                // get the video codec information and add the right kinds of video stream...
+
+                auto video_codec_id = r_mux::encoding_to_av_codec_id(video_codec_name);
+
+                if(video_codec_id == AV_CODEC_ID_H264)
+                {
+                    auto maybe_sps = r_pipeline::get_h264_sps(video_codec_parameters);
+                    if(!maybe_sps.is_null())
+                    {
+                        auto sps_info = r_pipeline::parse_h264_sps(maybe_sps.value());
+
+                        muxer.add_video_stream(
+                            av_d2q(fr, 10000),
+                            video_codec_id,
+                            sps_info.width,
+                            sps_info.height,
+                            sps_info.profile_idc,
+                            sps_info.level_idc
+                        );
+                    }
+                    auto maybe_pps = r_pipeline::get_h264_pps(video_codec_parameters);
+                    muxer.set_video_extradata(r_pipeline::make_h264_extradata(maybe_sps, maybe_pps));
+                }
+                else if(video_codec_id == AV_CODEC_ID_HEVC)
+                {
+                    auto maybe_vps = r_pipeline::get_h265_vps(video_codec_parameters);
+                    auto maybe_sps = r_pipeline::get_h265_sps(video_codec_parameters);
+                    if(!maybe_sps.is_null())
+                    {
+                        auto sps_info = r_pipeline::parse_h265_sps(maybe_sps.value());
+
+                        muxer.add_video_stream(
+                            av_d2q(fr, 10000),
+                            video_codec_id,
+                            sps_info.width,
+                            sps_info.height,
+                            sps_info.profile_idc,
+                            sps_info.level_idc
+                        );
+
+                        //muxer.set_video_bitstream_filter("hevc_mp4toannexb");
+                    }
+                    auto maybe_pps = r_pipeline::get_h265_pps(video_codec_parameters);
+                    muxer.set_video_extradata(r_pipeline::make_h265_extradata(maybe_vps, maybe_sps, maybe_pps));
+                }
+
+                // If there is audio, add the audio stream...
+
+                if(has_audio)
+                {
+                    printf("audio_codec_parameters=%s\n", audio_codec_parameters.c_str());
+
+                    r_nullable<int> audio_rate, audio_channels;
+                    auto parts = r_string_utils::split(audio_codec_parameters, ",");
+                    for(auto part : parts)
+                    {
+                        auto inner_parts = r_string_utils::split(part, "=");
+                        if(inner_parts.size() == 2)
+                        {
+                            if(r_string_utils::strip(inner_parts[0]) == "sc_audio_rate")
+                                audio_rate.set_value(r_string_utils::s_to_int(inner_parts[1]));
+                            if(r_string_utils::strip(inner_parts[0]) == "sc_audio_channels")
+                                audio_channels.set_value(r_string_utils::s_to_int(inner_parts[1]));
+                        }
+                    }
+
+                    auto audio_codec_id = r_mux::encoding_to_av_codec_id(audio_codec_name);
+
+                    if(audio_channels.is_null())
+                        audio_channels.set_value(1);
+
+                    if(audio_rate.is_null())
+                    {
+                        if(audio_codec_id == AV_CODEC_ID_PCM_MULAW)
+                            audio_rate.set_value(8000);
+                        else if(audio_codec_id == AV_CODEC_ID_PCM_ALAW)
+                            audio_rate.set_value(8000);
+                    }
+
+                    if(audio_rate.is_null())
+                        R_THROW(("Missing audio rate."));
+
+                    muxer.add_audio_stream(
+                        audio_codec_id,
+                        audio_channels.value(),
+                        audio_rate.value()
+                    );
+                }
+
+                muxer.open();
+            }
+
+            if(!bt.has_key("frames"))
+                R_THROW(("Blob tree missing frames."));
+
+            auto n_frames = bt["frames"].size();
+
+            printf("N_FRAMES=%ld\n", n_frames);
+
+            for(size_t fi = 0; fi < n_frames; ++fi)
+            {
+                if(!bt["frames"].has_index(fi))
+                    R_THROW(("Blob tree missing frame."));
+
+                if(!bt["frames"][fi].has_key("stream_id"))
+                    R_THROW(("Blob tree missing stream id."));
+
+                auto sid = bt["frames"][fi]["stream_id"].get_value<int>();
+
+                if(!bt["frames"][fi].has_key("key"))
+                    R_THROW(("Blob tree missing key."));
+
+                auto key = (bt["frames"][fi]["key"].get_string() == "true");
+
+                if(!bt["frames"][fi].has_key("data"))
+                    R_THROW(("Blob tree missing data."));
+
+                auto frame = bt["frames"][fi]["data"].get();
+
+                if(!bt["frames"][fi].has_key("ts"))
+                    R_THROW(("Blob tree missing ts."));
+
+                auto ts = bt["frames"][fi]["ts"].get_value<int64_t>();
+
+                if(ts_first_frame == 0)
+                    ts_first_frame = ts;
+
+                if(sid == R_STORAGE_MEDIA_TYPE_VIDEO)
+                    muxer.write_video_frame(frame.data(), frame.size(), ts-ts_first_frame, ts-ts_first_frame, {1, 1000}, key);
+                else if(sid == R_STORAGE_MEDIA_TYPE_AUDIO)
+                    muxer.write_audio_frame(frame.data(), frame.size(), ts-ts_first_frame, {1, 1000});
+            }
         }
 
         muxer.finalize();

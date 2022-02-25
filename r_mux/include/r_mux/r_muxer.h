@@ -40,6 +40,9 @@ public:
     void add_video_stream(AVRational frame_rate, AVCodecID codec_id, uint16_t w, uint16_t h, int profile, int level);
     void add_audio_stream(AVCodecID codec_id, uint8_t channels, uint32_t sample_rate);
 
+    void set_video_bitstream_filter(const std::string& filter_name);
+    void set_audio_bitstream_filter(const std::string& filter_name);
+
     void set_video_extradata(const std::vector<uint8_t>& ed);
     void set_audio_extradata(const std::vector<uint8_t>& ed);
 
@@ -47,9 +50,6 @@ public:
 
     void write_video_frame(uint8_t* p, size_t size, int64_t input_pts, int64_t input_dts, AVRational input_time_base, bool key);
     void write_audio_frame(uint8_t* p, size_t size, int64_t input_pts, AVRational input_time_base);
-
-    uint8_t* extradata();
-    int extradata_size();
 
     void finalize();
 
@@ -65,6 +65,8 @@ private:
     AVStream* _video_stream; // raw pointers allowed here because they are cleaned up automatically by _fc
     AVStream* _audio_stream;
     bool _needs_finalize;
+    r_utils::r_std_utils::raii_ptr<AVBSFContext> _video_bsf;
+    r_utils::r_std_utils::raii_ptr<AVBSFContext> _audio_bsf;
 };
 
 }

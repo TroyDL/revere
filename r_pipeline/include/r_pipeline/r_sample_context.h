@@ -50,6 +50,10 @@ public:
     uint64_t gst_dts() const;
     uint64_t gst_dts_running_time() const;
 
+    r_utils::r_nullable<std::string> sprop_sps() const;
+    r_utils::r_nullable<std::string> sprop_pps() const;
+    r_utils::r_nullable<std::string> sprop_vps() const;
+
 private:
     r_utils::r_nullable<uint8_t> _audio_channels {0};
     r_utils::r_nullable<uint32_t> _audio_sample_rate {0};

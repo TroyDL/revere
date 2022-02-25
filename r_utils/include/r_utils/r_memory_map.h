@@ -76,7 +76,7 @@ public:
 
     r_memory_map& operator=(r_memory_map&& other) noexcept
     {
-        if (this != &other)
+        if(this != &other)
         {
             _clear();
 
@@ -100,7 +100,7 @@ public:
         return _mem;
     }
 
-    inline uint32_t mength() const
+    inline uint32_t length() const
     {
         return _length;
     }

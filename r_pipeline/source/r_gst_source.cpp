@@ -484,7 +484,10 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
             {
                 r_h264_info h264_info;
                 h264_info.profile_level_id = string(gst_structure_get_string(new_pad_struct, "profile-level-id"));
-                h264_info.sprop_parameter_sets = string(gst_structure_get_string(new_pad_struct, "sprop-parameter-sets"));
+                auto sprop_parameter_sets = string(gst_structure_get_string(new_pad_struct, "sprop-parameter-sets"));
+                auto parts = r_string_utils::split(sprop_parameter_sets, ',');
+                h264_info.sprop_sps = parts[0];
+                h264_info.sprop_pps = parts[1];
                 h264_info.packetization_mode = 0;
                 gst_structure_get_int(new_pad_struct, "packetization-mode", &h264_info.packetization_mode);
 

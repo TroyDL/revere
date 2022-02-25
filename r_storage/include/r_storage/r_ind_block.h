@@ -23,9 +23,9 @@ namespace r_storage
 //   uint32_t n_entries,
 //   int64_t base_time,
 //   char[16] video_codec_name,
-//   char[256] video_codec_parameters,
+//   char[2048] video_codec_parameters,
 //   char[16] audio_codec_name,
-//   char[256] audio_codec_parameters
+//   char[2048] audio_codec_parameters
 // index:
 //   {uint32_t time, uint32_t block_offset}[n_entries]
 // blocks:

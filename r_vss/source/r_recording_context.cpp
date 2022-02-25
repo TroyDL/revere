@@ -340,4 +340,22 @@ void r_recording_context::_final_storage_writer_video_config(const r_pipeline::s
 {
     if(!sc.framerate().is_null())
         this->_storage_write_context.video_codec_parameters += ", sc_framerate=" + r_string_utils::double_to_s(sc.framerate().value());
+
+    if(this->_storage_write_context.video_codec_name == "h264")
+    {
+        //, sprop-parameter-sets=Z2QACqzZRifmwFqAgICgAAB9IAAXcAHiRLLA,aOvjyyLA
+        auto sps = sc.sprop_sps().value();
+        auto pps = sc.sprop_pps().value();
+
+        this->_storage_write_context.video_codec_parameters += string(", sprop-parameter-sets=") + sps + "," + pps;
+    }
+    else if(this->_storage_write_context.video_codec_name == "h265")
+    {
+        //, sprop-vps=QAEMAf//AIAAAAMAAAMAAAMAAAMAALUCQA==, sprop-sps=QgEBAIAAAAMAAAMAAAMAAAMAAKACgIAtH+W1kkbQzkkktySqSfKSyA==, sprop-pps=RAHBpVgeSA==
+        auto sps = sc.sprop_sps().value();
+        auto pps = sc.sprop_pps().value();
+        auto vps = sc.sprop_vps().value();
+
+        this->_storage_write_context.video_codec_parameters += string(", sprop-vps=") + vps + ", sprop-sps=" + sps + ", sprop-pps=" + pps;
+    }
 }

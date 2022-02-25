@@ -41,7 +41,8 @@ std::string encoding_to_str(r_encoding encoding);
 struct r_h264_info
 {
     std::string profile_level_id;
-    std::string sprop_parameter_sets;
+    std::string sprop_sps;
+    std::string sprop_pps;
     int packetization_mode;
 };
 

@@ -60,3 +60,61 @@ uint64_t sample_context::gst_dts_running_time() const
 {
     return _gst_time_info.dts_running_time;
 }
+
+r_nullable<string> sample_context::sprop_sps() const
+{
+    r_nullable<string> result;
+
+    auto pi = _src_pad_info.find(VIDEO_MEDIA);
+
+    if(pi != _src_pad_info.end())
+    {
+        auto rpi = pi->second;
+
+        if(!rpi.h264.is_null())
+            result.set_value(rpi.h264.value().sprop_sps);
+        else if(!rpi.h265.is_null())
+            result.set_value(rpi.h265.value().sprop_sps);
+        else R_THROW(("No SPS!"));
+    }
+
+    return result;
+}
+
+r_nullable<string> sample_context::sprop_pps() const
+{
+    r_nullable<string> result;
+
+    auto pi = _src_pad_info.find(VIDEO_MEDIA);
+
+    if(pi != _src_pad_info.end())
+    {
+        auto rpi = pi->second;
+
+        if(!rpi.h264.is_null())
+            result.set_value(rpi.h264.value().sprop_pps);
+        else if(!rpi.h265.is_null())
+            result.set_value(rpi.h265.value().sprop_pps);
+        else R_THROW(("No PPS!"));
+    }
+
+    return result;
+}
+
+r_nullable<string> sample_context::sprop_vps() const
+{
+    r_nullable<string> result;
+
+    auto pi = _src_pad_info.find(VIDEO_MEDIA);
+
+    if(pi != _src_pad_info.end())
+    {
+        auto rpi = pi->second;
+
+        if(!rpi.h265.is_null())
+            result.set_value(rpi.h265.value().sprop_vps);
+        else R_THROW(("No VPS!"));
+    }
+
+    return result;
+}

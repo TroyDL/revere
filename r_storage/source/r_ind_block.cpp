@@ -31,11 +31,16 @@ bool r_ind_block::fits(size_t size) const
     uint8_t* last_index = _index_start() + ((n_valid_entries-1)*INDEX_ENTRY_SIZE);
     uint8_t* last_block = _start + *(uint32_t*)(last_index + 4);
     uint8_t* new_block_start = last_block + 5 + *(uint32_t*)(last_block + 1);
+    uint8_t* new_block_end = new_block_start + (5 + size);
 
-    return (unsigned)((_start + _size) - new_block_start) >= (5 + size);
+    auto end_sentry = _start + _size;
+    if(new_block_end > end_sentry)
+        return false;
+
+    return true;
 }
 
-void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, uint8_t flags, int64_t ts)
+void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, int64_t ts)
 {
     if(_start == nullptr || size == 0)
         R_THROW(("Cannot append to empty index."));
@@ -78,7 +83,7 @@ void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, ui
 
         uint8_t* last_index = _index_start() + ((n_valid_entries-1)*INDEX_ENTRY_SIZE);
 
-        // an index is [uint32_t time, uint32_t offset] so skip the time and read the offset
+        // an index entry is [uint32_t time, uint32_t offset] so skip the time and read the offset
         uint8_t* last_block = _start + *(uint32_t*)(last_index + 4);
 
         uint8_t* new_block = last_block + 5 + *(uint32_t*)(last_block + 1);
@@ -89,7 +94,7 @@ void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, ui
         memcpy(new_block + 5, data, size);
 
         // write index...
-        uint8_t* new_index = last_index + INDEX_ENTRY_SIZE;
+        uint8_t* new_index = _index_start() + (n_valid_entries*INDEX_ENTRY_SIZE);
         *(uint32_t*)new_index = offset_time;
         *(uint32_t*)(new_index + 4) = (uint32_t)(new_block - _start);
 
@@ -98,6 +103,70 @@ void r_ind_block::append(const uint8_t* data, size_t size, uint8_t stream_id, ui
         _write_n_valid_entries(n_valid_entries + 1);
     }
 }
+
+#if 0
+void r_ind_block::validate_block()
+{
+    uint8_t* rd = _start;
+    uint32_t n_valid_entries = *(uint32_t*)rd;
+    rd += sizeof(uint32_t);
+    if(n_valid_entries > 2000)
+        R_THROW(("Too many valid entries in block: %d", n_valid_entries));
+    uint32_t n_entries = *(uint32_t*)rd;
+    rd += sizeof(uint32_t);
+    if(n_entries > 2000)
+        R_THROW(("Too many entries in block: %d", n_valid_entries));
+    int64_t base_time = *(int64_t*)rd;
+    rd += sizeof(int64_t);
+//    if(base_time < (1646049942000 - 432000000) || base_time > (1646049942000 + 432000000))
+//        R_THROW(("Invalid base time: %ld", base_time));
+    char msg[2048];
+    memcpy(msg, rd, 16);
+    string vcn((char*)&msg[0]);
+    rd += 16;
+    if(vcn.length() > 16)
+        R_THROW(("Invalid vcn: %s", vcn.c_str()));
+    memcpy(msg, rd, 2048);
+    string vcp((char*)&msg[0]);
+    rd += 2048;
+    if(vcp.length() > 2048)
+        R_THROW(("Invalid vcp: %s", vcp.c_str()));
+    memcpy(msg, rd, 16);
+    string acn((char*)&msg[0]);
+    rd += 16;
+    if(acn.length() > 16)
+        R_THROW(("Invalid acn: %s", acn.c_str()));
+    memcpy(msg, rd, 2048);
+    string acp((char*)&msg[0]);
+    rd += 2048;
+    if(acp.length() > 2048)
+        R_THROW(("Invalid acp: %s", acp.c_str()));
+
+    for(uint32_t i = 0; i < n_valid_entries; i++)
+    {
+        uint32_t time = *(uint32_t*)rd;
+        rd += sizeof(uint32_t);
+        if(time > 86400000)
+            R_THROW(("%u Invalid time: %d", i, time));
+
+        uint32_t offset = *(uint32_t*)rd;
+        rd += sizeof(uint32_t);
+        if(offset > _size)
+            R_THROW(("%u Invalid offset: %d", i, offset));
+
+        uint8_t* block = _start + offset;
+        uint8_t stream_id = *block;
+        if(stream_id > 1)
+            R_THROW(("%u Invalid stream id: %d", i, stream_id));
+        uint32_t block_size = *(uint32_t*)(block + 1);
+        if(block+block_size > _start + _size)
+            R_THROW(("%u Invalid block size: %d", i, block_size));
+    }
+
+    printf("BLOCK VALID!\n");
+    fflush(stdout);
+}
+#endif
 
 void r_ind_block::initialize_block(uint8_t* p, size_t size, uint32_t n_entries, int64_t base_time, const std::string& video_codec_name, const std::string& video_codec_parameters, const std::string& audio_codec_name, const std::string& audio_codec_parameters)
 {
@@ -222,7 +291,7 @@ void r_ind_block::_write_audio_codec_parameters(const string& audio_codec_parame
 
 uint8_t* r_ind_block::_index_start() const
 {
-    return _start + 4160;
+    return _start + 4144;
 }
 
 uint8_t* r_ind_block::_blocks_start() const

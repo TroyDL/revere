@@ -3,6 +3,7 @@
 #include "utils.h"
 #include "r_vss/r_stream_keeper.h"
 #include "r_storage/r_storage_file.h"
+#include "r_storage/r_storage_file_reader.h"
 #include "r_disco/r_stream_config.h"
 #include "r_utils/r_string_utils.h"
 #include "r_utils/r_blob_tree.h"
@@ -118,11 +119,11 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
     sk.stop();
 
     // Create a storage file object so we can query from it...
-    r_storage_file sf("top_dir" + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + storage_file_path);
+    r_storage_file_reader sfr("top_dir" + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + storage_file_path);
 
-    auto kfst = sf.key_frame_start_times(R_STORAGE_MEDIA_TYPE_ALL);
+    auto kfst = sfr.key_frame_start_times(R_STORAGE_MEDIA_TYPE_ALL);
 
-    auto result = sf.query(R_STORAGE_MEDIA_TYPE_ALL, kfst.front(), kfst.back());
+    auto result = sfr.query(R_STORAGE_MEDIA_TYPE_ALL, kfst.front(), kfst.back());
 
     uint32_t version = 0;
     auto bt = r_blob_tree::deserialize(&result[0], result.size(), version);

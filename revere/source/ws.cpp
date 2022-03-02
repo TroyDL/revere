@@ -8,6 +8,7 @@
 #include "r_utils/3rdparty/json/json.h"
 #include "r_disco/r_camera.h"
 #include "r_storage/r_storage_file.h"
+#include "r_storage/r_storage_file_reader.h"
 #include "r_pipeline/r_stream_info.h"
 #include "r_mux/r_muxer.h"
 #include "r_codec/r_video_decoder.h"
@@ -64,7 +65,7 @@ r_http::r_server_response ws::_get_jpg(const r_http::r_web_server<r_utils::r_soc
         if(maybe_camera.value().record_file_path.is_null())
             R_THROW(("Camera has no recording file!"));
 
-        r_storage_file sf(_top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + maybe_camera.value().record_file_path.value());
+        r_storage_file_reader sf(_top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + maybe_camera.value().record_file_path.value());
 
         if(args.find("start_time") == args.end())
             R_THROW(("Missing start_time."));
@@ -136,10 +137,7 @@ r_http::r_server_response ws::_get_contents(const r_http::r_web_server<r_utils::
         if(maybe_camera.value().record_file_path.is_null())
             R_THROW(("Camera has no recording file!"));
 
-        r_storage_file sf(_top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + maybe_camera.value().record_file_path.value());
-
-        if(args.find("media_type") == args.end())
-            R_THROW(("Missing media_type."));
+        r_storage_file_reader sf(_top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + maybe_camera.value().record_file_path.value());
 
         r_storage_media_type mt = R_STORAGE_MEDIA_TYPE_ALL;
         if(args["media_type"] == "audio")
@@ -333,7 +331,7 @@ r_http::r_server_response ws::_get_export(const r_http::r_web_server<r_utils::r_
         if(maybe_camera.value().record_file_path.is_null())
             R_THROW(("Camera has no recording file!"));
 
-        r_storage_file sf(_top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + maybe_camera.value().record_file_path.value());
+        r_storage_file_reader sf(_top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + maybe_camera.value().record_file_path.value());
 
         if(args.find("start_time") == args.end())
             R_THROW(("Missing start_time."));
@@ -364,7 +362,7 @@ r_http::r_server_response ws::_get_export(const r_http::r_web_server<r_utils::r_
         {
             auto rs = qs;
             auto re = rs;
-            if(rs +  std::chrono::minutes(5) > qe)
+            if(rs +  std::chrono::minutes(5) >= qe)
             {
                 re = qe;
                 done = true;
@@ -485,8 +483,6 @@ r_http::r_server_response ws::_get_export(const r_http::r_web_server<r_utils::r_
 
                 if(has_audio)
                 {
-                    printf("audio_codec_parameters=%s\n", audio_codec_parameters.c_str());
-
                     r_nullable<int> audio_rate, audio_channels;
                     auto parts = r_string_utils::split(audio_codec_parameters, ",");
                     for(auto part : parts)

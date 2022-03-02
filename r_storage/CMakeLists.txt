@@ -9,6 +9,8 @@ add_library(
     source/r_rel_block.cpp
     include/r_storage/r_storage_file.h
     source/r_storage_file.cpp
+    include/r_storage/r_storage_file_reader.h
+    source/r_storage_file_reader.cpp
 )
 
 target_include_directories(

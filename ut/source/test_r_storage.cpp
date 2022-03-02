@@ -6,6 +6,7 @@
 #include "r_storage/r_dumbdex.h"
 #include "r_storage/r_ind_block.h"
 #include "r_storage/r_storage_file.h"
+#include "r_storage/r_storage_file_reader.h"
 #include "r_storage/r_rel_block.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_algorithms.h"
@@ -345,16 +346,16 @@ void test_r_storage::test_r_ind_block_basic_iteration()
     vector<uint8_t> input_frame_2(1024);
     iota(rbegin(input_frame_2), rend(input_frame_2), 0);
 
-    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 1);
-    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 0, 2);
-    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 3);
-    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 0, 4);
-    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 5);
-    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 0, 6);
-    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 7);
-    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 0, 8);
+    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 1);
+    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 2);
+    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 3);
+    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 4);
+    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 5);
+    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 6);
+    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 7);
+    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 8);
 
-    RTF_ASSERT_THROWS(blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 9), r_exception);
+    RTF_ASSERT_THROWS(blk.append(&input_frame_1[0], input_frame_1.size(), 0, 9), r_exception);
 
     auto i = blk.begin();
 
@@ -442,14 +443,14 @@ void test_r_storage::test_r_ind_block_find_lower_bound()
     vector<uint8_t> input_frame_2(1024);
     iota(rbegin(input_frame_2), rend(input_frame_2), 0);
 
-    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 10);
-    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 0, 20);
-    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 30);
-    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 0, 40);
-    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 50);
-    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 0, 60);
-    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 0, 70);
-    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 0, 80);
+    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 10);
+    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 20);
+    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 30);
+    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 40);
+    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 50);
+    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 60);
+    blk.append(&input_frame_1[0], input_frame_1.size(), 0, 70);
+    blk.append(&input_frame_2[0], input_frame_2.size(), 0, 80);
 
     // find the first element that exists...
     auto i = blk.find_lower_bound(10);
@@ -673,40 +674,44 @@ void test_r_storage::test_r_rel_block_basic_iteration()
 
 void test_r_storage::test_r_storage_file_basic()
 {
-    r_storage_file::allocate("test_file", 65536, 10);
-
-    r_storage_file sf("test_file");
-
-    vector<uint8_t> frame(256);
-    std::iota(begin(frame), end(frame), 0);
-
-    r_nullable<string> vp = string("vparam"), ap = string("aparam");
-    r_nullable<string> acn = string("aname");
-    auto wc = sf.create_write_context("vname", vp, acn, ap);
-
-    int64_t ts = 100, pts = 100;
-    for(int i = 0; i < 10000; ++i)
     {
-        sf.write_frame(
-            wc,
-            R_STORAGE_MEDIA_TYPE_VIDEO,
-            frame.data(),
-            frame.size() - (_random() % 32),
-            (pts % 100) == 0,
-            ts,
-            pts
-        );
+        r_storage_file::allocate("test_file", 65536, 10);
 
-        ts += 33;
-        pts += 10;
+        r_storage_file sf("test_file");
+
+        vector<uint8_t> frame(256);
+        std::iota(begin(frame), end(frame), 0);
+
+        r_nullable<string> vp = string("vparam"), ap = string("aparam");
+        r_nullable<string> acn = string("aname");
+        auto wc = sf.create_write_context("vname", vp, acn, ap);
+
+        int64_t ts = 100, pts = 100;
+        for(int i = 0; i < 10000; ++i)
+        {
+            sf.write_frame(
+                wc,
+                R_STORAGE_MEDIA_TYPE_VIDEO,
+                frame.data(),
+                frame.size() - (_random() % 32),
+                (pts % 100) == 0,
+                ts,
+                pts
+            );
+
+            ts += 33;
+            pts += 10;
+        }
     }
 
-    auto gop_starts = sf.key_frame_start_times(R_STORAGE_MEDIA_TYPE_VIDEO);
+    r_storage_file_reader sfr("test_file");
+
+    auto gop_starts = sfr.key_frame_start_times(R_STORAGE_MEDIA_TYPE_VIDEO);
 
     auto first_ts = gop_starts.front();
     auto last_ts = gop_starts.back();
 
-    auto result = sf.query(R_STORAGE_MEDIA_TYPE_VIDEO, first_ts + 50, last_ts - 50);
+    auto result = sfr.query(R_STORAGE_MEDIA_TYPE_VIDEO, first_ts + 50, last_ts - 50);
 
     RTF_ASSERT(result.size() > 0);
 }
@@ -733,7 +738,7 @@ void test_r_storage::test_r_storage_file_fake_camera()
     string video_codec_name, audio_codec_name;
     string video_codec_parameters, audio_codec_parameters;
 
-    r_storage_file sf;
+    shared_ptr<r_storage_file> sf;
     r_storage_write_context ctx;
 
     src.set_sdp_media_cb([&](const map<string, r_sdp_media>& sdp_media){
@@ -743,8 +748,8 @@ void test_r_storage::test_r_storage_file_fake_camera()
         int audio_timebase;
         tie(audio_codec_name, audio_codec_parameters, audio_timebase) = sdp_media_to_s(AUDIO_MEDIA, sdp_media);
 
-        sf = r_storage_file("ten_mb_file");
-        ctx = sf.create_write_context(video_codec_name, video_codec_parameters, audio_codec_name, audio_codec_parameters);
+        sf = make_shared<r_storage_file>("ten_mb_file");
+        ctx = sf->create_write_context(video_codec_name, video_codec_parameters, audio_codec_name, audio_codec_parameters);
     });
 
     double framerate = 0.0;
@@ -756,7 +761,7 @@ void test_r_storage::test_r_storage_file_fake_camera()
     src.set_video_sample_cb(
         [&](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
             auto mi = buffer.map(r_gst_buffer::MT_READ);
-            sf.write_frame(
+            sf->write_frame(
                 ctx,
                 R_STORAGE_MEDIA_TYPE_VIDEO,
                 mi.data(),
@@ -776,10 +781,13 @@ void test_r_storage::test_r_storage_file_fake_camera()
 
     fc->quit();
 
-    sf.finalize(ctx);
+    sf->finalize(ctx);
 
-    auto kfst = sf.key_frame_start_times(R_STORAGE_MEDIA_TYPE_ALL);
-    auto result = sf.query(R_STORAGE_MEDIA_TYPE_ALL, kfst.front(), kfst.back());
+    shared_ptr<r_storage_file_reader> sfr = make_shared<r_storage_file_reader>("ten_mb_file");
+
+
+    auto kfst = sfr->key_frame_start_times(R_STORAGE_MEDIA_TYPE_ALL);
+    auto result = sfr->query(R_STORAGE_MEDIA_TYPE_ALL, kfst.front(), kfst.back());
 
     uint32_t version = 0;
     auto bt = r_blob_tree::deserialize(&result[0], result.size(), version);
@@ -820,7 +828,6 @@ void test_r_storage::test_r_storage_file_fake_camera()
     }
 
     muxer.finalize();
-
 }
 
 int64_t bits_to_bytes_per_second(int64_t bits_per_second)

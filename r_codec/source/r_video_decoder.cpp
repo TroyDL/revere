@@ -9,6 +9,8 @@ using namespace r_utils;
 using namespace r_utils::r_std_utils;
 using namespace std;
 
+static const uint8_t READ_PADDING = 32;
+
 static string _ff_rc_to_msg(int rc)
 {
     char msg_buffer[1024];
@@ -140,17 +142,17 @@ void r_video_decoder::set_extradata(const vector<uint8_t>& ed)
         _context->extradata_size = 0;
     }
 
-    _context->extradata = (uint8_t*)av_malloc(ed.size());
+    _context->extradata = (uint8_t*)av_malloc(ed.size() + READ_PADDING);
     _context->extradata_size = ed.size();
     memcpy(_context->extradata, ed.data(), ed.size());
 }
 
 void r_video_decoder::attach_buffer(const uint8_t* data, size_t size)
 {
-    _buffer.resize(size);
+    _buffer.resize(size + READ_PADDING);
     memcpy(_buffer.data(), data, size);
     _pos = _buffer.data();
-    _remaining_size = _buffer.size();
+    _remaining_size = size;
 }
 
 r_codec_state r_video_decoder::decode()

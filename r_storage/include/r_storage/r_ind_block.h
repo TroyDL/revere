@@ -96,7 +96,7 @@ public:
 
         r_ind_block_info operator*() const
         {
-            uint32_t block_offset = *(uint32_t*)(_index_start + (_pos*INDEX_ENTRY_SIZE) + 4);
+            uint32_t block_offset = *(uint32_t*)(_index_start + ((_pos*INDEX_ENTRY_SIZE) + sizeof(uint32_t)));
             uint8_t* block = _start + block_offset;
 
             // [uint8_t stream_id][uint8_t flags][uint32_t block_size][uint8_t block[]]
@@ -201,7 +201,7 @@ public:
 
     bool fits(size_t size) const;
 
-    void append(const uint8_t* data, size_t size, uint8_t stream_id, uint8_t flags, int64_t ts);
+    void append(const uint8_t* data, size_t size, uint8_t stream_id, int64_t ts);
 
     iterator begin() const
     {

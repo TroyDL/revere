@@ -46,7 +46,7 @@ public:
 
     r_memory_map(
         int fd,
-        uint32_t offset,
+        int64_t offset,
         uint32_t len,
         uint32_t prot,
         uint32_t flags
@@ -105,9 +105,14 @@ public:
         return _length;
     }
 
-    void advise( void* addr, size_t length, int advice ) const;
+    inline bool mapped() const
+    {
+        return _mem != nullptr;
+    }
 
-    void flush( void* addr, size_t length, bool now );
+    void advise(int advice, void* addr = nullptr, size_t length = 0) const;
+
+    void flush(void* addr = nullptr, size_t length = 0, bool now = true);
 
 private:
     void _clear() noexcept;

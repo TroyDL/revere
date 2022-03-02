@@ -360,7 +360,7 @@ vector<uint8_t> r_utils::r_string_utils::from_base64(const std::string str)
     // This buffer size is an upper bound.
     // This value can be: N, N+1 or N+2,
     // where N is the length of the raw data.
-    size_t bufferSize = ((3 * str.size()) / 4);
+    size_t bufferSize = ((4 * str.size() / 3) + 3) & ~3;
 
     // Allocate some memory
     vector<uint8_t> destBuffer(bufferSize);

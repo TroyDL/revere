@@ -24,7 +24,7 @@ r_memory_map::r_memory_map() :
 
 r_memory_map::r_memory_map(
     int fd,
-    uint32_t offset,
+    int64_t offset,
     uint32_t len,
     uint32_t prot,
     uint32_t flags
@@ -89,6 +89,9 @@ r_memory_map::r_memory_map(
                  _GetPosixAccessFlags( flags ),
                  fd,
                  offset );
+
+    if(_mem == MAP_FAILED)
+        R_THROW(( "Unable to complete file mapping"));
 #endif
 }
 
@@ -97,27 +100,27 @@ r_memory_map::~r_memory_map() noexcept
     _clear();
 }
 
-void r_memory_map::advise( void* addr, size_t length, int advice ) const
+void r_memory_map::advise(int advice, void* addr, size_t length) const
 {
 #ifndef IS_WINDOWS
     int posixAdvice = _GetPosixAdvice( advice );
 
-    int err = madvise( addr, length, posixAdvice );
+    int err = madvise( (addr)?addr:_mem, (length>0)?length:_length, posixAdvice );
 
     if( err != 0 )
         R_THROW(( "Unable to apply memory mapping advice." ));
 #endif
 }
 
-void r_memory_map::flush( void* addr, size_t length, bool now )
+void r_memory_map::flush(void* addr, size_t length, bool now)
 {
 #ifndef IS_WINDOWS
-    int err = msync( addr, length, (now) ? MS_SYNC : MS_ASYNC );
+    int err = msync( (addr)?addr:_mem, (length>0)?length:_length, (now) ? MS_SYNC : MS_ASYNC );
 
     if( err != 0 )
         R_THROW(("Unable to sync memory mapped file."));
 #else
-    if( !FlushViewOfFile( addr, length ) )
+    if( !FlushViewOfFile( (addr)?addr:_mem, (length>0)?length:_length ) )
         R_THROW(("Unable to sync memory mapped file."));
 
     if( now )

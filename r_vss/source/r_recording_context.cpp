@@ -75,37 +75,35 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     _source.set_args(arguments);
 
     _source.set_audio_sample_cb([this](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
-        // Record the frame...
 
+        lock_guard<mutex> g(this->_sample_write_lock);
+
+        if(!this->_got_first_audio_sample)
         {
-            if(!this->_got_first_audio_sample)
-            {
-                this->_got_first_audio_sample = true;
-                _final_storage_writer_audio_config(sc);
-            }
-
-            _last_a_time = system_clock::now();
-            auto mi = buffer.map(r_gst_buffer::MT_READ);
-            _a_bytes_received += mi.size();
-            lock_guard<mutex> g(this->_sample_write_lock);
-            if(this->_audio_caps.is_null())
-            {
-                this->_audio_caps = _source.get_audio_caps();
-                if(!this->_video_caps.is_null())
-                    this->_sk->add_restream_mount(_sdp_medias, _camera, this);
-            }
-
-            auto ts = sc.stream_start_ts() + pts;
-            this->_storage_file.write_frame(
-                this->_storage_write_context,
-                R_STORAGE_MEDIA_TYPE_AUDIO,
-                mi.data(),
-                mi.size(),
-                key,
-                ts,
-                pts
-            );
+            this->_got_first_audio_sample = true;
+            _final_storage_writer_audio_config(sc);
         }
+
+        _last_a_time = system_clock::now();
+        auto mi = buffer.map(r_gst_buffer::MT_READ);
+        _a_bytes_received += mi.size();
+        if(this->_audio_caps.is_null())
+        {
+            this->_audio_caps = _source.get_audio_caps();
+            if(!this->_video_caps.is_null())
+                this->_sk->add_restream_mount(_sdp_medias, _camera, this);
+        }
+
+        auto ts = sc.stream_start_ts() + pts;
+        this->_storage_file.write_frame(
+            this->_storage_write_context,
+            R_STORAGE_MEDIA_TYPE_AUDIO,
+            mi.data(),
+            mi.size(),
+            key,
+            ts,
+            pts
+        );
 
         // and copy it into our audio queue for restreaming.
         if(this->_restreaming)
@@ -130,45 +128,45 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
     });
 
     _source.set_video_sample_cb([this](const sample_context& sc, const r_gst_buffer& buffer, bool key, int64_t pts){
+
+        lock_guard<mutex> g(this->_sample_write_lock);
+
+        if(!this->_got_first_video_sample)
         {
-            if(!this->_got_first_video_sample)
-            {
-                this->_got_first_video_sample = true;
-                _final_storage_writer_video_config(sc);
-            }
+            this->_got_first_video_sample = true;
+            _final_storage_writer_video_config(sc);
+        }
 
-            _last_v_time = system_clock::now();
-            auto mi = buffer.map(r_gst_buffer::MT_READ);
-            _v_bytes_received += mi.size();
-            lock_guard<mutex> g(this->_sample_write_lock);
-            if(this->_video_caps.is_null())
-            {
-                this->_video_caps = _source.get_video_caps();
-                if(!this->_has_audio || !this->_audio_caps.is_null())
-                    this->_sk->add_restream_mount(_sdp_medias, _camera, this);
-            }
+        _last_v_time = system_clock::now();
+        auto mi = buffer.map(r_gst_buffer::MT_READ);
+        _v_bytes_received += mi.size();
+        if(this->_video_caps.is_null())
+        {
+            this->_video_caps = _source.get_video_caps();
+            if(!this->_has_audio || !this->_audio_caps.is_null())
+                this->_sk->add_restream_mount(_sdp_medias, _camera, this);
+        }
 
-            auto ts = sc.stream_start_ts() + pts;
-            this->_storage_file.write_frame(
-                this->_storage_write_context,
-                R_STORAGE_MEDIA_TYPE_VIDEO,
-                mi.data(),
-                mi.size(),
-                key,
+        auto ts = sc.stream_start_ts() + pts;
+        this->_storage_file.write_frame(
+            this->_storage_write_context,
+            R_STORAGE_MEDIA_TYPE_VIDEO,
+            mi.data(),
+            mi.size(),
+            key,
+            ts,
+            pts
+        );
+
+        if(key || GST_BUFFER_FLAG_IS_SET(buffer.get(), GST_BUFFER_FLAG_NON_DROPPABLE))
+        {
+            this->_sk->post_key_frame_to_motion_engine(
+                buffer,
                 ts,
-                pts
+                this->_storage_write_context.video_codec_name,
+                this->_storage_write_context.video_codec_parameters,
+                this->_camera.id
             );
-
-            if(key || GST_BUFFER_FLAG_IS_SET(buffer.get(), GST_BUFFER_FLAG_NON_DROPPABLE))
-            {
-                this->_sk->post_key_frame_to_motion_engine(
-                    buffer,
-                    ts,
-                    this->_storage_write_context.video_codec_name,
-                    this->_storage_write_context.video_codec_parameters,
-                    this->_camera.id
-                );
-            }
         }
 
         if(this->_restreaming)

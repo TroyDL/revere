@@ -159,9 +159,9 @@ MainWindow::~MainWindow()
     _cameraUIUpdateTimer->stop();
     delete _cameraUIUpdateTimer;
 
+    _streamKeeper.stop();
     _agent.stop();
     _devices.stop();
-    _streamKeeper.stop();
 
     _trayIcon->setVisible(false);
     delete _trayIcon;

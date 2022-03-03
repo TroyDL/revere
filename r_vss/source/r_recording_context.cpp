@@ -215,7 +215,7 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
 
 r_recording_context::~r_recording_context() noexcept
 {
-    _source.stop();
+    stop();
 }
 
 bool r_recording_context::dead() const
@@ -277,6 +277,13 @@ void r_recording_context::restream_media_configure(GstRTSPMediaFactory* factory,
 
         g_signal_connect(_a_appsrc, "need-data", (GCallback)r_recording_context::_need_data, this);
     }
+}
+
+void r_recording_context::stop()
+{
+    _source.stop();
+
+    this->_storage_file.finalize(this->_storage_write_context);
 }
 
 void r_recording_context::_need_data(GstElement* appsrc, guint unused, r_recording_context* rc)

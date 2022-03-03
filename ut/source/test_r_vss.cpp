@@ -40,8 +40,8 @@ static void _whack_files()
     if(r_fs::file_exists("top_dir"))
         r_fs::rmdir("top_dir");
 
-//    if(r_fs::file_exists("output_true_north.mp4"))
-//        r_fs::remove_file("output_true_north.mp4");
+    if(r_fs::file_exists("output_true_north.mov"))
+        r_fs::remove_file("output_true_north.mov");
 }
 
 void test_r_vss::setup()
@@ -139,7 +139,7 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
 
     // create an output mp4 file for our audio + video
 
-    r_muxer muxer("output_true_north.mp4");
+    r_muxer muxer("output_true_north.mov");
 
     muxer.add_video_stream(
         av_d2q(23.9760, 10000),
@@ -185,7 +185,7 @@ void test_r_vss::test_r_stream_keeper_basic_recording()
 
     // Finally, use a demuxer to verify our output file...
 
-    r_demuxer demuxer("output_true_north.mp4");
+    r_demuxer demuxer("output_true_north.mov");
 
     RTF_ASSERT(demuxer.get_stream_count() == 2);
 

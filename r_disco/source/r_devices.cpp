@@ -264,6 +264,8 @@ void r_devices::_create_db(const std::string& top_dir) const
             "record_file_path TEXT, "
             "n_record_file_blocks INTEGER, "
             "record_file_block_size INTEGER, "
+            "do_motion_detection INTEGER, "
+            "motion_detection_file_path TEXT, "
             "stream_config_hash TEXT"
         ");"
     );
@@ -306,6 +308,8 @@ r_sqlite_conn r_devices::_open_or_create_db(const string& top_dir) const
             "record_file_path TEXT, "
             "n_record_file_blocks INTEGER, "
             "record_file_block_size INTEGER, "
+            "do_motion_detection INTEGER, "
+            "motion_detection_file_path TEXT, "
             "stream_config_hash TEXT"
         ");"
     );
@@ -469,6 +473,12 @@ r_camera r_devices::_create_camera(const map<string, r_nullable<string>>& row) c
         camera.n_record_file_blocks = s_to_int(row.at("n_record_file_blocks").value());
     if(!row.at("record_file_block_size").is_null())
         camera.record_file_block_size = s_to_int(row.at("record_file_block_size").value());
+    if(!row.at("do_motion_detection").is_null())
+        camera.do_motion_detection = (s_to_int(row.at("do_motion_detection").value()) == 1)?true:false;
+    else camera.do_motion_detection = false;
+    if(!row.at("motion_detection_file_path").is_null())
+        camera.motion_detection_file_path = row.at("motion_detection_file_path").value();
+
     camera.stream_config_hash = row.at("stream_config_hash").value();
     return camera;
 }
@@ -545,8 +555,10 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
 
     auto query = r_string_utils::format(
             "REPLACE INTO cameras("
-                "id, %s%s%s%s%s%s%s%s%s%s%s%s%s%sstate, %s%s%sstream_config_hash) "
+                "id, %s%s%s%s%s%s%s%s%s%s%s%s%s%sstate, %s%s%s%s%sstream_config_hash) "
             "VALUES("
+                "%s"
+                "%s"
                 "%s"
                 "%s"
                 "%s"
@@ -585,6 +597,8 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             (!camera.record_file_path.is_null())?"record_file_path, ":"",
             (!camera.n_record_file_blocks.is_null())?"n_record_file_blocks, ":"",
             (!camera.record_file_block_size.is_null())?"record_file_block_size, ":"",
+            (!camera.do_motion_detection.is_null())?"do_motion_detection, ":"",
+            (!camera.motion_detection_file_path.is_null())?"motion_detection_file_path, ":"",
 
             r_string_utils::format("'%s', ", camera.id.c_str()).c_str(),
             (!camera.camera_name.is_null())?r_string_utils::format("'%s', ", camera.camera_name.value().c_str()).c_str():"",
@@ -605,6 +619,8 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             (!camera.record_file_path.is_null())?r_string_utils::format("'%s', ", camera.record_file_path.value().c_str()).c_str():"",
             (!camera.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", camera.n_record_file_blocks.value()).c_str():"",
             (!camera.record_file_block_size.is_null())?r_string_utils::format("%d, ", camera.record_file_block_size.value()).c_str():"",
+            (!camera.do_motion_detection.is_null())?r_string_utils::format("%d, ", (camera.do_motion_detection.value()==true)?1:0).c_str():"",
+            (!camera.motion_detection_file_path.is_null())?r_string_utils::format("%d, ", camera.motion_detection_file_path.value()).c_str():"",
             r_string_utils::format("'%s'", hash.c_str()).c_str()
         );
 

@@ -108,7 +108,9 @@ void r_storage_file::write_frame(const r_storage_write_context& ctx, r_storage_m
                 // and multiply that number by the indexes per second. That is approx how many indexes we need per
                 // ind block.
 
-                _current_block = _initialize_ind_block(ctx, _block_index.insert(g.ts), g.ts, 2000);
+                auto blk_idx = _block_index.insert(g.ts);
+
+                _current_block = _initialize_ind_block(ctx, blk_idx, g.ts, 2000);
             }
 
             _current_block->append(g.data.data(), g.data.size(), g.media_type, g.ts);
@@ -241,7 +243,7 @@ r_storage_file::_storage_file_header r_storage_file::_read_header(const std::str
 
 shared_ptr<r_memory_map> r_storage_file::_map_block(uint16_t block)
 {
-    if(block >= _h.num_blocks)
+    if(block > _h.num_blocks)
         R_THROW(("Invalid block index."));
 
     return make_shared<r_memory_map>(

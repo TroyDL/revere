@@ -300,7 +300,7 @@ void r_storage_file_reader::_visit_ind_block(r_storage_media_type media_type, in
 
 shared_ptr<r_memory_map> r_storage_file_reader::_map_block(uint16_t block)
 {
-    if(block >= _h.num_blocks)
+    if(block > _h.num_blocks)
         R_THROW(("Invalid block index."));
 
     return make_shared<r_memory_map>(

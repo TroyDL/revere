@@ -56,6 +56,8 @@ static void _whack_files()
         r_fs::remove_file("test_file");
     if(r_fs::file_exists("ten_mb_file"))
         r_fs::remove_file("ten_mb_file");
+    if(r_fs::file_exists("output.mp4"))
+        r_fs::remove_file("output.mp4");
 }
 
 void test_r_storage::setup()
@@ -81,6 +83,70 @@ static int _random()
     return random();
 #endif
 }
+
+#if 0
+void r_ind_block::validate_block()
+{
+    uint8_t* rd = _start;
+    uint32_t n_valid_entries = *(uint32_t*)rd;
+    rd += sizeof(uint32_t);
+    if(n_valid_entries > 2000)
+        R_THROW(("Too many valid entries in block: %d", n_valid_entries));
+    uint32_t n_entries = *(uint32_t*)rd;
+    rd += sizeof(uint32_t);
+    if(n_entries > 2000)
+        R_THROW(("Too many entries in block: %d", n_valid_entries));
+    int64_t base_time = *(int64_t*)rd;
+    rd += sizeof(int64_t);
+//    if(base_time < (1646049942000 - 432000000) || base_time > (1646049942000 + 432000000))
+//        R_THROW(("Invalid base time: %ld", base_time));
+    char msg[2048];
+    memcpy(msg, rd, 16);
+    string vcn((char*)&msg[0]);
+    rd += 16;
+    if(vcn.length() > 16)
+        R_THROW(("Invalid vcn: %s", vcn.c_str()));
+    memcpy(msg, rd, 2048);
+    string vcp((char*)&msg[0]);
+    rd += 2048;
+    if(vcp.length() > 2048)
+        R_THROW(("Invalid vcp: %s", vcp.c_str()));
+    memcpy(msg, rd, 16);
+    string acn((char*)&msg[0]);
+    rd += 16;
+    if(acn.length() > 16)
+        R_THROW(("Invalid acn: %s", acn.c_str()));
+    memcpy(msg, rd, 2048);
+    string acp((char*)&msg[0]);
+    rd += 2048;
+    if(acp.length() > 2048)
+        R_THROW(("Invalid acp: %s", acp.c_str()));
+
+    for(uint32_t i = 0; i < n_valid_entries; i++)
+    {
+        uint32_t time = *(uint32_t*)rd;
+        rd += sizeof(uint32_t);
+        if(time > 86400000)
+            R_THROW(("%u Invalid time: %d", i, time));
+
+        uint32_t offset = *(uint32_t*)rd;
+        rd += sizeof(uint32_t);
+        if(offset > _size)
+            R_THROW(("%u Invalid offset: %d", i, offset));
+
+        uint8_t* block = _start + offset;
+        uint8_t stream_id = *block;
+        if(stream_id > 1)
+            R_THROW(("%u Invalid stream id: %d", i, stream_id));
+        uint32_t block_size = *(uint32_t*)(block + 1);
+        if(block+block_size > _start + _size)
+            R_THROW(("%u Invalid block size: %d", i, block_size));
+    }
+
+    printf("BLOCK VALID!\n");
+    fflush(stdout);
+}
+#endif
 
 void test_r_storage::test_r_dumbdex_writing()
 {

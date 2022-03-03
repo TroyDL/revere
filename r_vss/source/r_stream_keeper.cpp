@@ -98,6 +98,11 @@ void r_stream_keeper::stop()
     if(!_running)
         R_THROW(("Cannot stop stream keeper if its not running!"));
 
+    for(auto& s : _streams)
+        s.second->stop();
+
+    _motionEngine.stop();
+
     _running = false;
 
     g_main_loop_quit(_loop);

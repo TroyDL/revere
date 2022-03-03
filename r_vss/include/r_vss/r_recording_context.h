@@ -44,6 +44,8 @@ public:
 
     void restream_media_configure(GstRTSPMediaFactory* factory, GstRTSPMedia* media);
 
+    void stop();
+
 private:
     struct _frame_context
     {

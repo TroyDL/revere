@@ -8,6 +8,7 @@
 #include "r_storage/r_storage_file.h"
 #include "r_storage/r_storage_file_reader.h"
 #include "r_storage/r_rel_block.h"
+#include "r_storage/r_ring.h"
 #include "r_utils/r_exception.h"
 #include "r_utils/r_algorithms.h"
 #include "r_utils/r_file.h"
@@ -58,6 +59,8 @@ static void _whack_files()
         r_fs::remove_file("ten_mb_file");
     if(r_fs::file_exists("output.mp4"))
         r_fs::remove_file("output.mp4");
+    if(r_fs::file_exists("ring_buffer"))
+        r_fs::remove_file("ring_buffer");
 }
 
 void test_r_storage::setup()
@@ -922,4 +925,51 @@ void test_r_storage::test_r_storage_file_human_readable_file_size()
 
     sz = r_storage_file::human_readable_file_size(1023);
     RTF_ASSERT(sz == "1023.00 bytes");
+}
+
+void test_r_storage::test_r_ring_basic()
+{
+    r_ring::allocate("ring_buffer", 1, 10);
+
+    r_ring r("ring_buffer", 1);
+
+    for(uint8_t i = 0; i < 10; ++i)
+    {
+        r.write(&i);
+        rtf_usleep(1000000);
+    }
+
+    auto now = system_clock::now();
+
+    uint64_t sum = 0;
+    r.query(now-seconds(10), now, [&sum](const uint8_t* p){sum += *p;});
+
+    RTF_ASSERT(sum == 45);
+
+    // At this point, the r_ring is full. Further writes will wrap.
+
+    for(uint8_t i = 10; i < 15; ++i)
+    {
+        r.write(&i);
+        rtf_usleep(1000000);
+    }
+
+    now = system_clock::now();
+
+    sum = 0;
+    r.query(now-seconds(10), now, [&sum](const uint8_t* p){sum += *p;});
+
+    RTF_ASSERT(sum == 95);
+
+    // Now, sleeping for 10 seconds and then writing 42 should result in a zero fill for all of the
+    // remaining slots.
+    rtf_usleep(10000000);
+
+    uint8_t val = 42;
+    r.write(&val);
+
+    sum = 0;
+    r.query(now-seconds(10), now, [&sum](const uint8_t* p){sum += *p;});
+
+    RTF_ASSERT(sum == 42);
 }

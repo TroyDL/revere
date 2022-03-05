@@ -12,7 +12,7 @@ using namespace std;
 
 r_storage_file::r_storage_file(const string& file_name) :
     _file(r_file::open(file_name, "r+")),
-    _file_lock(fileno(_file)),
+    _file_lock(r_fs::fileno(_file)),
     _h(_read_header(file_name)),
     _dumbdex_map(_map_block(0)),
     _block_index(file_name, (uint8_t*)_dumbdex_map->map() + R_STORAGE_FILE_HEADER_SIZE, _h.num_blocks),
@@ -177,12 +177,7 @@ void r_storage_file::allocate(const std::string& file_name, size_t block_size, s
             throw std::runtime_error("dumbdex: unable to open dumbdex file.");
 
         r_memory_map mm(
-#ifdef IS_LINUX
-            fileno(f.get()),
-#endif
-#ifdef IS_WINDOWS
-            _fileno(f.get()),
-#endif
+            r_fs::fileno(f.get()),
             0,
             (uint32_t)block_size,
             r_memory_map::RMM_PROT_READ | r_memory_map::RMM_PROT_WRITE,
@@ -247,12 +242,7 @@ shared_ptr<r_memory_map> r_storage_file::_map_block(uint16_t block)
         R_THROW(("Invalid block index."));
 
     return make_shared<r_memory_map>(
-#ifdef IS_WINDOWS
-        _fileno(_file),
-#endif
-#ifdef IS_LINUX
-        fileno(_file),
-#endif
+        r_fs::fileno(_file),
         ((int64_t)block) * ((int64_t)_h.block_size),
         _h.block_size,
         r_memory_map::RMM_PROT_READ | r_memory_map::RMM_PROT_WRITE,

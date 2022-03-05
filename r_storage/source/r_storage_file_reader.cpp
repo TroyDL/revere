@@ -15,7 +15,7 @@ using namespace std;
 
 r_storage_file_reader::r_storage_file_reader(const string& file_name) :
     _file(r_file::open(file_name, "r")),
-    _file_lock(fileno(_file)),
+    _file_lock(r_fs::fileno(_file)),
     _h(_read_header(file_name)),
     _dumbdex_map(_map_block(0)),
     _block_index(file_name, (uint8_t*)_dumbdex_map->map() + r_storage_file::R_STORAGE_FILE_HEADER_SIZE, _h.num_blocks)
@@ -304,12 +304,7 @@ shared_ptr<r_memory_map> r_storage_file_reader::_map_block(uint16_t block)
         R_THROW(("Invalid block index."));
 
     return make_shared<r_memory_map>(
-#ifdef IS_WINDOWS
-        _fileno(_file),
-#endif
-#ifdef IS_LINUX
-        fileno(_file),
-#endif
+        r_fs::fileno(_file),
         ((int64_t)block) * ((int64_t)_h.block_size),
         _h.block_size,
         r_memory_map::RMM_PROT_READ,

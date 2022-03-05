@@ -11,6 +11,8 @@ add_library(
     source/r_storage_file.cpp
     include/r_storage/r_storage_file_reader.h
     source/r_storage_file_reader.cpp
+    include/r_storage/r_ring.h
+    source/r_ring.cpp
 )
 
 target_include_directories(

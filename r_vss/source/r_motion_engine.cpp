@@ -86,6 +86,34 @@ void r_motion_engine::_entry_point()
                         if(!maybe_motion_info.is_null())
                         {
                             auto motion_info = maybe_motion_info.value();
+
+                            // a motion event consists of 3 values:
+                            //     motion
+                            //     average motion at that moment
+                            //     running stddev
+                            //
+                            // motion is expressed as a uint8_t scalar value between 0 and 100 and it represents the amount of motion pixels on the screen.
+                            // average motion is a uint8_t scalar that is the current average of motion values.
+                            // running stddev is
+
+                            auto mq = (uint8_t)(((double)motion_info.motion / (double)(320 * 240))*100.0);
+                            auto amq = (uint8_t)(((double)motion_info.avg_motion / (double)(320 * 240))*100.0);
+                            auto stddev_fraq = ((double)motion_info.stddev / (double)(320 * 240));
+                            auto stddev_mq = (uint8_t)(stddev_fraq*100.0);
+
+                            //printf("RSD: %lu, stddev: %lu\n",((motion_info.stddev*100)/motion_info.avg_motion), motion_info.stddev);
+
+                            auto dmq = (mq > amq)?(mq-amq):0;
+                            auto threshold_mq = (uint8_t)((double)stddev_mq * 0.5);
+
+                            if(dmq > threshold_mq)
+                                printf("NMOTION\n");
+                            
+                            //printf("mq: %u, amq: %u, stddev_mq: %u, dmq: %u\n",mq,amq,stddev_mq,dmq);
+
+
+
+
                             auto delta = (motion_info.motion > motion_info.avg_motion)?motion_info.motion - motion_info.avg_motion:0;
 
                             auto threshold = (uint64_t)((double)motion_info.stddev * .5);

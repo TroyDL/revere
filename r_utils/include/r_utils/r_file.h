@@ -81,6 +81,8 @@ struct r_file_info
 };
 
 int stat(const std::string& fileName, struct r_file_info* fileInfo);
+uint64_t file_size(const std::string& fileName);
+int fileno(FILE* f);
 std::vector<uint8_t> read_file(const std::string& path);
 void write_file(const uint8_t* bytes, size_t len, const std::string& path);
 void atomic_rename_file(const std::string& oldPath, const std::string& newPath);

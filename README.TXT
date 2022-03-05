@@ -17,25 +17,16 @@ What exists
    - basic recording GUI
 
 TODO SOON
-   - Exports
-       - Support localtime or UTC Queries
-       - Use http chunked transfer encoding to support large files
    - Analytics
-       - Add r_camera flag "do_motion"
-       - Add r_camera "motion_sensitivity"
-           - 0.5 
-       - Need motion_processor thread
-           - Write to new motion.db
-             - create motion.db if not exists
-             - schema upgrades?
-             - write motion
-       - Analytic Storage
-           - We need 192 bytes to store 3 64 bit values (motion, avg_motion, stddev)
-           - If we store one of those per second then we need 192*86400=1,658,8800 bytes to store one day
-           - 1,658,000 * 30 (days) = 497,664,000
-           - When we do camera setup, lets ask if they want to do motion detection. If they do:
-               - divide the storage file size they choose by the byterate to get the number of seconds of retention they want
-               - multiply that number by 192, that is your motion db file size (+header).
+       - Add UI dialog for motion detection
+           - Maybe just a checkbox on an existing dialog do motion [x]
+           - set do_motion_detection and motion_detection_file_path on r_camera during camera setup
+           - Modify camera setup to finally create the r_ring motion file (if box was checked)
+           - Use the byterate + recording file size to estimate seconds of recording they need and then size the motion data buffer based on that.
+       - Modify recording_context to only send keys if r_camera::do_motion_detection is true
+       - Modify motion data to be 3 bytes (motion, avg_motion, stddev) plumb it through to motion engine
+       - Modify motion engine to actually write motion data to r_ring
+       - Implement motion event query mechanism
    - Viewer
        - Cross platform QT Viewer
        - CRAZY fast + tons of keyboard shortcuts + super minimal UI

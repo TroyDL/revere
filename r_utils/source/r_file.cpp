@@ -76,6 +76,25 @@ int r_utils::r_fs::stat(const string& file_name, struct r_file_info* file_info)
 #endif
 }
 
+uint64_t r_utils::r_fs::file_size(const std::string& fileName)
+{
+    struct r_file_info file_info;
+    int err = r_utils::r_fs::stat(fileName, &file_info);
+    if(err < 0)
+        R_STHROW(r_not_found_exception, ("Unable to stat: %s",fileName.c_str()));
+    return file_info.file_size;
+}
+
+int r_utils::r_fs::fileno(FILE* f)
+{
+#ifdef IS_WINDOWS
+    return _fileno(f);
+#endif
+#ifdef IS_LINUX
+    return ::fileno(f);
+#endif
+}
+
 vector<uint8_t> r_utils::r_fs::read_file(const string& path)
 {
     struct r_file_info fi;
@@ -162,10 +181,10 @@ bool r_utils::r_fs::is_dir(const string& path)
 int r_utils::r_fs::fallocate(FILE* file, uint64_t size)
 {
 #ifdef IS_WINDOWS
-    return ( _chsize_s( _fileno( file ), size ) == 0) ? 0 : -1;
+    return ( _chsize_s( r_fs::fileno( file ), size ) == 0) ? 0 : -1;
 #endif
 #ifdef IS_LINUX
-    return posix_fallocate64(fileno(file), 0, size);
+    return posix_fallocate64(r_fs::fileno(file), 0, size);
 #endif
 }
 

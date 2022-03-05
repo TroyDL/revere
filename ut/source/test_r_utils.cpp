@@ -28,13 +28,6 @@ using namespace r_utils;
 
 REGISTER_TEST_FIXTURE(test_r_utils);
 
-#ifdef IS_WINDOWS
-#define FILENO(a) _fileno(a)
-#endif
-#ifdef IS_LINUX
-#define FILENO(a) fileno(a)
-#endif
-
 void test_r_utils::setup()
 {
     r_raw_socket::socket_startup();
@@ -294,7 +287,7 @@ void test_r_utils::test_file_lock()
 
         int state = 42;
 
-        r_file_lock fileLock(FILENO(lockFile));
+        r_file_lock fileLock(r_fs::fileno(lockFile));
 
         thread t;
 
@@ -302,7 +295,7 @@ void test_r_utils::test_file_lock()
             r_file_lock_guard g(fileLock);
 
             t = thread([&](){
-                    r_file_lock newLock(FILENO(otherFile));
+                    r_file_lock newLock(r_fs::fileno(otherFile));
                     r_file_lock_guard g(newLock);
                     state = 43;
                 });
@@ -340,14 +333,14 @@ void test_r_utils::test_shared_file_lock()
         // But then we fire up two threads with a shared lock
 
         thread t1([&](){
-                r_file_lock newLock( FILENO( otherFileA ) );
+                r_file_lock newLock( r_fs::fileno( otherFileA ) );
                 r_file_lock_guard g( newLock, false );
                 ++state;
                 std::this_thread::sleep_for(std::chrono::microseconds(500000));
             });
 
         thread t2([&](){
-                r_file_lock newLock( FILENO( otherFileB ) );
+                r_file_lock newLock( r_fs::fileno( otherFileB ) );
                 r_file_lock_guard g( newLock, false );
                 ++state;
                 std::this_thread::sleep_for(std::chrono::microseconds(500000));
@@ -356,7 +349,7 @@ void test_r_utils::test_shared_file_lock()
         std::this_thread::sleep_for(std::chrono::microseconds(250000));
 
         {
-            r_file_lock newLock( FILENO( lockFile ) );
+            r_file_lock newLock( r_fs::fileno( lockFile ) );
             r_file_lock_guard g( newLock );
             // since the above shared locks must be let go before an exclusive can be acquired, then we know at this point
             // state should be 44.

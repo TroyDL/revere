@@ -968,6 +968,8 @@ void test_r_storage::test_r_ring_basic()
     uint8_t val = 42;
     r.write(&val);
 
+    now = system_clock::now();
+
     sum = 0;
     r.query(now-seconds(10), now, [&sum](const uint8_t* p){sum += *p;});
 

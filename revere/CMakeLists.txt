@@ -28,6 +28,9 @@ add_executable(
     source/newfilename.ui
     source/newfilename.h
     source/newfilename.cpp
+    source/motiondetection.ui
+    source/motiondetection.h
+    source/motiondetection.cpp
     source/ws.h
     source/ws.cpp
 )

@@ -158,7 +158,9 @@ r_recording_context::r_recording_context(r_stream_keeper* sk, const r_camera& ca
             pts
         );
 
-        if(key || GST_BUFFER_FLAG_IS_SET(buffer.get(), GST_BUFFER_FLAG_NON_DROPPABLE))
+        bool do_motion = (!this->_camera.do_motion_detection.is_null())?this->_camera.do_motion_detection.value():false;
+
+        if(do_motion && (key || GST_BUFFER_FLAG_IS_SET(buffer.get(), GST_BUFFER_FLAG_NON_DROPPABLE)))
         {
             this->_sk->post_key_frame_to_motion_engine(
                 buffer,

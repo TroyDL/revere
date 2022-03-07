@@ -9,7 +9,8 @@
 using namespace r_vss;
 using namespace std;
 
-r_motion_engine::r_motion_engine(const string& top_dir) :
+r_motion_engine::r_motion_engine(r_disco::r_devices& devices, const string& top_dir) :
+    _devices(devices),
     _top_dir(top_dir)
 {
 }
@@ -143,5 +144,16 @@ map<string, shared_ptr<r_work_context>>::iterator r_motion_engine::_create_work_
 {
     auto wc = make_shared<r_work_context>(r_mux::encoding_to_av_codec_id(item.video_codec_name));
     wc->video_decoder.set_extradata(r_pipeline::get_video_codec_extradata(item.video_codec_name, item.video_codec_parameters));
+
+    auto maybe_camera = _devices.get_camera_by_id(item.id);
+
+    if(maybe_camera.is_null())
+        R_THROW(("Motion engine unable to find camera with id: %s", item.id.c_str()));
+
+    wc->camera = maybe_camera.value();
+
+    // file should exist (under analytics?)
+    // create r_ring and assign it to the work context.
+
     return _work_contexts.insert(make_pair(item.id, wc)).first;
 }

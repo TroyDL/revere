@@ -5,6 +5,7 @@
 #include "r_pipeline/r_gst_source.h"
 #include "r_pipeline/r_stream_info.h"
 #include "r_storage/r_storage_file.h"
+#include "r_storage/r_ring.h"
 #include "r_utils/r_time_utils.h"
 #include "r_utils/r_file.h"
 #include "r_codec/r_video_decoder.h"
@@ -19,6 +20,7 @@
 #include <QPixmap>
 #include <QMenu>
 #include <QErrorMessage>
+#include <QRadioButton>
 #include <functional>
 #include <thread>
 
@@ -45,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     _newOrExisting(new NewOrExisting(this)),
     _pleaseWait(new PleaseWait(this)),
     _newFileName(new NewFileName(this)),
+    _motionDetection(new MotionDetection(this)),
     _assignmentState(),
     _ws(top_dir(), _devices)
 {
@@ -104,6 +107,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ok_button, SIGNAL(clicked()), this, SLOT(on_friendly_name_ok_clicked()));
     cancel_button = friendly_name_button_box->button(QDialogButtonBox::Cancel);
     connect(cancel_button, SIGNAL(clicked()), _friendlyName, SLOT(close()));
+
+    button_box = _motionDetection->findChild<QDialogButtonBox*>("buttonBox");
+    ok_button = button_box->button(QDialogButtonBox::Ok);
+    connect(ok_button, SIGNAL(clicked()), this, SLOT(on_motion_detection_ok_clicked()));
+    cancel_button = button_box->button(QDialogButtonBox::Cancel);
+    connect(cancel_button, SIGNAL(clicked()), _motionDetection, SLOT(close()));
 
     auto new_storage_button = _newOrExisting->findChild<QPushButton*>("newStorageButton");
     connect(new_storage_button, SIGNAL(clicked()), this, SLOT(on_new_storage_clicked()));
@@ -405,6 +414,17 @@ void MainWindow::on_friendly_name_ok_clicked()
 
     _friendlyName->hide();
 
+    _motionDetection->show();
+}
+
+void MainWindow::on_motion_detection_ok_clicked()
+{
+    _motionDetection->hide();
+
+    auto as = _assignmentState.value();
+    as.do_motion_detection = _motionDetection->findChild<QRadioButton*>("yes")->isChecked();
+    _assignmentState.set_value(as);
+
     _newOrExisting->show();
 }
 
@@ -417,6 +437,7 @@ void MainWindow::on_new_storage_clicked()
     _retention->findChild<QLineEdit*>("motionPercentageEstimate")->setText(QString("5"));
     _retention->findChild<QLabel*>("fileSizeLabel")->setText(QString());
     _retention->show();
+
     _update_retention_ui();
 }
 
@@ -438,15 +459,11 @@ void MainWindow::on_existing_storage_clicked()
 
     auto as = _assignmentState.value();
 
-    auto c = as.camera.value();
+    as.file_name = fileName;
 
-    c.rtsp_username = as.rtsp_username;
-    c.rtsp_password = as.rtsp_password;
-    c.friendly_name = as.camera_friendly_name;
-    c.record_file_path = fileName;
-    //c.n_record_file_blocks = as.num_storage_file_blocks;
-    //c.record_file_block_size = as.storage_file_block_size;
-    _devices.assign_camera(c);
+    _assign_camera(as);
+
+    _assignmentState.set_value(as);
 
     _update_list_ui();
 }
@@ -635,10 +652,10 @@ void MainWindow::_update_retention_ui()
 
     int64_t n_blocks = continuous_sz_info.first + (motionPercentage*(double)motion_sz_info.first);
 
-    as.num_storage_file_blocks = n_blocks;
-    as.storage_file_block_size = continuous_sz_info.second;
+    as.num_storage_file_blocks.set_value(n_blocks);
+    as.storage_file_block_size.set_value(continuous_sz_info.second);
 
-    auto human_readable_size = r_storage::r_storage_file::human_readable_file_size(as.num_storage_file_blocks * as.storage_file_block_size);
+    auto human_readable_size = r_storage::r_storage_file::human_readable_file_size(as.num_storage_file_blocks.value() * as.storage_file_block_size.value());
 
     auto fileSizeLabel = _retention->findChild<QLabel*>("fileSizeLabel");
 
@@ -671,19 +688,56 @@ void MainWindow::on_new_filename_ok_clicked()
         return;
     }
 
+    if(as.do_motion_detection)
+    {
+        auto dot_pos = fileName.find_last_of('.');
+        auto motion_file_name = (dot_pos == string::npos)?fileName+".mdb":fileName.substr(0, dot_pos)+".mdb";
+        auto motion_path = join_path(video_path, motion_file_name);
+
+        if(r_fs::file_exists(motion_path))
+        {
+            // There is a bug in Qt that causes this slot (on_new_filename_ok_clicked()) to fire twice if we
+            // pop this warning dialog. The solution is to block signals from the sending button while we pop
+            // the warning dialog.
+            QPushButton* sender = qobject_cast<QPushButton*>(QObject::sender());
+            sender->blockSignals(true);
+            QMessageBox::warning(this, "Motion File Exists", "File already exists. Please choose a different name.");
+            sender->blockSignals(false);
+            return;
+        }
+
+        as.motion_detection_file_path = motion_file_name;
+
+        r_storage::r_ring::allocate(motion_path, 3, 2592000);
+    }
+
     _newFileName->hide();
 
-    r_storage::r_storage_file::allocate(storage_path, as.storage_file_block_size, as.num_storage_file_blocks);
+    r_storage::r_storage_file::allocate(storage_path, as.storage_file_block_size.value(), as.num_storage_file_blocks.value());
 
-    c.rtsp_username = as.rtsp_username;
-    c.rtsp_password = as.rtsp_password;
-    c.friendly_name = as.camera_friendly_name;
-    c.record_file_path = fileName;
-    c.n_record_file_blocks = as.num_storage_file_blocks;
-    c.record_file_block_size = as.storage_file_block_size;
-    _devices.assign_camera(c);
+    as.file_name = fileName;
+
+    _assign_camera(as);
 
     _assignmentState.set_value(as);
 
     _update_list_ui();
+}
+
+void MainWindow::_assign_camera(const assignment_state& as)
+{
+    auto c = as.camera.value();
+
+    c.rtsp_username = as.rtsp_username;
+    c.rtsp_password = as.rtsp_password;
+    c.friendly_name = as.camera_friendly_name;
+    c.record_file_path = as.file_name;
+    if(!as.num_storage_file_blocks.is_null())
+        c.n_record_file_blocks = as.num_storage_file_blocks.value();
+    if(!as.storage_file_block_size.is_null())
+        c.record_file_block_size = as.storage_file_block_size.value();
+    c.do_motion_detection.set_value(as.do_motion_detection);
+    c.motion_detection_file_path.set_value(as.motion_detection_file_path);
+
+    _devices.assign_camera(c);
 }

@@ -18,11 +18,11 @@ class r_ring final
 public:
     r_ring(const std::string& path, size_t element_size);
     r_ring(const r_ring&) = delete;
-    r_ring(r_ring&& other) noexcept = delete;
+    r_ring(r_ring&& other) noexcept;
     ~r_ring() noexcept;
     
     r_ring& operator=(const r_ring&) = delete;
-    r_ring& operator=(r_ring&& other) noexcept = delete;
+    r_ring& operator=(r_ring&& other) noexcept;
 
     void write(const uint8_t* p);
 

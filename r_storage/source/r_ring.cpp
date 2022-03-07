@@ -38,8 +38,30 @@ r_ring::r_ring(const string& path, size_t element_size) :
 {
 }
 
+r_ring::r_ring(r_ring&& other) noexcept :
+    _file(move(other._file)),
+    _lock(move(other._lock)),
+    _element_size(other._element_size),
+    _file_size(other._file_size),
+    _map(move(other._map)),
+    _last_write_idx(other._last_write_idx)
+{
+}
+
 r_ring::~r_ring() noexcept
 {
+}
+
+r_ring& r_ring::operator=(r_ring&& other) noexcept
+{
+    _last_write_idx = other._last_write_idx;
+    _map = move(other._map);
+    _file_size = other._file_size;
+    _element_size = other._element_size;
+    _lock = move(other._lock);
+    _file = move(other._file);
+
+    return *this;
 }
 
 void r_ring::write(const uint8_t* p)

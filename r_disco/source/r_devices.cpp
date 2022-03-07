@@ -620,7 +620,7 @@ r_devices_cmd_result r_devices::_save_camera(const r_sqlite_conn& conn, const r_
             (!camera.n_record_file_blocks.is_null())?r_string_utils::format("%d, ", camera.n_record_file_blocks.value()).c_str():"",
             (!camera.record_file_block_size.is_null())?r_string_utils::format("%d, ", camera.record_file_block_size.value()).c_str():"",
             (!camera.do_motion_detection.is_null())?r_string_utils::format("%d, ", (camera.do_motion_detection.value()==true)?1:0).c_str():"",
-            (!camera.motion_detection_file_path.is_null())?r_string_utils::format("%d, ", camera.motion_detection_file_path.value()).c_str():"",
+            (!camera.motion_detection_file_path.is_null())?r_string_utils::format("'%s', ", camera.motion_detection_file_path.value().c_str()).c_str():"",
             r_string_utils::format("'%s'", hash.c_str()).c_str()
         );
 

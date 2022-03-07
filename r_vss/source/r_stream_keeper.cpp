@@ -45,7 +45,7 @@ r_stream_keeper::r_stream_keeper(r_devices& devices, const string& top_dir) :
     _server(gst_rtsp_onvif_server_new()),
     _mounts(nullptr),
     _factories(),
-    _motionEngine(top_dir)
+    _motionEngine(_devices, top_dir)
 {
     auto video_path = top_dir + r_fs::PATH_SLASH + "video";
 

@@ -461,6 +461,22 @@ void MainWindow::on_existing_storage_clicked()
 
     as.file_name = fileName;
 
+    // Generate an mdb path and see if it already exists. If it does, use it.
+    auto video_path = sub_dir("video");
+
+    auto dot_pos = fileName.find_last_of('.');
+
+    auto mdb_file_name = fileName.substr(0, dot_pos) + ".mdb";
+
+    auto mdb_path = join_path(video_path, mdb_file_name);
+
+    if(r_fs::file_exists(mdb_path))
+    {
+        as.do_motion_detection = true;
+        as.motion_detection_file_path = mdb_path;
+    }
+
+    // Finally, assign the camera.
     _assign_camera(as);
 
     _assignmentState.set_value(as);

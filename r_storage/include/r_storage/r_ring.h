@@ -24,7 +24,7 @@ public:
     r_ring& operator=(const r_ring&) = delete;
     r_ring& operator=(r_ring&& other) noexcept;
 
-    void write(const uint8_t* p);
+    void write(const std::chrono::system_clock::time_point& tp, const uint8_t* p);
 
     template<typename CB>
     void query(const std::chrono::system_clock::time_point& qs, const std::chrono::system_clock::time_point& qe, CB cb)

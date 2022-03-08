@@ -305,8 +305,8 @@ uint64_t r_motion::gray8_compute_motion(const r_image& a)
     {
         for(uint16_t w = 0; w < a.width; ++w)
         {
-            double diff = std::pow((double)(a.data[(h*a.width) + w]), 2.0);
-            sum += (uint16_t)diff;
+            uint8_t diff = a.data[(h*a.width) + w];
+            sum += diff;
         }
     }
 

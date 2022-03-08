@@ -9,11 +9,13 @@
 #include "r_disco/r_camera.h"
 #include "r_storage/r_storage_file.h"
 #include "r_storage/r_storage_file_reader.h"
+#include "r_storage/r_ring.h"
 #include "r_pipeline/r_stream_info.h"
 #include "r_mux/r_muxer.h"
 #include "r_codec/r_video_decoder.h"
 #include "r_codec/r_video_encoder.h"
 #include <functional>
+#include <array>
 
 using namespace r_utils;
 using namespace r_http;
@@ -37,6 +39,7 @@ ws::ws(const string& top_dir, r_devices& devices) :
     _server.add_route(METHOD_GET, "/contents", std::bind(&ws::_get_contents, this, _1, _2, _3));
     _server.add_route(METHOD_GET, "/cameras", std::bind(&ws::_get_cameras, this, _1, _2, _3));
     _server.add_route(METHOD_GET, "/export", std::bind(&ws::_get_export, this, _1, _2, _3));
+    _server.add_route(METHOD_GET, "/motions", std::bind(&ws::_get_motions, this, _1, _2, _3));
 
     _server.start();
 }
@@ -576,4 +579,80 @@ r_http::r_server_response ws::_get_export(const r_http::r_web_server<r_utils::r_
     }
 
     R_STHROW(r_http_500_exception, ("Failed to export."));
+}
+
+r_http::r_server_response ws::_get_motions(const r_http::r_web_server<r_utils::r_socket>& ws,
+                                           r_utils::r_buffered_socket<r_utils::r_socket>& conn,
+                                           const r_http::r_server_request& request)
+{
+    try
+    {    
+
+        auto args = request.get_uri().get_get_args();
+
+        auto maybe_camera = _devices.get_camera_by_id(args["camera_id"]);
+
+        if(maybe_camera.is_null())
+            R_THROW(("Unknown camera id."));
+
+        if(maybe_camera.value().motion_detection_file_path.is_null())
+            R_THROW(("Camera has no motion recording file!"));
+
+        auto motion_file_name = maybe_camera.value().motion_detection_file_path.value();
+
+        auto motion_path = _top_dir + r_fs::PATH_SLASH + "video" + r_fs::PATH_SLASH + motion_file_name;
+
+        if(!r_fs::file_exists(motion_path))
+            R_THROW(("Motion database file does not exist."));
+
+        r_ring r(motion_path, 3);
+
+        if(args.find("start_time") == args.end())
+            R_THROW(("Missing start_time."));
+
+        auto start_time_s = args["start_time"];
+
+        auto start_tp = r_time_utils::iso_8601_to_tp(start_time_s);
+
+        bool input_z_time = start_time_s.find("Z") != std::string::npos;
+
+        if(args.find("end_time") == args.end())
+            R_THROW(("Missing end_time."));
+        
+        auto end_time_s = args["end_time"];
+
+        auto end_tp = r_time_utils::iso_8601_to_tp(end_time_s);
+
+        json j;
+        j["motions"] = json::array();
+
+        size_t i = 0;
+        vector<array<uint8_t, 3>> motion_data;
+        r.query(
+            start_tp,
+            end_tp,
+            [&motion_data, &i, &j, start_tp, input_z_time](const uint8_t* p){
+                json j_motion;
+                j_motion["time"] = r_time_utils::tp_to_iso_8601(start_tp + seconds(i), input_z_time);
+                j_motion["motion"] = *p;
+                j_motion["avg_motion"] = *(p+1);
+                j_motion["stddev"] = *(p+2);
+
+                j["motions"].push_back(j_motion);
+
+                ++i;
+            }
+        );
+
+        r_server_response response;
+        response.set_content_type("text/json");
+        response.set_body(j.dump());
+        return response;
+    }
+    catch(const std::exception& ex)
+    {
+        R_LOG_ERROR("%s", ex.what());
+    }
+
+    R_STHROW(r_http_500_exception, ("Failed to query motions."));
 }

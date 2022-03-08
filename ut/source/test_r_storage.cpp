@@ -935,7 +935,7 @@ void test_r_storage::test_r_ring_basic()
 
     for(uint8_t i = 0; i < 10; ++i)
     {
-        r.write(&i);
+        r.write(system_clock::now(), &i);
         rtf_usleep(1000000);
     }
 
@@ -950,7 +950,7 @@ void test_r_storage::test_r_ring_basic()
 
     for(uint8_t i = 10; i < 15; ++i)
     {
-        r.write(&i);
+        r.write(system_clock::now(), &i);
         rtf_usleep(1000000);
     }
 
@@ -966,7 +966,7 @@ void test_r_storage::test_r_ring_basic()
     rtf_usleep(10000000);
 
     uint8_t val = 42;
-    r.write(&val);
+    r.write(system_clock::now(), &val);
 
     now = system_clock::now();
 

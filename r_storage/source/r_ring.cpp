@@ -64,13 +64,13 @@ r_ring& r_ring::operator=(r_ring&& other) noexcept
     return *this;
 }
 
-void r_ring::write(const uint8_t* p)
+void r_ring::write(const system_clock::time_point& tp, const uint8_t* p)
 {
     r_file_lock_guard g(_lock);
 
     auto n_elements = _n_elements();
 
-    auto unwrapped_idx = _unwrapped_idx(system_clock::now());
+    auto unwrapped_idx = _unwrapped_idx(tp);
 
     if(_last_write_idx != -1)
     {

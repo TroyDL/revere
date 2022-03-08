@@ -7,6 +7,7 @@
 #include "r_codec/r_video_decoder.h"
 #include "r_pipeline/r_gst_buffer.h"
 #include "r_disco/r_devices.h"
+#include "r_storage/r_ring.h"
 #include <vector>
 #include <map>
 #include <memory>
@@ -27,17 +28,28 @@ struct r_work_item
 struct r_work_context
 {
 public:
-    r_work_context(AVCodecID codec_id) :
-        motion_state(),
-        video_decoder(codec_id)
+    r_work_context(AVCodecID codec_id,
+                   const r_disco::r_camera& camera,
+                   const std::string& path,
+                   const std::vector<uint8_t> ed) :
+        _motion_state(),
+        _video_decoder(codec_id),
+        _camera(camera),
+        _ring(path, 3)
     {
+        _video_decoder.set_extradata(ed);
     }
     ~r_work_context() noexcept
     {
     }
-    r_motion::r_motion_state motion_state;
-    r_codec::r_video_decoder video_decoder;
-    r_disco::r_camera camera;
+    r_codec::r_video_decoder& decoder(){return _video_decoder;}
+    r_motion::r_motion_state& motion_state(){return _motion_state;}
+    r_storage::r_ring& ring(){return _ring;}
+private:
+    r_motion::r_motion_state _motion_state;
+    r_codec::r_video_decoder _video_decoder;
+    r_disco::r_camera _camera;
+    r_storage::r_ring _ring;
 };
 
 class r_motion_engine final

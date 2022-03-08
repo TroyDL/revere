@@ -57,6 +57,8 @@ r_onvif_session::~r_onvif_session()
 
 vector<r_onvif_discovery_info> r_onvif_session::discover()
 {
+    _uuid = r_string_utils::format("urn:uuid:%s", r_uuid::generate().c_str());
+
     vector<r_onvif_discovery_info> discovered;
 
     string broadcast_message;

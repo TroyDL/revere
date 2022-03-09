@@ -24,6 +24,10 @@ r_file_lock::r_file_lock(r_file_lock&& obj) noexcept :
 {
 }
 
+r_file_lock::~r_file_lock() noexcept
+{
+}
+
 r_file_lock& r_file_lock::operator=(r_file_lock&& obj) noexcept
 {
     _fd = std::move(obj._fd);

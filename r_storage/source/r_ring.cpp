@@ -33,7 +33,7 @@ r_ring::r_ring(const string& path, size_t element_size) :
     _lock(r_fs::fileno(_file)),
     _element_size(element_size),
     _file_size(r_fs::file_size(path)),
-    _map(r_fs::fileno(_file), 0, _file_size, r_memory_map::RMM_PROT_READ | r_memory_map::RMM_PROT_WRITE, r_memory_map::RMM_TYPE_FILE | r_memory_map::RMM_SHARED),
+    _map(r_fs::fileno(_file), 0, (uint32_t)_file_size, r_memory_map::RMM_PROT_READ | r_memory_map::RMM_PROT_WRITE, r_memory_map::RMM_TYPE_FILE | r_memory_map::RMM_SHARED),
     _last_write_idx(-1)
 {
 }

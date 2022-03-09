@@ -75,7 +75,9 @@ r_memory_map::r_memory_map(
         if( _mapHandle == 0 )
             R_THROW(( "Unable to create file mapping"));
 
-        _mem = MapViewOfFile( _mapHandle, accessFlags, 0, offset, len );
+        uint64_t ofs = (uint64_t)offset;
+
+        _mem = MapViewOfFile( _mapHandle, accessFlags, (DWORD)(ofs>>32), (DWORD)(ofs&0x00000000FFFFFFFF), len );
         if( _mem == NULL )
         {
             DWORD lastError = GetLastError();

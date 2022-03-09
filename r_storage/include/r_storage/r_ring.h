@@ -33,13 +33,13 @@ public:
         auto n_elements = _n_elements();
 
         auto now = std::chrono::system_clock::now();
-        auto now_et = std::chrono::system_clock::to_time_t(now);
+        std::time_t now_et = std::chrono::system_clock::to_time_t(now);
 
         if(qe <= qs)
             R_THROW(("invalid query"));
 
-        auto qs_et = std::chrono::system_clock::to_time_t(qs);
-        auto oldest_et = now_et - n_elements;
+        std::time_t qs_et = std::chrono::system_clock::to_time_t(qs);
+        std::time_t oldest_et = now_et - n_elements;
 
         if(qs_et < oldest_et)
             R_THROW(("query start time is too old"));

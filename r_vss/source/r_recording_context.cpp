@@ -243,7 +243,7 @@ r_camera r_recording_context::camera() const
 
 int32_t r_recording_context::bytes_per_second() const
 {
-    return (_v_bytes_received + _a_bytes_received) / duration_cast<seconds>(system_clock::now() - _stream_start_ts).count();
+    return (int32_t)((_v_bytes_received + _a_bytes_received) / duration_cast<seconds>(system_clock::now() - _stream_start_ts).count());
 }
 
 void r_recording_context::restream_media_configure(GstRTSPMediaFactory* factory, GstRTSPMedia* media)

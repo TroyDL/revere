@@ -29,6 +29,10 @@ add_executable(
     source/test_r_motion.cpp
 )
 
+if(MSVC)
+    target_link_options(revere_ut PUBLIC "/STACK:10000000")
+endif()
+
 target_include_directories(
     revere_ut PUBLIC 
     include
@@ -67,7 +71,6 @@ target_link_libraries(
     r_onvif
     r_codec
     r_motion
-    ${GLFW3_LIBRARY}
     ${GSTREAMER_LIBS}
     ${FFMPEG_LIBS}
 )

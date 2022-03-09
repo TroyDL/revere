@@ -323,7 +323,7 @@ void test_r_storage::test_r_dumbdex_size_methods()
 }
 
 void test_r_storage::test_r_ind_block_private_getters()
-{    
+{
     std::vector<uint8_t> buffer(8192);
 
     r_ind_block::initialize_block(&buffer[0], buffer.size(), 16, 123456789, "flv", "your mom", "voc", "your grandmom");

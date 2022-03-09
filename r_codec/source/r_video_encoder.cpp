@@ -13,9 +13,7 @@ static string _ff_rc_to_msg(int rc)
 {
     char msg_buffer[1024];
     if(av_strerror(rc, msg_buffer, 1024) < 0)
-    {
-        throw runtime_error("Unknown ff return code.");
-    }
+        R_THROW(("Unknown ff return code."));
     return string(msg_buffer);
 }
 

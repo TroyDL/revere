@@ -42,7 +42,7 @@ public:
     
     T standard_deviation() const
     {
-        return std::sqrt(variance());
+        return (T)std::sqrt(variance());
     }
 
 private:

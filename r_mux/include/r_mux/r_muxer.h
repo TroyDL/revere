@@ -21,6 +21,13 @@ extern "C"
 #include <libavutil/rational.h>
 }
 
+#ifdef IS_WINDOWS
+extern "C"
+{
+#include <libavcodec/bsf.h>
+}
+#endif
+
 namespace r_mux
 {
 

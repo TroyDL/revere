@@ -42,8 +42,6 @@ vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t>& t
         threshold = (deltas.size() > 2)?(int64_t)((accumulate(begin(deltas)+1, end(deltas), .0) / deltas.size()) * 1.5):0;
     }
 
-    printf("threshold: %ld\n", threshold);
-
     deque<int64_t> timesd;
     for (auto t : times) {
         timesd.push_back(t);

@@ -7,12 +7,13 @@ class test_r_utils_r_file_lock;
 namespace r_utils
 {
 
-class r_file_lock
+class r_file_lock final
 {
 public:
     r_file_lock(int fd=-1);
     r_file_lock(const r_file_lock&) = delete;
     r_file_lock( r_file_lock&& obj ) noexcept;
+    ~r_file_lock() noexcept;
 
     r_file_lock& operator=(const r_file_lock&) = delete;
     r_file_lock& operator=(r_file_lock&& obj) noexcept;

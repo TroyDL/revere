@@ -35,6 +35,10 @@ add_executable(
     source/ws.cpp
 )
 
+if(MSVC)
+    target_link_options(revere PUBLIC "/STACK:10000000")
+endif()
+
 target_include_directories(
     revere PUBLIC
     ../r_motion/include

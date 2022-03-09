@@ -475,7 +475,7 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
         }
         catch(const std::exception& e)
         {
-            R_LOG_NOTICE("Encountered unknown encoding: %s", encoding_name.c_str());
+            R_LOG_NOTICE("Encountered unknown encoding: %s %s", encoding_name.c_str(), e.what());
         }
 
         if(si.media == VIDEO_MEDIA)
@@ -518,7 +518,7 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
             r_nullable<int> clock_rate;
 
             int value;
-            if(gst_structure_get_int(new_pad_struct, "clock-rate", &value) == true)
+            if(gst_structure_get_int(new_pad_struct, "clock-rate", &value) == TRUE)
                 clock_rate.set_value(value);
 
             if(encoding == AAC_LATM_ENCODING)
@@ -885,7 +885,7 @@ GstFlowReturn r_gst_source::_new_video_sample(GstElement* elt, r_gst_source* src
 
         auto sample_pts = GST_BUFFER_PTS(buffer.get());
         bool has_pts = (sample_pts != GST_CLOCK_TIME_NONE);
-        bool sample_dts = GST_BUFFER_DTS(buffer.get());
+        auto sample_dts = GST_BUFFER_DTS(buffer.get());
         bool has_dts = (sample_dts != GST_CLOCK_TIME_NONE);
 
         // OK, this is kind of a workaround for a specific axis camera. Basically, we see an

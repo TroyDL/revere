@@ -3,12 +3,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 set(
     FFMPEG_INCLUDE_DIRS
-    deps/windows/ffmpeg/include
+    ../deps/windows/ffmpeg/include
 )
 
 set(
     FFMPEG_LIB_DIRS
-    deps/windows/ffmpeg/lib
+    ../deps/windows/ffmpeg/lib
 )
 
 set(

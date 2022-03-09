@@ -59,7 +59,7 @@ private:
     void _clear();
 
     AVCodecID _codec_id;
-    AVCodec* _codec;
+    const AVCodec* _codec;
     AVCodecContext* _context;
     AVCodecParserContext* _parser;
     bool _parse_input;

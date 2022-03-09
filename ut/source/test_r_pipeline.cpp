@@ -279,7 +279,6 @@ void test_r_pipeline::test_gst_source_pull_real()
     src.set_video_sample_cb(
         [&](const sample_context& ctx, const r_gst_buffer& buffer, bool key, int64_t pts){
             auto mi = buffer.map(r_gst_buffer::MT_READ);
-            printf("bframes pts = %ld, key = %s, size = %lu\n", pts, (key)?"true":"false", mi.size());
         }
     );
 

@@ -27,13 +27,9 @@ endif()
 include(Qt.cmake)
 include(GStreamer.cmake)
 include(FFmpeg.cmake)
+include(libxml2.cmake)
 
 find_package(Threads)
-find_package(LibXml2)
-
-#find_package(PkgConfig REQUIRED)
-#pkg_search_module(GLFW REQUIRED glfw3)
-#find_package(OpenGL REQUIRED)
 
 # Libraries
 #

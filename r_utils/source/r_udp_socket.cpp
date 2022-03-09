@@ -35,13 +35,24 @@ r_udp_socket& r_udp_socket::operator=(r_udp_socket&& obj) noexcept
 
 int r_udp_socket::sendto(const uint8_t* buffer, size_t size, r_socket_address& address)
 {
+#ifdef IS_WINDOWS
+    return ::sendto((SOK)_sok, (char*)buffer, (int)size, 0, address.get_sock_addr(), (int)address.sock_addr_size());
+#endif
+#ifdef IS_LINUX
     return ::sendto((SOK)_sok, buffer, size, 0, address.get_sock_addr(), address.sock_addr_size());
+#endif
 }
 
 int r_udp_socket::recvfrom(uint8_t* buffer, size_t size, r_socket_address& address)
 {
+#ifdef IS_WINDOWS
+    socklen_t addr_len = address.sock_addr_size();
+    return ::recvfrom((SOK)_sok, (char*)buffer, (int)size, 0, address.get_sock_addr(), &addr_len);
+#endif
+#ifdef IS_LINUX
     socklen_t addr_len = address.sock_addr_size();
     return ::recvfrom((SOK)_sok, buffer, size, 0, address.get_sock_addr(), &addr_len);
+#endif
 }
 
 void r_udp_socket::_clear() noexcept

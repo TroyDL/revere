@@ -10,9 +10,16 @@
 
 extern "C"
 {
-#include "libavformat/avformat.h"
-#include "libavcodec/avcodec.h"
+#include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
 }
+
+#ifdef IS_WINDOWS
+extern "C"
+{
+#include <libavcodec/bsf.h>
+}
+#endif
 
 namespace r_mux
 {

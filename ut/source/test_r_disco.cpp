@@ -82,13 +82,15 @@ void test_r_disco::test_r_disco_r_agent_start_stop()
     auto fct = thread([&](){
         fc->start();
     });
-    fct.detach();
 
     r_agent agent("top_dir");
     agent.start();
 
     this_thread::sleep_for(chrono::milliseconds(5000));
     agent.stop();
+
+    fc->quit();
+    fct.join();
 }
 
 vector<pair<r_stream_config, string>> _fake_stream_configs()

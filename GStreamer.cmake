@@ -3,14 +3,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 set(
     GSTREAMER_INCLUDE_DIRS
-    deps/windows/gstreamer/1.0/msvc_x86_64/include/gstreamer-1.0
-    deps/windows/gstreamer/1.0/msvc_x86_64/include/glib-2.0
-    deps/windows/gstreamer/1.0/msvc_x86_64/lib/glib-2.0/include
+    ../deps/windows/gstreamer/1.0/msvc_x86_64/include/gstreamer-1.0
+    ../deps/windows/gstreamer/1.0/msvc_x86_64/include/glib-2.0
+    ../deps/windows/gstreamer/1.0/msvc_x86_64/lib/glib-2.0/include
 )
 
 set(
     GSTREAMER_LIB_DIRS
-    deps/windows/gstreamer/1.0/msvc_x86_64/lib
+    ../deps/windows/gstreamer/1.0/msvc_x86_64/lib
 )
 
 set(

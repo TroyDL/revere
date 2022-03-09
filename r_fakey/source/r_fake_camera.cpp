@@ -82,7 +82,8 @@ void r_fake_camera::start() const
 
 void r_fake_camera::quit() const
 {
-    g_main_loop_quit(_loop);
+    if(g_main_loop_is_running(_loop))
+        g_main_loop_quit(_loop);
 }
 
 string r_fake_camera::make_data_uri(const string& type, const uint8_t* p, size_t len)
@@ -108,9 +109,9 @@ void r_fake_camera::_common_init(int rtsp_port)
 
 GstRTSPMediaFactory* r_fake_camera::_prep_factory(const string& file_name, const string& username, const string& password)
 {
-    auto si = _get_stream_info(_server_root + "/" + file_name);
+    auto si = _get_stream_info(_server_root + r_fs::PATH_SLASH + file_name);
 
-    auto media_file_name = _server_root + "/" + file_name;
+    auto media_file_name = (_server_root==".")?file_name:_server_root + r_fs::PATH_SLASH + file_name;
     auto launch = "multifilesrc location=" + media_file_name;
 
     if(r_string_utils::contains(file_name, ".mp4"))

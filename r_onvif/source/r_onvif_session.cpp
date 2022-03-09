@@ -1,3 +1,6 @@
+#ifdef IS_WINDOWS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
+#endif
 
 #include <string.h>
 #include <stdio.h>
@@ -23,7 +26,10 @@
     #include <winsock2.h>
     #include <wincrypt.h>
     #include <iphlpapi.h>
+    #include <io.h>
     #include <fcntl.h>
+    #include <stdio.h>
+    #include <time.h>
 #else
     #include <sys/socket.h>
     #include <arpa/inet.h>
@@ -52,7 +58,7 @@ r_onvif_session::r_onvif_session() :
 
 r_onvif_session::~r_onvif_session()
 {
-    xmlCleanupParser ();
+    xmlCleanupParser();
 }
 
 vector<r_onvif_discovery_info> r_onvif_session::discover()
@@ -200,7 +206,7 @@ string r_onvif_session::_get_discovery_xml() const
     xmlSetNs(types, ns_d);
     raii_ptr<xmlOutputBuffer> outputBuffer(xmlAllocOutputBuffer(NULL), xmlOutputBufferClose);
     xmlNodeDumpOutput(outputBuffer.get(), doc.get(), root, 0, 0, NULL);
-    int size = xmlOutputBufferGetSize(outputBuffer.get());
+    //int size = xmlOutputBufferGetSize(outputBuffer.get());
     string result((char*)xmlOutputBufferGetContent(outputBuffer.get()));
     xmlOutputBufferFlush(outputBuffer.get());
 
@@ -238,13 +244,13 @@ void r_onvif_session::_set_socket_options(
         }
         if (pIPAddrTable == NULL) {
             printf("Memory allocation failed for GetIpAddrTable\n");
-            return -1;
+            return;
         }
     }
 
     if ((dwRetVal = GetIpAddrTable(pIPAddrTable, &dwSize, 0)) != NO_ERROR) {
-        printf("GetIpAddrTable failed with error %d\n", dwRetVal);
-        return -1;
+        printf("GetIpAddrTable failed with error %lu\n", dwRetVal);
+        return;
     }
 
     int p = 0;
@@ -266,7 +272,7 @@ void r_onvif_session::_set_socket_options(
         pIPAddrTable = NULL;
     }
 
-    status = setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (const char *)&broadcast, sizeof(broadcast));
+    status = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&broadcast, sizeof(broadcast));
 #else
     status = setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval *)&tv, sizeof(struct timeval));
 #endif
@@ -447,11 +453,32 @@ int r_onvif_session::_get_time_offset(
         int is_dst = (dst_buf == "true") ? 1 : 0;
 
         time_t now = time(NULL);
+#ifdef IS_WINDOWS
+        struct tm utc_storage;
+        auto err = gmtime_s(&utc_storage, &now);
+        if(err != 0)
+            R_THROW(("Unable to get UTC time."));
+        struct tm* utc_here = &utc_storage;
+#endif
+#ifdef IS_LINUX
         struct tm *utc_here = gmtime(&now);
+        if(utc_here == NULL)
+            R_THROW(("Unable to get UTC time."));
+#endif
         utc_here->tm_isdst = -1;
         time_t utc_time_here = mktime(utc_here);
 
+#ifdef IS_WINDOWS
+        err = localtime_s(&utc_storage, &now);
+        if(err != 0)
+            R_THROW(("Unable to get UTC time."));
+        struct tm* utc_there = &utc_storage;
+#endif
+#ifdef IS_LINUX
         struct tm *utc_there = localtime(&now);
+        if(utc_there == NULL)
+            R_THROW(("Unable to get UTC time."));
+#endif
         utc_there->tm_year = stoi(year_buf) - 1900;
         utc_there->tm_mon = stoi(month_buf) - 1;
         utc_there->tm_mday = stoi(day_buf);
@@ -487,7 +514,7 @@ xmlDocPtr r_onvif_session::_send_command_to_camera(
 
     auto response_body = response.get_body_as_string();
  
-    return xmlParseMemory(response_body.c_str(), response_body.size());
+    return xmlParseMemory(response_body.c_str(), (int)response_body.size());
 }
 
 string r_onvif_session::_add_http_header(
@@ -499,23 +526,38 @@ string r_onvif_session::_add_http_header(
 {
     xmlOutputBufferPtr outputbuffer = xmlAllocOutputBuffer(NULL);
     xmlNodeDumpOutput(outputbuffer, doc, root, 0, 0, NULL);
-    int size = xmlOutputBufferGetSize(outputbuffer);
+    int size = (int)xmlOutputBufferGetSize(outputbuffer);
 
     char xml[8192] = {0};
     if (size > 8191) {
         fprintf(stderr, "xmlOutputBufferGetSize too big %d\n", size);
+#ifdef IS_WINDOWS
+        strncat_s(xml, 8192, (char*)xmlOutputBufferGetContent(outputbuffer), 8191);
+#endif
+#ifdef IS_LINUX
         strncat(xml, (char*)xmlOutputBufferGetContent(outputbuffer), 8191);
+#endif
     }
     else {
+#ifdef IS_WINDOWS
+        strcpy_s(xml, 8192, (char*)xmlOutputBufferGetContent(outputbuffer));
+#endif
+#ifdef IS_LINUX
         strcpy(xml, (char*)xmlOutputBufferGetContent(outputbuffer));
+#endif
     }
 
     xmlOutputBufferFlush(outputbuffer);
     xmlOutputBufferClose(outputbuffer);
 
     char c_xml_size[6];
+#ifdef IS_WINDOWS
+    sprintf_s(c_xml_size, 6, "%d", size);
+#endif
+#ifdef IS_LINUX
     sprintf(c_xml_size, "%d", size);
-    int xml_size_length = strlen(c_xml_size)+1;
+#endif
+    int xml_size_length = (int)strlen(c_xml_size)+1;
 
     string host, protocol, uri;
     int port;
@@ -536,8 +578,8 @@ string r_onvif_session::_add_http_header(
     http_terminate[3] = '\n';
     http_terminate[4] = '\0';
 
-    int p = post_type.size() + 1;
-    int h = host.size() + 1;
+    int p = (int)(post_type.size() + 1);
+    int h = (int)(host.size() + 1);
     int c = sizeof(content);
     int cl = sizeof(content_length);
     int cmd_size = p + c + h + cl + xml_size_length + size + 1;
@@ -711,7 +753,7 @@ void r_onvif_session::add_username_digest_header(
     time_t offset
 ) const
 {
-    srand (time(NULL));
+    srand((unsigned int)time(NULL));
 
 #ifdef _WIN32
     _setmode(0, O_BINARY);
@@ -723,7 +765,7 @@ void r_onvif_session::add_username_digest_header(
     char time_holder[1024] = {0};
     char digest_base64[1024] = {0};
 
-    for (int i=0; i<nonce_chunk_size; i++)
+    for (unsigned int i=0; i<nonce_chunk_size; i++)
         nonce_buffer[i] = (unsigned char)rand();
 
     unsigned char nonce_result[30];
@@ -731,24 +773,51 @@ void r_onvif_session::add_username_digest_header(
 
     auto b64_encoded = r_string_utils::to_base64(nonce_buffer, nonce_chunk_size);
     memcpy(nonce_result, b64_encoded.c_str(), b64_encoded.length());
+
+#ifdef IS_WINDOWS
+    strcpy_s(nonce_base64, 1024, (char*)nonce_result);
+#endif
+#ifdef IS_LINUX
     strcpy(nonce_base64, (char*)nonce_result);
+#endif
 
     auto now = chrono::system_clock::now();
     auto delta = chrono::duration_cast<chrono::milliseconds>(now.time_since_epoch());
 
     struct timeval tv;
-    tv.tv_sec = delta.count() / 1000;
+    tv.tv_sec = (long)(delta.count() / 1000);
     tv.tv_usec = (delta.count() % 1000) * 1000;
 
     int millisec = tv.tv_usec / 1000;
 
     char time_buffer[1024];
-    size_t time_buffer_length = strftime(time_buffer, 1024, "%Y-%m-%dT%H:%M:%S.", gmtime(&tv.tv_sec+offset));
+#ifdef IS_WINDOWS
+    struct tm tm_storage;
+    auto err = gmtime_s(&tm_storage, (time_t*)&tv.tv_sec+offset);
+    if(err != 0)
+        R_THROW(("gmtime_s failed"));
+    struct tm* this_tm = &tm_storage;
+#endif
+#ifdef IS_LINUX
+    struct tm* this_tm = gmtime((time_t*)&tv.tv_sec+offset);
+#endif
+    size_t time_buffer_length = strftime(time_buffer, 1024, "%Y-%m-%dT%H:%M:%S.", this_tm);
     time_buffer[time_buffer_length] = '\0';
 
     char milli_buf[16] = {0};
+#ifdef IS_WINDOWS
+    sprintf_s(milli_buf, 16, "%03dZ", millisec);
+#endif
+#ifdef IS_LINUX
     sprintf(milli_buf, "%03dZ", millisec);
+#endif
+
+#ifdef IS_WINDOWS
+    strcat_s(time_buffer, time_buffer_length, milli_buf);
+#endif
+#ifdef IS_LINUX
     strcat(time_buffer, milli_buf);
+#endif
 
     r_sha1 ctx;
     ctx.update(nonce_buffer, nonce_chunk_size);
@@ -765,8 +834,14 @@ void r_onvif_session::add_username_digest_header(
     memset(digest_result, 0, 128);
     memcpy(digest_result, b64_encoded.c_str(), b64_encoded.length());
 
+#ifdef IS_WINDOWS
+    strcpy_s(time_holder, 1024, time_buffer);
+    strcpy_s(digest_base64, 1024, (char*)digest_result);
+#endif
+#ifdef IS_LINUX
     strcpy(time_holder, time_buffer);
     strcpy(digest_base64, (const char *)digest_result);
+#endif
 
     xmlNsPtr ns_wsse = xmlNewNs(root, (xmlChar*)"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd", (xmlChar*)"wsse");
     xmlNsPtr ns_wsu = xmlNewNs(root, (xmlChar*)"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd", (xmlChar*)"wsu");

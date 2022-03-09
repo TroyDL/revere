@@ -656,8 +656,6 @@ void MainWindow::_update_retention_ui()
 {
     auto as = _assignmentState.value();
 
-    printf("as.byte_rate = %ld\n", as.byte_rate);
-
     _retention->findChild<QLabel*>("headingLabel")->setText(QString::fromStdString(as.camera_friendly_name + " at " + to_string((as.byte_rate * 8) / 1024)) + " kbps.\n");
 
     auto continuous_sz_info = r_storage::r_storage_file::required_file_size_for_retention_hours((as.continuous_retention_days*24), as.byte_rate);

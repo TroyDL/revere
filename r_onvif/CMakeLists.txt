@@ -10,7 +10,12 @@ target_include_directories(
     include
     ../r_http/include
     ../r_utils/include
-    ${LIBXML2_INCLUDE_DIR}
+    ${LIBXML2_INCLUDE_DIRS}
+)
+
+target_link_directories(
+    r_onvif PUBLIC
+    ${LIBXML2_LIB_DIRS}
 )
 
 target_link_libraries(

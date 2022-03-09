@@ -267,7 +267,7 @@ static float _compute_framerate(const r_blob_tree& bt)
         }
     }
 
-    int64_t avg_delta = (std::accumulate(begin(deltas), end(deltas), 0, [](int64_t a, int64_t b) { return a + b; }) / deltas.size());
+    int64_t avg_delta = (std::accumulate(begin(deltas), end(deltas), (int64_t)0, [](int64_t a, int64_t b) {return a + b;}) / deltas.size());
 
     return (float)1000 / (float)avg_delta;
 }
@@ -530,8 +530,6 @@ r_http::r_server_response ws::_get_export(const r_http::r_web_server<r_utils::r_
                 R_THROW(("Blob tree missing frames."));
 
             auto n_frames = bt["frames"].size();
-
-            printf("N_FRAMES=%ld\n", n_frames);
 
             for(size_t fi = 0; fi < n_frames; ++fi)
             {

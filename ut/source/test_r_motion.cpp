@@ -22,8 +22,23 @@ REGISTER_TEST_FIXTURE(test_r_motion);
 
 std::string get_env(const string& name)
 {
+    std::string output;
+#ifdef IS_WINDOWS
+    char* s = nullptr;
+    size_t len = 0;
+    _dupenv_s(&s, &len, name.c_str());
+    if(s)
+    {
+        output = string(s, len);
+        free(s);
+    }
+#endif
+#ifdef IS_LINUX
     char* env = getenv(name.c_str());
-    return (env)?string(env):string();
+    if(env)
+        output = string(env);
+#endif
+    return output;
 }
 
 void test_r_motion::setup()

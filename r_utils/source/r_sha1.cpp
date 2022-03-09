@@ -44,10 +44,10 @@ void r_sha1::update(const uint8_t* src, size_t size)
     uint32_t i, j;
 
     j = _count[0];
-    if ((_count[0] += size << 3) < j)
+    if ((_count[0] += (uint32_t)(size << 3)) < j)
         _count[1]++;
 
-    _count[1] += (size >> 29);
+    _count[1] += (uint32_t)(size >> 29);
     j = (j >> 3) & 63;
 
     if((j + size) > 63)

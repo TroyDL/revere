@@ -100,5 +100,5 @@ void test_r_onvif::test_r_onvif_session_basic()
         }
     }
 
-//    RTF_ASSERT(foundSomething);
+    RTF_ASSERT(foundSomething);
 }

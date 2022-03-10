@@ -483,8 +483,11 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
             if(encoding == H264_ENCODING)
             {
                 r_h264_info h264_info;
-                h264_info.profile_level_id = string(gst_structure_get_string(new_pad_struct, "profile-level-id"));
-                auto sprop_parameter_sets = string(gst_structure_get_string(new_pad_struct, "sprop-parameter-sets"));
+
+                auto str = gst_structure_get_string(new_pad_struct, "profile-level-id");
+                h264_info.profile_level_id = (str)?string(str):string();
+                str = gst_structure_get_string(new_pad_struct, "sprop-parameter-sets");
+                auto sprop_parameter_sets = (str)?string(str):string();
                 auto parts = r_string_utils::split(sprop_parameter_sets, ',');
                 h264_info.sprop_sps = parts[0];
                 h264_info.sprop_pps = parts[1];
@@ -501,9 +504,12 @@ void r_gst_source::_pad_added_callback(GstElement* src, GstPad* new_pad)
             else if(encoding == H265_ENCODING)
             {
                 r_h265_info h265_info;
-                h265_info.sprop_vps = string(gst_structure_get_string(new_pad_struct, "sprop-vps"));
-                h265_info.sprop_sps = string(gst_structure_get_string(new_pad_struct, "sprop-sps"));
-                h265_info.sprop_pps = string(gst_structure_get_string(new_pad_struct, "sprop-pps"));
+                auto str = gst_structure_get_string(new_pad_struct, "sprop-vps");
+                h265_info.sprop_vps = (str)?string(str):string();
+                str = gst_structure_get_string(new_pad_struct, "sprop-sps");
+                h265_info.sprop_sps = (str)?string(str):string();
+                str = gst_structure_get_string(new_pad_struct, "sprop-pps");
+                h265_info.sprop_pps = (str)?string(str):string();
 
                 si.encoding = H265_ENCODING;
                 si.h265.set_value(h265_info);

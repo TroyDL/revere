@@ -369,10 +369,9 @@ r_nullable<string> r_onvif_session::_maybe_get_xml_value(
     if(xpo.get() == NULL || xmlXPathNodeSetIsEmpty(xpo.get()->nodesetval))
         return result;
 
-    raii_ptr<char> keyword((char*)xmlNodeListGetString(doc, xpo.get()->nodesetval->nodeTab[0]->xmlChildrenNode, 1), free);
+    raii_ptr<char> keyword((char*)xmlNodeListGetString(doc, xpo.get()->nodesetval->nodeTab[0]->xmlChildrenNode, 1), xmlFree);
     if(keyword.get() == NULL)
         return result;
-    
     result.set_value(string((char*)keyword.get()));
 
     return result;
@@ -402,7 +401,7 @@ string r_onvif_session::_get_node_attribute(
     if(!result.get())
         R_THROW(("Unable to find xpath."));
 
-    raii_ptr<char> val((char*)xmlGetProp(result.get()->nodesetval->nodeTab[0], (xmlChar*)attribute.c_str()), free);
+    raii_ptr<char> val((char*)xmlGetProp(result.get()->nodesetval->nodeTab[0], (xmlChar*)attribute.c_str()), xmlFree);
 
     return string(val.get());
 }
@@ -793,7 +792,8 @@ void r_onvif_session::add_username_digest_header(
     char time_buffer[1024];
 #ifdef IS_WINDOWS
     struct tm tm_storage;
-    auto err = gmtime_s(&tm_storage, (time_t*)&tv.tv_sec+offset);
+    time_t then = tv.tv_sec + offset;
+    auto err = gmtime_s(&tm_storage, &then);
     if(err != 0)
         R_THROW(("gmtime_s failed"));
     struct tm* this_tm = &tm_storage;
@@ -813,7 +813,8 @@ void r_onvif_session::add_username_digest_header(
 #endif
 
 #ifdef IS_WINDOWS
-    strcat_s(time_buffer, time_buffer_length, milli_buf);
+    //strcat_s(time_buffer, 1024, milli_buf);
+    strcat(time_buffer, milli_buf);
 #endif
 #ifdef IS_LINUX
     strcat(time_buffer, milli_buf);

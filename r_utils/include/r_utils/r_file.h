@@ -80,6 +80,7 @@ struct r_file_info
     r_file_type file_type;
 };
 
+std::string platform_path(const std::string& path);
 int stat(const std::string& fileName, struct r_file_info* fileInfo);
 uint64_t file_size(const std::string& fileName);
 int fileno(FILE* f);

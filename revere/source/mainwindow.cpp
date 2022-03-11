@@ -21,6 +21,7 @@
 #include <QMenu>
 #include <QErrorMessage>
 #include <QRadioButton>
+#include <QSettings>
 #include <functional>
 #include <thread>
 
@@ -35,9 +36,9 @@ MainWindow::MainWindow(QWidget *parent) :
     _trayIcon(nullptr),
     _trayIconMenu(nullptr),
     _topDir(top_dir()),
-    _agent(_topDir),
-    _devices(_topDir),
-    _streamKeeper(_devices, _topDir),
+    _agent(r_fs::platform_path(_topDir)),
+    _devices(r_fs::platform_path(_topDir)),
+    _streamKeeper(_devices, r_fs::platform_path(_topDir)),
     _cameraUIUpdateTimer(nullptr),
     _discoveredListWidget(nullptr),
     _recordingListWidget(nullptr),
@@ -49,11 +50,14 @@ MainWindow::MainWindow(QWidget *parent) :
     _newFileName(new NewFileName(this)),
     _motionDetection(new MotionDetection(this)),
     _assignmentState(),
-    _ws(top_dir(), _devices)
+    _ws(r_fs::platform_path(_topDir), _devices)
 {
     r_pipeline::gstreamer_init();
 
     _ui->setupUi(this);
+
+    QIcon icon = QIcon(":/images/R.png");
+    setWindowIcon(QIcon(":/images/R.png"));
 
     statusBar()->hide();
 
@@ -180,6 +184,29 @@ MainWindow::~MainWindow()
     r_pipeline::gstreamer_deinit();
 }
 
+void MainWindow::save_window_state()
+{
+    QSettings settings("revere", "revere");
+
+    settings.setValue("pos", pos());
+    if(!isMaximized())
+        settings.setValue("size", size());
+    settings.setValue("maximized", isMaximized());
+}
+
+void MainWindow::restore_window_state()
+{
+    // Restore window state...
+    QSettings settings("revere", "revere");
+    if(settings.contains("pos"))
+        move(settings.value("pos").toPoint());
+    if(settings.contains("size"))
+        resize(settings.value("size").toSize());
+
+    if(settings.value("maximized").toBool())
+        setWindowState(windowState() | Qt::WindowMaximized);
+}
+
 void MainWindow::setVisible(bool visible)
 {
     _restoreAction->setEnabled(isMaximized() || !visible);
@@ -193,6 +220,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
         return;
     }
 #endif
+
+    save_window_state();
+
+    QMainWindow::closeEvent(event);
+
     if(_trayIcon->isVisible())
     {
         QMessageBox::information(this, tr("Minmize to tray"),
@@ -450,23 +482,24 @@ void MainWindow::on_existing_storage_clicked()
         tr("Open File"),
         QString::fromStdString(sub_dir("video")),
         tr("Revere Video Database (*.rvd)")
-    ).toStdString();
+    );
 
-    if(fileName.empty())
+    if(fileName.isEmpty())
         return;
 
-    fileName = fileName.substr(fileName.rfind(r_fs::PATH_SLASH)+1);
+    QFileInfo fi(fileName);
+    auto filePath = fi.fileName().toStdString();
 
     auto as = _assignmentState.value();
 
-    as.file_name = fileName;
+    as.file_name = filePath;
 
     // Generate an mdb path and see if it already exists. If it does, use it.
     auto video_path = sub_dir("video");
 
-    auto dot_pos = fileName.find_last_of('.');
+    auto dot_pos = filePath.find_last_of('.');
 
-    auto mdb_file_name = fileName.substr(0, dot_pos) + ".mdb";
+    auto mdb_file_name = filePath.substr(0, dot_pos) + ".mdb";
 
     auto mdb_path = join_path(video_path, mdb_file_name);
 

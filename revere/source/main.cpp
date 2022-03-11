@@ -5,6 +5,7 @@
 #include "r_onvif/r_onvif_session.h"
 #include <string>
 #include <QApplication>
+#include <QSettings>
 #include <algorithm>
 
 //
@@ -30,6 +31,8 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(revere);
 
     R_LOG_INFO("Revere Starting...");
+
+    r_logger::install_logger();
 
     auto arguments = r_args::parse_arguments(argc, argv);
 
@@ -104,6 +107,7 @@ int main(int argc, char *argv[])
 
     QApplication a(argc, argv);
     MainWindow w;
+    w.restore_window_state();
     w.show();
     return a.exec();
 }

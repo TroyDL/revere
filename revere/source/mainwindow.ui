@@ -57,8 +57,13 @@
    <string>Revere</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="revere.qrc">
-    <normaloff>:/images/R.png</normaloff>:/images/R.png</iconset>
+   <iconset>
+    <normalon>:/images/R.ico</normalon>
+    <activeoff>:/images/R.ico</activeoff>
+    <activeon>:/images/R.ico</activeon>
+    <selectedoff>:/images/R.ico</selectedoff>
+    <selectedon>:/images/R.ico</selectedon>
+   </iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_13">
@@ -159,6 +164,9 @@
 selection-background-color: rgb(224, 224, 224);
 selection-color: rgb(224, 224, 224);</string>
             </property>
+            <property name="horizontalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
+            </property>
             <property name="sizeAdjustPolicy">
              <enum>QAbstractScrollArea::AdjustToContents</enum>
             </property>
@@ -204,6 +212,9 @@ selection-color: rgb(224, 224, 224);</string>
             </property>
             <property name="styleSheet">
              <string notr="true">background-color: rgb(8, 32, 50);</string>
+            </property>
+            <property name="horizontalScrollBarPolicy">
+             <enum>Qt::ScrollBarAlwaysOff</enum>
             </property>
             <property name="sizeAdjustPolicy">
              <enum>QAbstractScrollArea::AdjustToContents</enum>

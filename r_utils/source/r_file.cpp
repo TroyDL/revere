@@ -2,6 +2,7 @@
 #include "r_utils/r_file.h"
 #include "r_utils/r_string_utils.h"
 #include <random>
+#include <regex>
 #ifdef IS_WINDOWS
 #include <Windows.h>
 #include <Io.h>
@@ -46,6 +47,24 @@ r_file& r_file::operator = (r_file&& obj) noexcept
     _f = std::move(obj._f);
     obj._f = nullptr;
     return *this;
+}
+
+string r_utils::r_fs::platform_path(const string& path)
+{
+    string output;
+#ifdef IS_WINDOWS
+    // convert forward slashes to backslashes
+    auto s1 = regex_replace(path, regex("//"), "/");
+
+    output = regex_replace(s1, regex("/"), "\\");
+#endif
+#ifdef IS_LINUX
+    // convert backslashes to forward slashes
+    auto s1 = regex_replace(path, regex("\\\\"), "\\");
+
+    output = regex_replace(s1, regex("\\"), "/");
+#endif
+    return output;
 }
 
 int r_utils::r_fs::stat(const string& file_name, struct r_file_info* file_info)

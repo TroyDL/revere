@@ -57,6 +57,9 @@ public:
 
     void setVisible(bool visible) override;
 
+    void save_window_state();
+    void restore_window_state();
+
 protected:
     void closeEvent(QCloseEvent *event) override;
 

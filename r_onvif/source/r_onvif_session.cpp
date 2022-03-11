@@ -511,6 +511,9 @@ xmlDocPtr r_onvif_session::_send_command_to_camera(
     r_http::r_client_response response;
     response.read_response(sok);
 
+    if(response.is_failure())
+        R_THROW(("Error returned from camera."));
+
     auto response_body = response.get_body_as_string();
  
     return xmlParseMemory(response_body.c_str(), (int)response_body.size());

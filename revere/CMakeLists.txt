@@ -77,9 +77,9 @@ target_link_libraries(
     r_utils
     ${GSTREAMER_LIBS}
     ${FFMPEG_LIBS}
-    Qt5::UiTools
-    Qt5::Widgets
-    Qt5::Multimedia
+    Qt6::UiTools
+    Qt6::Widgets
+    Qt6::Multimedia
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
 )

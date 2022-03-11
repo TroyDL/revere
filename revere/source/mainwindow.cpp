@@ -288,8 +288,6 @@ void MainWindow::on_rtsp_credentials_ok_clicked()
 
         this->_assignmentState.set_value(as);
 
-        this->_pleaseWait->hide();
-
         emit this->fetch_camera_params_done();
     });
     th.detach();
@@ -381,6 +379,8 @@ static r_nullable<vector<uint8_t>> _decode_frame(const r_pipeline::r_sdp_media& 
 
 void MainWindow::on_fetch_camera_params_done()
 {
+    _pleaseWait->hide();
+
     try
     {
         // get the codec from the _assignmentState sdp_mediasr

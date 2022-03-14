@@ -36,7 +36,7 @@ add_executable(
 )
 
 if(MSVC)
-    target_link_options(revere PUBLIC "/STACK:1000000")
+    target_link_options(revere PUBLIC "/STACK:10000000")
 endif()
 
 target_include_directories(

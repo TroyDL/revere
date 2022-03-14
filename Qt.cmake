@@ -4,7 +4,14 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(QT NAMES Qt6 COMPONENTS REQUIRED)
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    find_package(QT NAMES Qt6 COMPONENTS REQUIRED)
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    find_package(QT NAMES Qt5 COMPONENTS REQUIRED)
+endif()
+
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR}Multimedia REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR}UiTools REQUIRED)

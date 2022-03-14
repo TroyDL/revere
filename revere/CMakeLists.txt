@@ -62,8 +62,7 @@ target_link_directories(
     ${FFMPEG_LIB_DIRS}
 )
 
-target_link_libraries(
-    revere
+set(REVERE_LIBS
     r_motion
     r_codec
     r_disco
@@ -75,10 +74,30 @@ target_link_libraries(
     r_db
     r_http
     r_utils
-    ${GSTREAMER_LIBS}
-    ${FFMPEG_LIBS}
-    Qt6::Widgets
-    Qt6::Multimedia
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${CMAKE_DL_LIBS}
 )
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    target_link_libraries(
+        revere
+        ${REVERE_LIBS}
+        ${GSTREAMER_LIBS}
+        ${FFMPEG_LIBS}
+        Qt6::Widgets
+        Qt6::Multimedia
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${CMAKE_DL_LIBS}
+    )
+endif()
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    target_link_libraries(
+        revere
+        ${REVERE_LIBS}
+        ${GSTREAMER_LIBS}
+        ${FFMPEG_LIBS}
+        Qt5::Widgets
+        Qt5::Multimedia
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${CMAKE_DL_LIBS}
+    )
+endif()

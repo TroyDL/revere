@@ -56,9 +56,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     _ui->setupUi(this);
 
-    QIcon icon = QIcon(":/images/R.png");
-    setWindowIcon(QIcon(":/images/R.png"));
-
     statusBar()->hide();
 
     connect(this, &MainWindow::fetch_camera_params_done, this, &MainWindow::on_fetch_camera_params_done);

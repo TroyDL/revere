@@ -36,7 +36,7 @@ add_executable(
 )
 
 if(MSVC)
-    target_link_options(revere PUBLIC "/STACK:10000000")
+    target_link_options(revere PUBLIC "/STACK:1000000")
 endif()
 
 target_include_directories(
@@ -63,21 +63,20 @@ target_link_directories(
 )
 
 target_link_libraries(
-    revere LINK_PUBLIC
+    revere
     r_motion
     r_codec
-    r_vss
     r_disco
     r_storage
     r_mux
     r_fakey
+    r_vss
     r_pipeline
     r_db
     r_http
     r_utils
     ${GSTREAMER_LIBS}
     ${FFMPEG_LIBS}
-    Qt6::UiTools
     Qt6::Widgets
     Qt6::Multimedia
     ${CMAKE_THREAD_LIBS_INIT}

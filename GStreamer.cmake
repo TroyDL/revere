@@ -1,32 +1,34 @@
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-
-set(
-    GSTREAMER_INCLUDE_DIRS
-    ../deps/windows/gstreamer/1.0/msvc_x86_64/include/gstreamer-1.0
-    ../deps/windows/gstreamer/1.0/msvc_x86_64/include/glib-2.0
-    ../deps/windows/gstreamer/1.0/msvc_x86_64/lib/glib-2.0/include
-)
-
-set(
-    GSTREAMER_LIB_DIRS
-    ../deps/windows/gstreamer/1.0/msvc_x86_64/lib
-)
-
-set(
-    GSTREAMER_LIBS
-    gstreamer-1.0
-    gstapp-1.0
-    gstsdp-1.0
-    gstrtspserver-1.0
-    gstcodecparsers-1.0
-    gobject-2.0
-    gmodule-2.0
-    xml2
-    gthread-2.0
-    glib-2.0
-)
-
+    if(DEFINED ENV{GSTREAMER_DEV_ROOT})
+        set(
+            GSTREAMER_INCLUDE_DIRS
+            $ENV{GSTREAMER_DEV_ROOT}/include/gstreamer-1.0
+            $ENV{GSTREAMER_DEV_ROOT}/include/glib-2.0
+            $ENV{GSTREAMER_DEV_ROOT}/lib/glib-2.0/include
+        )
+        
+        set(
+            GSTREAMER_LIB_DIRS
+            $ENV{GSTREAMER_DEV_ROOT}/lib
+        )
+        
+        set(
+            GSTREAMER_LIBS
+            gstreamer-1.0
+            gstapp-1.0
+            gstsdp-1.0
+            gstrtspserver-1.0
+            gstcodecparsers-1.0
+            gobject-2.0
+            gmodule-2.0
+            xml2
+            gthread-2.0
+            glib-2.0
+        )
+    else()
+        message( FATAL_ERROR "Required GSTREAMER_DEV_ROOT environment variable not set." )
+    endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

@@ -312,11 +312,11 @@ int main(int, char**)
     auto roboto_thin = io.Fonts->AddFontFromMemoryTTF(Roboto_Thin_ttf, Roboto_Thin_ttf_len, 18.0, &font_cfg);
     auto roboto_thin_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_ThinItalic_ttf, Roboto_ThinItalic_ttf_len, 18.0, &font_cfg);
 
-    int my_image_width = 0;
-    int my_image_height = 0;
-    GLuint my_image_texture = 0;
-    bool ret = LoadTextureFromFile("icons8-hammer-16.png", &my_image_texture, &my_image_width, &my_image_height);
-    IM_ASSERT(ret);
+    //int my_image_width = 0;
+    //int my_image_height = 0;
+    //GLuint my_image_texture = 0;
+    //bool ret = LoadTextureFromFile("icons8-hammer-16.png", &my_image_texture, &my_image_width, &my_image_height);
+    //IM_ASSERT(ret);
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);

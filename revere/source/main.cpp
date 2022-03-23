@@ -7,6 +7,9 @@
 #include "gl_utils.h"
 #include "r_utils/r_string_utils.h"
 #include <stdio.h>
+#ifdef IS_WINDOWS
+#include <windows.h>
+#endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #include "roboto.c"
 #include <string>

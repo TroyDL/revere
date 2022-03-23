@@ -20,6 +20,16 @@ void load_texture_from_file(const string& filename, GLuint* out_texture, int* ou
     if(!image_data)
         R_THROW(("Unable to load image file: %s", filename.c_str()));
 
+    auto image_texture = load_texture_from_rgba(image_data, image_width * image_height * 4, image_width, image_height);
+    stbi_image_free(image_data);
+
+    *out_texture = image_texture;
+    *out_width = image_width;
+    *out_height = image_height;
+}
+
+GLuint load_texture_from_rgba(const uint8_t* pixels, size_t size, uint16_t w, uint16_t h)
+{
     // Create a OpenGL texture identifier
     GLuint image_texture;
     glGenTextures(1, &image_texture);
@@ -31,14 +41,10 @@ void load_texture_from_file(const string& filename, GLuint* out_texture, int* ou
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
 
-    // Upload pixels into texture
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-    stbi_image_free(image_data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
-    *out_texture = image_texture;
-    *out_width = image_width;
-    *out_height = image_height;
+    return image_texture;
 }

@@ -5,12 +5,16 @@
 #include "imgui_impl_opengl3.h"
 #include "utils.h"
 #include "gl_utils.h"
+#include "r_utils/r_string_utils.h"
 #include <stdio.h>
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #include "roboto.c"
 #include <string>
 #include <thread>
 #include <tray.hpp>
+
+using namespace std;
+using namespace r_utils;
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -19,7 +23,43 @@ static void glfw_error_callback(int error, const char* description)
 
 extern ImGuiContext *GImGui;
 
-void FakeList2(int& selected, int width, const std::string& buttontext)
+struct font_catalog
+{
+    ImFont* roboto_black;
+    ImFont* roboto_black_italic;
+    ImFont* roboto_bold;
+    ImFont* roboto_bold_italic;
+    ImFont* roboto_italic;
+    ImFont* roboto_light;
+    ImFont* roboto_light_italic;
+    ImFont* roboto_medium;
+    ImFont* roboto_medium_italic;
+    ImFont* roboto_regular;
+    ImFont* roboto_thin;
+    ImFont* roboto_thin_italic;
+};
+
+font_catalog load_fonts(ImGuiIO& io)
+{
+    font_catalog f;
+    ImFontConfig font_cfg;
+    font_cfg.FontDataOwnedByAtlas = false;
+    f.roboto_black = io.Fonts->AddFontFromMemoryTTF(Roboto_Black_ttf, Roboto_Black_ttf_len, 18.0, &font_cfg);
+    f.roboto_black_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_BlackItalic_ttf, Roboto_BlackItalic_ttf_len, 18.0, &font_cfg);
+    f.roboto_bold = io.Fonts->AddFontFromMemoryTTF(Roboto_Bold_ttf, Roboto_Bold_ttf_len, 18.0, &font_cfg);
+    f.roboto_bold_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_BoldItalic_ttf, Roboto_BoldItalic_ttf_len, 18.0, &font_cfg);
+    f.roboto_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_Italic_ttf, Roboto_Italic_ttf_len, 18.0, &font_cfg);
+    f.roboto_light = io.Fonts->AddFontFromMemoryTTF(Roboto_Light_ttf, Roboto_Light_ttf_len, 18.0, &font_cfg);
+    f.roboto_light_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_LightItalic_ttf, Roboto_LightItalic_ttf_len, 18.0, &font_cfg);
+    f.roboto_medium = io.Fonts->AddFontFromMemoryTTF(Roboto_Medium_ttf, Roboto_Medium_ttf_len, 18.0, &font_cfg);
+    f.roboto_medium_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_MediumItalic_ttf, Roboto_MediumItalic_ttf_len, 18.0, &font_cfg);
+    f.roboto_regular = io.Fonts->AddFontFromMemoryTTF(Roboto_Regular_ttf, Roboto_Regular_ttf_len, 18.0, &font_cfg);
+    f.roboto_thin = io.Fonts->AddFontFromMemoryTTF(Roboto_Thin_ttf, Roboto_Thin_ttf_len, 18.0, &font_cfg);
+    f.roboto_thin_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_ThinItalic_ttf, Roboto_ThinItalic_ttf_len, 18.0, &font_cfg);
+    return f;
+}
+
+void FakeList2(int& selected, float width, const std::string& buttontext)
 {
     auto pos = ImGui::GetCursorPos();
 
@@ -28,11 +68,10 @@ void FakeList2(int& selected, int width, const std::string& buttontext)
     {
         ImGui::PushID(n);
 
-        char buf[32];
-        sprintf(buf, "##Object %d", n);
+        auto name = r_string_utils::format("##Object %d", n);
 
         ImGui::SetCursorPos(ImVec2(pos.x, pos.y));
-        if (ImGui::Selectable(buf, n == selected, 0, ImVec2(width, 50))) {
+        if (ImGui::Selectable(name.c_str(), n == selected, 0, ImVec2((float)width, 50))) {
             selected = n;
         }
         ImGui::SetItemAllowOverlap();
@@ -138,20 +177,7 @@ int main(int, char**)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    ImFontConfig font_cfg;
-    font_cfg.FontDataOwnedByAtlas = false;
-    auto roboto_black = io.Fonts->AddFontFromMemoryTTF(Roboto_Black_ttf, Roboto_Black_ttf_len, 18.0, &font_cfg);
-    auto roboto_black_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_BlackItalic_ttf, Roboto_BlackItalic_ttf_len, 18.0, &font_cfg);
-    auto roboto_bold = io.Fonts->AddFontFromMemoryTTF(Roboto_Bold_ttf, Roboto_Bold_ttf_len, 18.0, &font_cfg);
-    auto roboto_bold_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_BoldItalic_ttf, Roboto_BoldItalic_ttf_len, 18.0, &font_cfg);
-    auto roboto_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_Italic_ttf, Roboto_Italic_ttf_len, 18.0, &font_cfg);
-    auto roboto_light = io.Fonts->AddFontFromMemoryTTF(Roboto_Light_ttf, Roboto_Light_ttf_len, 18.0, &font_cfg);
-    auto roboto_light_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_LightItalic_ttf, Roboto_LightItalic_ttf_len, 18.0, &font_cfg);
-    auto roboto_medium = io.Fonts->AddFontFromMemoryTTF(Roboto_Medium_ttf, Roboto_Medium_ttf_len, 18.0, &font_cfg);
-    auto roboto_medium_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_MediumItalic_ttf, Roboto_MediumItalic_ttf_len, 18.0, &font_cfg);
-    auto roboto_regular = io.Fonts->AddFontFromMemoryTTF(Roboto_Regular_ttf, Roboto_Regular_ttf_len, 18.0, &font_cfg);
-    auto roboto_thin = io.Fonts->AddFontFromMemoryTTF(Roboto_Thin_ttf, Roboto_Thin_ttf_len, 18.0, &font_cfg);
-    auto roboto_thin_italic = io.Fonts->AddFontFromMemoryTTF(Roboto_ThinItalic_ttf, Roboto_ThinItalic_ttf_len, 18.0, &font_cfg);
+    auto fc = load_fonts(io);
 
     //int my_image_width = 0;
     //int my_image_height = 0;
@@ -177,9 +203,9 @@ int main(int, char**)
         auto window_width = window_size.x;
         auto window_height = window_size.y;
 
-        ImGui::PushFont(roboto_regular);
+        ImGui::PushFont(fc.roboto_regular);
 
-        double client_top = 0.;
+        float client_top = 0.;
 
         if(ImGui::BeginMainMenuBar())
         {

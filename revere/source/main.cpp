@@ -7,8 +7,6 @@
 #include "gl_utils.h"
 #include <stdio.h>
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include "roboto.c"
 #include <string>
 #include <thread>

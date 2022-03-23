@@ -37,6 +37,8 @@ add_executable(
 
     include/gl_utils.h
     source/gl_utils.cpp
+    include/font_catalog.h
+    source/font_catalog.cpp
     source/utils.cpp
     source/main.cpp
 )

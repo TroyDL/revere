@@ -24,7 +24,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     add_compile_definitions(IS_LINUX)
 endif()
 
-include(Qt.cmake)
 include(GStreamer.cmake)
 include(FFmpeg.cmake)
 include(libxml2.cmake)

@@ -4,6 +4,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "utils.h"
+#include "gl_utils.h"
 #include <stdio.h>
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
 #define STB_IMAGE_IMPLEMENTATION
@@ -13,169 +14,12 @@
 #include <thread>
 #include <tray.hpp>
 
-// Use Shell_NotifyIconA() to display a tray icon
-// https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shell_notifyicona
-//
-// NOTIFYICONDATA structure sent in the call to Shell_NotifyIcon contains information that specifies both the notification
-// area icon and the notification itself.
-//
-// Each icon in the notification area can be identified by the GUID with which the icon is declared in the registry. This is
-// the preferred method on Windows 7 and later.
-//
-// Icons in the notification area can have a tooltip. The tooltip can be either a standard tooltip (preferred) or an
-// application-drawn, pop-up UI.
-//
-// Notification area icons should be high-DPI aware. An application should provide both a 16x16 pixel icon and a 32x32 icon
-// in its resource file, and then use LoadIconMetric to ensure that the correct icon is loaded and scaled appropriately.
-//
-// The application responsible for the notification area icon should handle a mouse click for that icon. When a user
-// right-clicks the icon, it should bring up a normal shortcut menu.
-//
-// The icon can be added to the notification area without displaying a notification by defining only the icon-specific
-// members of NOTIFYICONDATA (discussed above) and calling Shell_NotifyIcon as shown here:
-//
-//     NOTIFYICONDATA nid = {};
-//     Do NOT set the NIF_INFO flag.
-//     ...                    
-//     Shell_NotifyIcon(NIM_ADD, &nid);
-//
-// 
-
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
 extern ImGuiContext *GImGui;
-
-namespace ImGui
-{
-bool BeginMainToolBar();
-void EndMainToolBar();
-}
-
-bool ImGui::BeginMainToolBar()
-{
-    ImGuiContext& g = *GImGui;
-    ImGuiViewportP* viewport = (ImGuiViewportP*)(void*)GetMainViewport();
-
-    // For the main menu bar, which cannot be moved, we honor g.Style.DisplaySafeAreaPadding to ensure text can be visible on a TV set.
-    // FIXME: This could be generalized as an opt-in way to clamp window->DC.CursorStartPos to avoid SafeArea?
-    // FIXME: Consider removing support for safe area down the line... it's messy. Nowadays consoles have support for TV calibration in OS settings.
-    g.NextWindowData.MenuBarOffsetMinVal = ImVec2(g.Style.DisplaySafeAreaPadding.x, ImMax(g.Style.DisplaySafeAreaPadding.y - g.Style.FramePadding.y, 0.0f));
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
-    float height = GetFrameHeight();
-    bool is_open = BeginViewportSideBar("##MainToolBar", viewport, ImGuiDir_Up, height, window_flags);
-    g.NextWindowData.MenuBarOffsetMinVal = ImVec2(0.0f, 0.0f);
-
-    if (is_open)
-        BeginMenuBar();
-    else
-        End();
-    return is_open;
-}
-
-void ImGui::EndMainToolBar()
-{
-    EndMenuBar();
-
-    // When the user has left the menu layer (typically: closed menus through activation of an item), we restore focus to the previous window
-    // FIXME: With this strategy we won't be able to restore a NULL focus.
-    ImGuiContext& g = *GImGui;
-    if (g.CurrentWindow == g.NavWindow && g.NavLayer == ImGuiNavLayer_Main && !g.NavAnyRequest)
-        FocusTopMostWindowUnderOne(g.NavWindow, NULL);
-
-    End();
-}
-
-#define GL_CLAMP_TO_EDGE 0x812F 
-
-// Simple helper function to load an image into a OpenGL texture with common settings
-bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height)
-{
-    // Load from file
-    int image_width = 0;
-    int image_height = 0;
-    unsigned char* image_data = stbi_load(filename, &image_width, &image_height, NULL, 4);
-    if (image_data == NULL)
-        return false;
-
-    // Create a OpenGL texture identifier
-    GLuint image_texture;
-    glGenTextures(1, &image_texture);
-    glBindTexture(GL_TEXTURE_2D, image_texture);
-
-    // Setup filtering parameters for display
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-
-    // Upload pixels into texture
-#if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image_width, image_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-    stbi_image_free(image_data);
-
-    *out_texture = image_texture;
-    *out_width = image_width;
-    *out_height = image_height;
-
-    return true;
-}
-
-void FakeList(int& selected)
-{
-    // selectable list
-    for (int n = 0; n < 25; n++)
-    {
-        // You may call Selectable() first which a non-visible label ("##title") and specify a custom size and then
-        // draw your stuff over it. You'll need to know the size ahead and call the imgui_internal.h text drawing
-        // functions that handle clipping.
-        //
-        // You can set a custom widget size with PushItemWidth() and PushItemHeight()
-
-
-        ImGui::PushID(n);
-        char buf[32];
-        sprintf(buf, "Object %d", n);
-        if (ImGui::Selectable(buf, selected == n, 0, ImVec2(0, 20)))
-            selected = n;
-        ImGui::SetItemAllowOverlap();
-        ImGui::SameLine();
-        static const ImVec4 main_color { 0.3828f, 0.0f, 0.6992f, 1.0f };
-        static const ImVec4 hover_color { 0.2148f, 0.0f, 0.9333f, 1.0f };
-        ImGui::PushStyleColor(ImGuiCol_Button, main_color);
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hover_color);
-
-        auto pos = ImGui::GetCursorPos();
-        pos.y -= 2;
-        ImGui::SetCursorPos(pos);
-
-        if(ImGui::Button("do thing"))
-        {
-            ImGui::OpenPopup("Setup?");
-            selected = n;
-            printf("SETUP CLICKED %d\n", n);
-        }
-
-        if (ImGui::BeginPopupModal("Setup?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            ImGuiContext& g = *GImGui;
-            ImGuiWindow* window = g.CurrentWindow;
-            ImVec2 pos_before = window->DC.CursorPos;
-
-            ImGui::Text("Setup Popup");
-            if (ImGui::Button("OK", ImVec2(120, 0))) { printf("OK PRESSED!\n"); ImGui::CloseCurrentPopup(); }
-            ImGui::EndPopup();
-        }
-
-        ImGui::PopStyleColor();
-        ImGui::PopStyleColor();
-        ImGui::PopID();
-    }
-}
 
 void FakeList2(int& selected, int width, const std::string& buttontext)
 {
@@ -280,11 +124,6 @@ int main(int, char**)
         glfwHideWindow(window);
     }));
 
-//    auto tray_th = std::thread([&]{
-//        tray.run();
-//    });
-//    tray_th.detach();
-
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -319,8 +158,7 @@ int main(int, char**)
     //int my_image_width = 0;
     //int my_image_height = 0;
     //GLuint my_image_texture = 0;
-    //bool ret = LoadTextureFromFile("icons8-hammer-16.png", &my_image_texture, &my_image_width, &my_image_height);
-    //IM_ASSERT(ret);
+    //load_texture_from_file("icons8-hammer-16.png", &my_image_texture, &my_image_width, &my_image_height);
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);

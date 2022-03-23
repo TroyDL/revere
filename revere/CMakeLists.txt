@@ -35,6 +35,8 @@ add_executable(
     source/imgui_impl_glfw.cpp
     source/imgui_impl_opengl3.cpp
 
+    include/gl_utils.h
+    source/gl_utils.cpp
     source/utils.cpp
     source/main.cpp
 )

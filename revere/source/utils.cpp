@@ -1,31 +1,67 @@
 
 #include "utils.h"
+#include "r_utils/r_exception.h"
+#include "r_utils/r_string_utils.h"
+#include "r_utils/r_file.h"
 
-#include <QStandardPaths>
-#include <QDir>
+#ifdef IS_WINDOWS
+#include <shlobj_core.h>
+#endif
+
+#ifdef IS_LINUX
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#endif
+
 #include <deque>
+#include <numeric>
+#include <iterator>
 
 using namespace std;
+using namespace r_utils;
 
 string top_dir()
 {
-    auto top_dir = QStandardPaths::locate(QStandardPaths::DocumentsLocation, "", QStandardPaths::LocateDirectory) + "revere" + QDir::separator() + "revere";
-    if(!QDir(top_dir).exists())
-        QDir().mkpath(top_dir);
-    return top_dir.toStdString();
+#ifdef IS_WINDOWS
+    wchar_t szPath[MAX_PATH];
+
+    auto ret = SHGetFolderPathW(NULL, CSIDL_PERSONAL|CSIDL_FLAG_CREATE, NULL, 0, szPath);
+
+    if(ret != S_OK)
+        R_THROW(("Could not get path to documents folder."));
+
+    return r_string_utils::convert_wide_string_to_multi_byte_string(szPath)  + r_fs::PATH_SLASH + "revere" + r_fs::PATH_SLASH + "revere";
+#endif
+
+#ifdef IS_LINUX
+    auto res = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if(res == -1)
+        R_THROW(("Could not get path to documents folder."));
+    vector<char> buffer(res);
+    passwd pwd;
+    passwd* result;
+    auto ret = getpwuid_r(getuid(), &pwd, buffer.data(), buffer.size(), &result);
+    if(ret != 0)
+        R_THROW(("Could not get path to documents folder."));
+    return string(pwd.pw_dir) + r_fs::PATH_SLASH + "Documents" + r_fs::PATH_SLASH + "revere" + r_fs::PATH_SLASH + "revere";
+#endif
 }
 
 string sub_dir(const string& subdir)
 {
-    auto sd = QString::fromStdString(top_dir()) + QDir::separator() + QString::fromStdString(subdir);
-    if(!QDir(sd).exists())
-        QDir().mkpath(sd);
-    return sd.toStdString();
+    auto top = top_dir();
+    auto sd = top + r_fs::PATH_SLASH + subdir;
+
+    if(!r_fs::file_exists(sd))
+        r_fs::mkdir(sd);
+
+    return sd;
 }
 
 std::string join_path(const std::string& path, const std::string& fileName)
 {
-    return (QString::fromStdString(path) + QDir::separator() + QString::fromStdString(fileName)).toStdString();
+    return path + r_fs::PATH_SLASH + fileName;
 }
 
 vector<pair<int64_t, int64_t>> find_contiguous_segments(const vector<int64_t>& times)

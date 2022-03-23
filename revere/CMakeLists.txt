@@ -1,46 +1,47 @@
-# revere
-#
+cmake_minimum_required(VERSION 3.14)
+project(revere)
+
+set(CMAKE_CXX_STANDARD 17)
+
+include(FetchContent)
+
+FetchContent_Declare(glfw
+  GIT_REPOSITORY https://github.com/glfw/glfw
+  GIT_TAG 3.3-stable
+)
+
+FetchContent_MakeAvailable(glfw)
+
+FetchContent_Declare(tray
+  GIT_REPOSITORY https://github.com/dicroce/traypp
+  GIT_TAG master
+)
+
+FetchContent_MakeAvailable(tray)
 
 add_executable(
     revere
-    source/main.cpp
-    source/mainwindow.h
-    source/mainwindow.cpp
-    source/mainwindow.ui
-    source/utils.h
-    source/utils.cpp
-    source/revere.qrc
-    source/rtspcredentials.ui
-    source/rtspcredentials.h
-    source/rtspcredentials.cpp
-    source/friendlyname.ui
-    source/friendlyname.h
-    source/friendlyname.cpp
-    source/retention.ui
-    source/retention.h
-    source/retention.cpp
-    source/neworexisting.ui
-    source/neworexisting.h
-    source/neworexisting.cpp
-    source/pleasewait.ui
-    source/pleasewait.h
-    source/pleasewait.cpp
-    source/newfilename.ui
-    source/newfilename.h
-    source/newfilename.cpp
-    source/motiondetection.ui
-    source/motiondetection.h
-    source/motiondetection.cpp
-    source/ws.h
-    source/ws.cpp
-)
+    include/imconfig.h
+    include/imgui_internal.h
+    include/imstb_rectpack.h
+    include/imstb_textedit.h
+    include/imstb_truetype.h
+    include/imgui.h
+    source/imgui.cpp
+    source/imgui_demo.cpp
+    source/imgui_draw.cpp
+    source/imgui_tables.cpp
+    source/imgui_widgets.cpp
+    source/imgui_impl_glfw.cpp
+    source/imgui_impl_opengl3.cpp
 
-if(MSVC)
-    target_link_options(revere PUBLIC "/STACK:10000000")
-endif()
+    source/utils.cpp
+    source/main.cpp
+)
 
 target_include_directories(
     revere PUBLIC
+    include
     ../r_motion/include
     ../r_codec/include
     ../r_vss/include
@@ -56,13 +57,16 @@ target_include_directories(
     ${FFMPEG_INCLUDE_DIRS}
 )
 
+find_package(OpenGL)
+
 target_link_directories(
     revere PUBLIC
     ${GSTREAMER_LIB_DIRS}
     ${FFMPEG_LIB_DIRS}
 )
 
-set(REVERE_LIBS
+target_link_libraries(
+    revere
     r_motion
     r_codec
     r_disco
@@ -74,30 +78,7 @@ set(REVERE_LIBS
     r_db
     r_http
     r_utils
+    glfw
+    ${OPENGL_LIBRARIES}
+    tray
 )
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    target_link_libraries(
-        revere
-        ${REVERE_LIBS}
-        ${GSTREAMER_LIBS}
-        ${FFMPEG_LIBS}
-        Qt6::Widgets
-        Qt6::Multimedia
-        ${CMAKE_THREAD_LIBS_INIT}
-        ${CMAKE_DL_LIBS}
-    )
-endif()
-
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    target_link_libraries(
-        revere
-        ${REVERE_LIBS}
-        ${GSTREAMER_LIBS}
-        ${FFMPEG_LIBS}
-        Qt5::Widgets
-        Qt5::Multimedia
-        ${CMAKE_THREAD_LIBS_INIT}
-        ${CMAKE_DL_LIBS}
-    )
-endif()
